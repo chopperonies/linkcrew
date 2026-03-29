@@ -4,12 +4,25 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
 const { sendDailyDigest } = require('../email/digest');
+const { handleMessage } = require('../bot/whatsapp');
 
 const app = express();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '../dashboard')));
+
+// ── WhatsApp Webhook ──────────────────────────────────────────────────────────
+app.post('/webhook/whatsapp', async (req, res) => {
+  const from = req.body.From;
+  const body = req.body.Body;
+  const profileName = req.body.ProfileName;
+  const mediaUrl = req.body.MediaUrl0 || null;
+
+  res.sendStatus(200); // Acknowledge immediately
+  handleMessage(from, body, profileName, mediaUrl).catch(console.error);
+});
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 
