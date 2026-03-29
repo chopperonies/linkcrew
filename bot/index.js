@@ -197,7 +197,8 @@ bot.on('callback_query', async (query) => {
       await supabase.from('job_assignments').upsert({
         job_id: jobId,
         employee_id: employee.id,
-        checked_in_at: new Date().toISOString()
+        checked_in_at: new Date().toISOString(),
+        checked_out_at: null
       }, { onConflict: 'job_id,employee_id' });
 
       await logJobUpdate(jobId, employee.id, 'checkin', `${employee.name} checked in`);

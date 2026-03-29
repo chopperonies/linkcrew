@@ -4,7 +4,7 @@
   "description": "Field crew job site management app",
   "main": "api/server.js",
   "scripts": {
-    "start": "node api/server.js",
+    "start": "node start.js",
     "bot": "node bot/index.js",
     "dev": "node api/server.js & node bot/index.js"
   },
