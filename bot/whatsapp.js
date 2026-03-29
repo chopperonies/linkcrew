@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const twilio = require('twilio');
 const { createClient } = require('@supabase/supabase-js');
 const { sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert } = require('../email/digest');
+const { notifyManagers } = require('../api/notify');
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -173,6 +174,7 @@ async function handleMessage(from, body, profileName, mediaUrl) {
     });
     await logJobUpdate(job.id, emp.id, 'supply_request', `Missing supplies: ${items} (${urgency.replace('_', ' ')})`);
     notifyManager(`🚨 Supply Request — ${job.name}\n👷 ${emp.name}\n📦 ${items}\n⏰ ${urgency.replace('_', ' ').toUpperCase()}`);
+    notifyManagers(supabase, '📦 Supply Request', `${job.name} — ${items} (${urgency.replace('_', ' ')})`).catch(console.error);
     sendSupplyAlert({ jobName: job.name, employeeName: emp.name, items, urgency }).catch(console.error);
     userState[from] = {};
     await send(from, `✅ Supply request submitted! Manager has been notified.\n\nReply *menu* for more options.`);
@@ -184,6 +186,7 @@ async function handleMessage(from, body, profileName, mediaUrl) {
     const { job, employee: emp } = state;
     await logJobUpdate(job.id, emp.id, 'bottleneck', text);
     notifyManager(`⚠️ Bottleneck — ${job.name}\n👷 ${emp.name}: "${text}"`);
+    notifyManagers(supabase, '🚧 Bottleneck Flagged', `${job.name} — ${text}`).catch(console.error);
     sendBottleneckAlert({ jobName: job.name, employeeName: emp.name, message: text }).catch(console.error);
     userState[from] = {};
     await send(from, `⚠️ Bottleneck reported. Manager has been notified.\n\nReply *menu* for more options.`);
