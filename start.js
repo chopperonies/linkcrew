@@ -1,3 +1,2 @@
-// Combined entry point for Render — runs both the dashboard server and Telegram bot
+// Entry point for Render — WhatsApp webhook is handled via server.js
 require('./api/server');
-require('./bot/index');

@@ -69,6 +69,10 @@ async function handleMessage(from, body, profileName, mediaUrl) {
   const text = (body || '').trim();
   const state = userState[from] || {};
   const employee = await getOrCreateEmployee(from, profileName || 'Crew Member');
+  if (!employee) {
+    await send(from, 'Sorry, could not register your account. Please try again.');
+    return;
+  }
 
   // Photo received during awaiting_photo state
   if (mediaUrl && state.action === 'awaiting_photo') {
