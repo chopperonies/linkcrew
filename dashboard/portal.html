@@ -103,9 +103,9 @@
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <div class="login-logo">Field<span>Sync</span></div>
-    <div class="login-sub">Enter your portal access code to continue.</div>
-    <label class="login-label">Access Code</label>
-    <input class="login-input" type="text" id="token-input" placeholder="Paste your access code here..." autocomplete="off">
+    <div class="login-sub">Paste the portal link you received, or ask your contractor to send you a new one.</div>
+    <label class="login-label">Portal Link or Access Code</label>
+    <input class="login-input" type="text" id="token-input" placeholder="Paste your portal link or access code..." autocomplete="off">
     <button class="login-btn" onclick="loginWithToken()">Access Portal</button>
     <div class="login-err" id="login-err"></div>
   </div>
@@ -212,8 +212,14 @@
   }
 
   async function loginWithToken() {
-    const val = document.getElementById('token-input').value.trim();
+    let val = document.getElementById('token-input').value.trim();
     if (!val) return;
+    // If they pasted a full URL, extract just the token param
+    try {
+      const u = new URL(val);
+      const t = u.searchParams.get('token');
+      if (t) val = t;
+    } catch (_) {}
     localStorage.setItem('portal_token', val);
     portalToken = val;
     document.getElementById('login-err').textContent = '';
