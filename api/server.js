@@ -20,7 +20,9 @@ const supabaseAdmin = createClient(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, '../dashboard')));
+app.use(express.static(path.join(__dirname, '../dashboard'), { index: false }));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing.html')));
+app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
 
 // Super-admin emails (comma-separated in env, e.g. "you@example.com")
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
