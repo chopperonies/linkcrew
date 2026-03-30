@@ -9,111 +9,228 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
 
-    /* Header */
-    .header { background: #1e293b; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
-    .header h1 { font-size: 20px; font-weight: 700; color: #f8fafc; }
-    .header h1 span { color: #38bdf8; }
-    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4ade80; }
-    .live-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    /* ── Auth screens ── */
+    .auth-screen { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 300; align-items: center; justify-content: center; }
+    .auth-screen.visible { display: flex; }
+    .auth-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 40px; width: 380px; }
+    .auth-logo { font-size: 26px; font-weight: 800; color: #f8fafc; margin-bottom: 4px; }
+    .auth-logo span { color: #38bdf8; }
+    .auth-subtitle { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+    .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
+    .auth-tab { flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; background: #0f172a; }
+    .auth-tab.active { color: #f8fafc; background: #334155; }
+    .auth-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 11px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+    .auth-input:focus { outline: none; border-color: #38bdf8; }
+    .auth-btn { width: 100%; background: #38bdf8; color: #0f172a; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+    .auth-btn:hover { background: #7dd3fc; }
+    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .auth-error { margin-top: 10px; font-size: 12px; color: #f87171; text-align: center; min-height: 18px; }
+    .auth-success { margin-top: 10px; font-size: 12px; color: #4ade80; text-align: center; min-height: 18px; }
 
-    /* Stats bar */
-    .stats { display: flex; gap: 16px; padding: 16px 24px; background: #1e293b; border-bottom: 1px solid #334155; overflow-x: auto; }
-    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 20px; min-width: 140px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+    /* ── Header ── */
+    .header { background: #1e293b; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
+    .header-brand { font-size: 18px; font-weight: 700; color: #f8fafc; }
+    .header-brand span { color: #38bdf8; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #4ade80; }
+    .live-dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .hdr-btn { background: #334155; color: #e2e8f0; border: none; padding: 6px 13px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .hdr-btn:hover { background: #475569; }
+    .hdr-btn.danger { background: #431414; color: #f87171; }
+    .hdr-btn.danger:hover { background: #5c1a1a; }
+    .hdr-btn.accent { background: #38bdf8; color: #0f172a; }
+    .hdr-btn.accent:hover { background: #7dd3fc; }
+
+    /* ── Admin tenant bar ── */
+    .admin-bar { background: #1a0a3a; border-bottom: 1px solid #4c1d95; padding: 8px 24px; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+    .admin-badge { background: #6d28d9; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 10px; letter-spacing: 0.05em; }
+    .tenant-select { background: #0f172a; border: 1px solid #4c1d95; color: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+    .admin-stat { color: #94a3b8; }
+    .admin-stat strong { color: #e2e8f0; }
+
+    /* ── Stats bar ── */
+    .stats { display: flex; gap: 14px; padding: 14px 24px; background: #1e293b; border-bottom: 1px solid #334155; overflow-x: auto; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 11px 18px; min-width: 130px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
     .stat:hover { border-color: #38bdf8; transform: translateY(-1px); }
     .stat.active { border-color: #38bdf8; background: #1e3a5f; }
-    .stat .num { font-size: 28px; font-weight: 700; color: #f8fafc; }
-    .stat .label { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat .num { font-size: 26px; font-weight: 700; color: #f8fafc; }
+    .stat .label { font-size: 10px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-    /* Stat overlay panel */
+    /* ── Overlays ── */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; align-items: flex-start; justify-content: center; padding-top: 80px; }
     .overlay.visible { display: flex; }
     .overlay-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 520px; max-height: 70vh; overflow-y: auto; }
-    .overlay-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #334155; position: sticky; top: 0; background: #1e293b; }
-    .overlay-header h3 { font-size: 15px; font-weight: 600; color: #f8fafc; }
-    .overlay-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1; }
+    .overlay-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #334155; position: sticky; top: 0; background: #1e293b; }
+    .overlay-header h3 { font-size: 14px; font-weight: 600; color: #f8fafc; }
+    .overlay-close { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
     .overlay-close:hover { color: #f8fafc; }
-    .overlay-body { padding: 16px 20px; }
+    .overlay-body { padding: 14px 18px; }
     .overlay-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1e293b; }
     .overlay-row:last-child { border-bottom: none; }
-    .overlay-avatar { width: 36px; height: 36px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #94a3b8; flex-shrink: 0; }
+    .overlay-avatar { width: 34px; height: 34px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #94a3b8; flex-shrink: 0; }
     .overlay-info .oi-name { font-size: 13px; font-weight: 500; color: #f8fafc; }
-    .overlay-info .oi-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .overlay-info .oi-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-    /* Main layout */
-    .main { display: grid; grid-template-columns: 1fr 380px; gap: 0; height: calc(100vh - 120px); }
-    .jobs-panel { padding: 20px; overflow-y: auto; }
-    .side-panel { background: #1e293b; border-left: 1px solid #334155; padding: 20px; overflow-y: auto; }
+    /* ── Main layout ── */
+    .main { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 112px); }
+    .jobs-panel { padding: 18px; overflow-y: auto; }
+    .side-panel { background: #1e293b; border-left: 1px solid #334155; padding: 18px; overflow-y: auto; }
 
-    /* Job cards */
-    .panel-title { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
-    .job-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+    /* ── Job cards ── */
+    .panel-title { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .job-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
     .job-card:hover { border-color: #38bdf8; }
     .job-card.selected { border-color: #38bdf8; background: #1e3a5f; }
-    .job-card .job-name { font-size: 15px; font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
-    .job-card .job-address { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
-    .job-meta { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .job-card .job-name { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 3px; }
+    .job-card .job-address { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+    .job-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 500; }
     .chip-blue { background: #1e3a5f; color: #38bdf8; }
     .chip-green { background: #14432a; color: #4ade80; }
     .chip-red { background: #431414; color: #f87171; }
     .chip-yellow { background: #43350e; color: #fbbf24; }
 
-    /* Side panel — supply requests */
-    .supply-item { background: #0f172a; border: 1px solid #334155; border-left: 3px solid #f87171; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
-    .supply-item .si-job { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-    .supply-item .si-items { font-size: 13px; color: #f8fafc; margin-bottom: 6px; }
+    /* ── Supply items ── */
+    .supply-item { background: #0f172a; border: 1px solid #334155; border-left: 3px solid #f87171; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+    .supply-item .si-job { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+    .supply-item .si-items { font-size: 12px; color: #f8fafc; margin-bottom: 5px; }
     .supply-item .si-meta { display: flex; align-items: center; justify-content: space-between; }
-    .supply-item .si-by { font-size: 11px; color: #64748b; }
-    .status-btn { padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; }
+    .supply-item .si-by { font-size: 10px; color: #64748b; }
+    .status-btn { padding: 3px 9px; border-radius: 4px; font-size: 10px; font-weight: 600; border: none; cursor: pointer; }
     .btn-prepare { background: #1e3a5f; color: #38bdf8; }
     .btn-delivered { background: #14432a; color: #4ade80; }
 
-    /* Job detail */
+    /* ── Job detail ── */
     .detail-panel { display: none; }
     .detail-panel.visible { display: block; }
-    .update-item { display: flex; gap: 10px; margin-bottom: 10px; }
-    .update-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .update-item { display: flex; gap: 8px; margin-bottom: 8px; }
+    .update-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
     .ui-checkin { background: #14432a; }
     .ui-checkout { background: #1e3a5f; }
     .ui-bottleneck { background: #43350e; }
     .ui-supply_request { background: #431414; }
     .ui-photo { background: #2d1b69; }
     .ui-update { background: #1e293b; }
-    .update-body .ub-name { font-size: 11px; color: #94a3b8; }
-    .update-body .ub-msg { font-size: 13px; color: #e2e8f0; margin-top: 2px; }
-    .update-body .ub-time { font-size: 10px; color: #475569; margin-top: 2px; }
+    .update-body .ub-name { font-size: 10px; color: #94a3b8; }
+    .update-body .ub-msg { font-size: 12px; color: #e2e8f0; margin-top: 1px; }
+    .update-body .ub-time { font-size: 10px; color: #475569; margin-top: 1px; }
+    .emp-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #1e293b; }
+    .emp-avatar { width: 30px; height: 30px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #94a3b8; }
 
-    /* Employees */
-    .emp-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1e293b; }
-    .emp-avatar { width: 32px; height: 32px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #94a3b8; }
-    .emp-name { font-size: 13px; color: #e2e8f0; }
-    .emp-status { font-size: 11px; margin-top: 2px; }
-
-    /* Add job form */
-    .add-job-btn { background: #38bdf8; color: #0f172a; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; float: right; }
+    /* ── Modals ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.visible { display: flex; }
-    .modal { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; width: 400px; }
-    .modal h3 { margin-bottom: 16px; color: #f8fafc; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-    .form-group input { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
-    .form-group input:focus { outline: none; border-color: #38bdf8; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-    .btn-cancel { background: #334155; color: #e2e8f0; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-    .btn-save { background: #38bdf8; color: #0f172a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .modal { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 22px; width: 440px; max-height: 82vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 14px; color: #f8fafc; font-size: 15px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 8px 11px; border-radius: 6px; font-size: 13px; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
+    .form-group select option { background: #1e293b; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+    .btn-cancel { background: #334155; color: #e2e8f0; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .btn-save { background: #38bdf8; color: #0f172a; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; }
+    .add-job-btn { background: #38bdf8; color: #0f172a; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-    /* Empty state */
-    .empty { text-align: center; padding: 40px; color: #475569; }
-    .empty .e-icon { font-size: 40px; margin-bottom: 10px; }
+    /* ── Team modal ── */
+    .team-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #1a2744; }
+    .team-row:last-child { border-bottom: none; }
+    .team-avatar { width: 34px; height: 34px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #94a3b8; flex-shrink: 0; }
+    .team-info { flex: 1; }
+    .team-info .ti-name { font-size: 13px; font-weight: 500; color: #f8fafc; }
+    .team-info .ti-sub { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .role-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .role-owner { background: #2d1b69; color: #a78bfa; }
+    .role-manager { background: #1e3a5f; color: #38bdf8; }
+    .role-crew { background: #14432a; color: #4ade80; }
+    .btn-delete { background: none; border: none; color: #475569; cursor: pointer; font-size: 15px; padding: 4px; border-radius: 4px; }
+    .btn-delete:hover { color: #f87171; background: #431414; }
+    .section-divider { border: none; border-top: 1px solid #334155; margin: 18px 0; }
+
+    /* ── Photos ── */
+    .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .photo-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; overflow: hidden; cursor: pointer; }
+    .photo-card:hover { border-color: #38bdf8; }
+    .photo-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+    .photo-meta { padding: 5px 7px; }
+    .photo-meta .pm-job { font-size: 10px; color: #38bdf8; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .photo-meta .pm-info { font-size: 9px; color: #64748b; margin-top: 1px; }
+
+    /* ── Side tabs ── */
+    .side-tabs { display: flex; border-bottom: 1px solid #334155; margin-bottom: 12px; }
+    .side-tab { flex: 1; padding: 7px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; }
+    .side-tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+    /* ── Admin tenants list ── */
+    .tenant-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .tenant-card .tc-name { font-size: 14px; font-weight: 600; color: #f8fafc; }
+    .tenant-card .tc-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .tenant-stats { display: flex; gap: 12px; }
+    .tenant-stat { text-align: right; }
+    .tenant-stat .ts-num { font-size: 16px; font-weight: 700; color: #38bdf8; }
+    .tenant-stat .ts-lbl { font-size: 10px; color: #64748b; }
+    .btn-view-tenant { background: #334155; color: #e2e8f0; border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .btn-view-tenant:hover { background: #38bdf8; color: #0f172a; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 36px; color: #475569; }
+    .empty .e-icon { font-size: 36px; margin-bottom: 8px; }
   </style>
 </head>
 <body>
 
+<!-- ── Auth Screen ── -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Field<span>Sync</span></div>
+    <div class="auth-subtitle">Owner Dashboard</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
+    </div>
+
+    <!-- Login form -->
+    <div id="login-form">
+      <input class="auth-input" type="email" id="login-email" placeholder="Email address" onkeydown="if(event.key==='Enter')doLogin()">
+      <input class="auth-input" type="password" id="login-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    </div>
+
+    <!-- Signup form -->
+    <div id="signup-form" style="display:none">
+      <input class="auth-input" type="text" id="signup-company" placeholder="Company / Business name" onkeydown="if(event.key==='Enter')doSignup()">
+      <input class="auth-input" type="email" id="signup-email" placeholder="Your email address" onkeydown="if(event.key==='Enter')doSignup()">
+      <input class="auth-input" type="password" id="signup-password" placeholder="Password (8+ characters)" onkeydown="if(event.key==='Enter')doSignup()">
+      <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create Account</button>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-success" id="auth-success"></div>
+  </div>
+</div>
+
+<!-- ── App Shell ── -->
+<div id="app-shell" style="display:none">
+
 <div class="header">
-  <h1>Field<span>Sync</span> Dashboard</h1>
-  <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+  <div class="header-brand">Field<span>Sync</span></div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <button class="hdr-btn" onclick="openTeam()">👥 Team</button>
+    <button class="hdr-btn danger" onclick="doLogout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- Admin bar (shown only for super-admin) -->
+<div class="admin-bar" id="admin-bar" style="display:none">
+  <span class="admin-badge">ADMIN</span>
+  <span style="color:#94a3b8;font-size:12px">Viewing:</span>
+  <select class="tenant-select" id="tenant-switcher" onchange="switchTenant(this.value)">
+    <option value="">— All Tenants —</option>
+  </select>
+  <button class="hdr-btn accent" onclick="showAdminTenants()" style="font-size:11px;padding:4px 10px">All Accounts</button>
+  <span class="admin-stat" id="admin-stats"></span>
 </div>
 
 <div class="stats">
@@ -135,57 +252,55 @@
 </div>
 
 <div class="main">
-
-  <!-- Left: Jobs List -->
   <div class="jobs-panel">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div class="panel-title">Active Jobs</div>
       <button class="add-job-btn" onclick="openAddJob()">+ Add Job</button>
     </div>
-    <div id="jobs-list">
-      <div class="empty"><div class="e-icon">📋</div>Loading jobs...</div>
-    </div>
+    <div id="jobs-list"><div class="empty"><div class="e-icon">📋</div>Loading...</div></div>
   </div>
 
-  <!-- Right: Supply requests + job detail -->
   <div class="side-panel">
-    <!-- Supply requests view (default) -->
     <div id="supplies-view">
-      <div class="panel-title">Pending Supply Requests</div>
-      <div id="supplies-list">
-        <div class="empty"><div class="e-icon">📦</div>No pending requests</div>
+      <div class="side-tabs">
+        <div class="side-tab active" id="stab-supplies" onclick="switchSideTab('supplies')">📦 Supplies</div>
+        <div class="side-tab" id="stab-photos" onclick="switchSideTab('photos')">📸 Photos</div>
       </div>
+      <div id="supplies-content"><div id="supplies-list"><div class="empty"><div class="e-icon">📦</div>No pending requests</div></div></div>
+      <div id="photos-content" style="display:none"><div id="photos-list"><div class="empty"><div class="e-icon">📸</div>Loading photos...</div></div></div>
     </div>
-
-    <!-- Job detail view -->
     <div id="detail-view" class="detail-panel">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-        <button onclick="closeDetail()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;">←</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button onclick="closeDetail()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:17px;">←</button>
         <div class="panel-title" style="margin:0" id="detail-title">Job Detail</div>
       </div>
-      <div id="detail-employees" style="margin-bottom:20px;"></div>
+      <div id="detail-employees" style="margin-bottom:16px;"></div>
       <div class="panel-title">Today's Activity</div>
       <div id="detail-updates"></div>
     </div>
   </div>
 </div>
 
-<!-- Add Job Modal -->
+</div><!-- end #app-shell -->
+
+<!-- ── Admin: All Accounts modal ── -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal" style="width:580px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0">🏢 All Accounts</h3>
+      <button class="btn-cancel" onclick="closeAdminModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <div id="admin-tenants-list"><div class="empty">Loading accounts...</div></div>
+  </div>
+</div>
+
+<!-- ── Add Job Modal ── -->
 <div class="modal-overlay" id="add-job-modal">
   <div class="modal">
     <h3>Add New Job</h3>
-    <div class="form-group">
-      <label>Job Name</label>
-      <input type="text" id="new-job-name" placeholder="e.g. Downtown Office Renovation">
-    </div>
-    <div class="form-group">
-      <label>Address</label>
-      <input type="text" id="new-job-address" placeholder="e.g. 123 Main St, Miami FL">
-    </div>
-    <div class="form-group">
-      <label>Manager Email</label>
-      <input type="email" id="new-job-email" placeholder="manager@company.com">
-    </div>
+    <div class="form-group"><label>Job Name</label><input type="text" id="new-job-name" placeholder="e.g. Downtown Office Renovation"></div>
+    <div class="form-group"><label>Address</label><input type="text" id="new-job-address" placeholder="e.g. 123 Main St, Miami FL"></div>
+    <div class="form-group"><label>Manager Email</label><input type="email" id="new-job-email" placeholder="manager@company.com"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeAddJob()">Cancel</button>
       <button class="btn-save" onclick="saveJob()">Create Job</button>
@@ -193,9 +308,170 @@
   </div>
 </div>
 
+<!-- ── Team Management Modal ── -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal" style="width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0">👥 Team</h3>
+      <button class="btn-cancel" onclick="closeTeam()" style="padding:4px 10px">✕</button>
+    </div>
+    <div id="team-list"><div class="empty">Loading...</div></div>
+    <hr class="section-divider">
+    <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
+    <div class="form-group"><label>Phone Number (WhatsApp)</label><input type="tel" id="emp-phone" placeholder="+1 (555) 000-0000"></div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="emp-role">
+        <option value="crew">Crew — field worker</option>
+        <option value="manager">Manager — oversees jobs</option>
+        <option value="owner">Owner — full access</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTeam()">Cancel</button>
+      <button class="btn-save" onclick="saveEmployee()">Add Employee</button>
+    </div>
+  </div>
+</div>
+
 <script>
-let supabaseClient;
+// ── Auth state ────────────────────────────────────────────────────────────────
+
+let supabaseClient = null;
+let currentToken = null;
+let isAdmin = false;
+let currentTenantId = null;
+
+const TOKEN_KEY = 'fs_token';
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); currentToken = t; }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); currentToken = null; }
+
+async function authFetch(url, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+  if (currentTenantId && isAdmin) headers['x-tenant-id'] = currentTenantId;
+  const res = await fetch(url, { ...opts, headers });
+  if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+  return res;
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('auth-success').textContent = '';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+
+  try {
+    // Sign in directly with Supabase
+    const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
+    if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = error.message; return; }
+
+    setToken(data.session.access_token);
+    await bootApp();
+  } catch (e) {
+    errEl.textContent = e.message || 'Could not sign in.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+async function doSignup() {
+  const company = document.getElementById('signup-company').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('auth-error');
+  const okEl = document.getElementById('auth-success');
+  errEl.textContent = ''; okEl.textContent = '';
+  if (!company || !email || !password) { errEl.textContent = 'All fields are required.'; return; }
+
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: company, email, password })
+    });
+    const result = await res.json();
+    if (!res.ok) { errEl.textContent = result.error || 'Signup failed.'; return; }
+
+    okEl.textContent = '✓ Account created! Signing you in...';
+
+    // Auto sign in after signup
+    const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
+    if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = 'Account created — please sign in.'; switchAuthTab('login'); return; }
+
+    setToken(data.session.access_token);
+    await bootApp();
+  } catch (e) {
+    errEl.textContent = e.message || 'Something went wrong.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Account';
+  }
+}
+
+function doLogout() {
+  clearToken();
+  isAdmin = false;
+  currentTenantId = null;
+  if (supabaseClient) { try { supabaseClient.removeAllChannels(); } catch(_){} }
+  document.getElementById('auth-screen').classList.add('visible');
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+async function bootApp() {
+  document.getElementById('auth-screen').classList.remove('visible');
+  document.getElementById('app-shell').style.display = 'block';
+
+  // Check if admin
+  const testRes = await authFetch('/api/admin/tenants');
+  isAdmin = testRes.ok;
+
+  if (isAdmin) {
+    document.getElementById('admin-bar').style.display = 'flex';
+    const tenants = await testRes.json();
+    const sel = document.getElementById('tenant-switcher');
+    tenants.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.company_name} (${t.owner_email})`;
+      sel.appendChild(opt);
+    });
+    document.getElementById('admin-stats').innerHTML = `<strong>${tenants.length}</strong> accounts`;
+  }
+
+  await init();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
 let selectedJobId = null;
+let allJobsData = [], allAssignmentsData = [], allSuppliesData = [], allUpdatesData = [];
 
 const updateIcons = {
   checkin: { icon: '✅', cls: 'ui-checkin' },
@@ -207,69 +483,78 @@ const updateIcons = {
 };
 
 async function init() {
-  const res = await fetch('/api/config');
-  const { supabaseUrl, supabaseKey } = await res.json();
-  supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-  await loadDashboard();
-  await loadSupplies();
+  const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
+  if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  await Promise.all([loadDashboard(), loadSupplies(), loadPhotos()]);
   subscribeRealtime();
 }
 
+async function switchTenant(tenantId) {
+  currentTenantId = tenantId || null;
+  selectedJobId = null;
+  closeDetail();
+  await Promise.all([loadDashboard(), loadSupplies(), loadPhotos()]);
+}
+
+function switchSideTab(tab) {
+  document.getElementById('supplies-content').style.display = tab === 'supplies' ? 'block' : 'none';
+  document.getElementById('photos-content').style.display = tab === 'photos' ? 'block' : 'none';
+  document.getElementById('stab-supplies').classList.toggle('active', tab === 'supplies');
+  document.getElementById('stab-photos').classList.toggle('active', tab === 'photos');
+}
+
 async function loadDashboard() {
-  const res = await fetch('/api/jobs');
+  const res = await authFetch('/api/jobs');
   const jobs = await res.json();
   allJobsData = jobs;
 
-  document.getElementById('stat-jobs').textContent = jobs.filter(j => j.status === 'active').length;
+  const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  document.getElementById('stat-jobs').textContent = active.length;
 
   const list = document.getElementById('jobs-list');
   if (!jobs.length) {
-    list.innerHTML = '<div class="empty"><div class="e-icon">📋</div>No active jobs. Add one above.</div>';
+    list.innerHTML = '<div class="empty"><div class="e-icon">📋</div>No jobs yet. Add one above.</div>';
+    document.getElementById('stat-crew').textContent = 0;
+    document.getElementById('stat-supplies').textContent = 0;
+    document.getElementById('stat-bottlenecks').textContent = 0;
     return;
   }
 
-  // Load full details for stats
-  let totalCrew = 0, totalSupplies = 0, totalBottlenecks = 0;
-  const today = new Date(); today.setHours(0,0,0,0);
-
   list.innerHTML = jobs.map(job => `
-    <div class="job-card ${selectedJobId === job.id ? 'selected' : ''}" onclick="openDetail('${job.id}', '${job.name.replace(/'/g,"\\'")}')">
+    <div class="job-card ${selectedJobId === job.id ? 'selected' : ''}" onclick="openDetail('${job.id}','${job.name.replace(/'/g,"\\'")}')">
       <div class="job-name">${job.name}</div>
       <div class="job-address">📍 ${job.address || 'No address'}</div>
       <div class="job-meta">
         <span class="chip chip-green">● ${job.status}</span>
-        <span class="chip chip-blue" id="crew-${job.id}">👷 Loading...</span>
+        <span class="chip chip-blue" id="crew-${job.id}">👷 ...</span>
         <span class="chip chip-red" id="supply-${job.id}">📦 ...</span>
       </div>
     </div>
   `).join('');
 
-  // Fetch per-job details async
-  allAssignmentsData = [];
-  allSuppliesData = [];
-  allUpdatesData = [];
+  allAssignmentsData = []; allSuppliesData = []; allUpdatesData = [];
+  let totalCrew = 0, totalSupplies = 0, totalBottlenecks = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
 
   jobs.forEach(async job => {
-    const r = await fetch(`/api/jobs/${job.id}`);
+    const r = await authFetch(`/api/jobs/${job.id}`);
     const d = await r.json();
-    const activeAssignments = (d.assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
-    const pendingSupplies = (d.supplies || []).filter(s => s.status === 'pending');
-    const todayBottlenecks = (d.updates || []).filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
+    const onSite = (d.assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
+    const pending = (d.supplies || []).filter(s => s.status === 'pending');
+    const bottlenecks = (d.updates || []).filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
 
-    // Store globally with job name for overlays
-    activeAssignments.forEach(a => { a.jobs = { name: job.name }; allAssignmentsData.push(a); });
-    pendingSupplies.forEach(s => { s.jobs = { name: job.name }; allSuppliesData.push(s); });
-    todayBottlenecks.forEach(b => { b.jobs = { name: job.name }; b.job_id = job.id; allUpdatesData.push(b); });
+    onSite.forEach(a => { a.jobs = { name: job.name }; allAssignmentsData.push(a); });
+    pending.forEach(s => { s.jobs = { name: job.name }; allSuppliesData.push(s); });
+    bottlenecks.forEach(b => { b.jobs = { name: job.name }; b.job_id = job.id; allUpdatesData.push(b); });
 
     const crewEl = document.getElementById(`crew-${job.id}`);
     const supplyEl = document.getElementById(`supply-${job.id}`);
-    if (crewEl) crewEl.textContent = `👷 ${activeAssignments.length} on site`;
-    if (supplyEl) supplyEl.textContent = `📦 ${pendingSupplies.length} pending`;
+    if (crewEl) crewEl.textContent = `👷 ${onSite.length} on site`;
+    if (supplyEl) supplyEl.textContent = `📦 ${pending.length} pending`;
 
-    totalCrew += activeAssignments.length;
-    totalSupplies += pendingSupplies.length;
-    totalBottlenecks += todayBottlenecks.length;
+    totalCrew += onSite.length;
+    totalSupplies += pending.length;
+    totalBottlenecks += bottlenecks.length;
 
     document.getElementById('stat-crew').textContent = totalCrew;
     document.getElementById('stat-supplies').textContent = totalSupplies;
@@ -278,22 +563,17 @@ async function loadDashboard() {
 }
 
 async function loadSupplies() {
-  const res = await fetch('/api/supplies/pending');
+  const res = await authFetch('/api/supplies/pending');
   const supplies = await res.json();
   const el = document.getElementById('supplies-list');
-
-  if (!supplies.length) {
-    el.innerHTML = '<div class="empty"><div class="e-icon">✅</div>All supplies accounted for</div>';
-    return;
-  }
-
+  if (!supplies.length) { el.innerHTML = '<div class="empty"><div class="e-icon">✅</div>All supplies accounted for</div>'; return; }
   el.innerHTML = supplies.map(s => `
     <div class="supply-item" id="supply-item-${s.id}">
       <div class="si-job">${s.jobs?.name} • <span style="color:${s.urgency==='same_day'?'#f87171':'#fbbf24'}">${s.urgency.replace('_',' ').toUpperCase()}</span></div>
       <div class="si-items">${s.items}</div>
       <div class="si-meta">
         <span class="si-by">👷 ${s.employees?.name}</span>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:5px">
           <button class="status-btn btn-prepare" onclick="updateSupply('${s.id}','preparing')">Preparing</button>
           <button class="status-btn btn-delivered" onclick="updateSupply('${s.id}','delivered')">Delivered ✓</button>
         </div>
@@ -302,15 +582,26 @@ async function loadSupplies() {
   `).join('');
 }
 
+async function loadPhotos() {
+  const res = await authFetch('/api/photos/recent');
+  const photos = await res.json();
+  const el = document.getElementById('photos-list');
+  if (!photos.length) { el.innerHTML = '<div class="empty"><div class="e-icon">📸</div>No photos yet</div>'; return; }
+  el.innerHTML = `<div class="photo-grid">${photos.map(p => `
+    <div class="photo-card" onclick="window.open('${p.photo_url}','_blank')">
+      <img src="${p.photo_url}" alt="${p.message||'Site photo'}" loading="lazy" onerror="this.parentElement.style.display='none'">
+      <div class="photo-meta">
+        <div class="pm-job">${p.jobs?.name||'—'}</div>
+        <div class="pm-info">👷 ${p.employees?.name||'?'} · ${new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+        ${p.message&&p.message!=='Site photo'?`<div class="pm-info" style="color:#94a3b8">${p.message}</div>`:''}
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
 async function updateSupply(id, status) {
-  await fetch(`/api/supplies/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
-  if (status === 'delivered') {
-    document.getElementById(`supply-item-${id}`)?.remove();
-  }
+  await authFetch(`/api/supplies/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  if (status === 'delivered') document.getElementById(`supply-item-${id}`)?.remove();
   await loadSupplies();
 }
 
@@ -320,56 +611,40 @@ async function openDetail(jobId, jobName) {
   document.getElementById('detail-view').classList.add('visible');
   document.getElementById('detail-title').textContent = jobName;
 
-  const res = await fetch(`/api/jobs/${jobId}`);
+  const res = await authFetch(`/api/jobs/${jobId}`);
   const { assignments, updates } = await res.json();
-
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayUpdates = (updates || []).filter(u => new Date(u.created_at) >= today);
+  const todayUpdates = (updates||[]).filter(u => new Date(u.created_at) >= today);
 
-  // Employees
   const empEl = document.getElementById('detail-employees');
-  if (assignments?.length) {
-    empEl.innerHTML = `
-      <div class="panel-title">Crew</div>
-      ${assignments.map(a => `
-        <div class="emp-item">
-          <div class="emp-avatar">${(a.employees?.name||'?')[0].toUpperCase()}</div>
-          <div>
-            <div class="emp-name">${a.employees?.name || 'Unknown'}</div>
-            <div class="emp-status" style="color:${a.checked_out_at ? '#94a3b8' : '#4ade80'}">
-              ${a.checked_out_at ? '● Off site' : '● On site'}
-            </div>
-          </div>
+  empEl.innerHTML = assignments?.length ? `
+    <div class="panel-title">Crew</div>
+    ${assignments.map(a => `
+      <div class="emp-item">
+        <div class="emp-avatar">${(a.employees?.name||'?')[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:13px;color:#e2e8f0">${a.employees?.name||'Unknown'}</div>
+          <div style="font-size:11px;color:${a.checked_out_at?'#94a3b8':'#4ade80'};margin-top:1px">${a.checked_out_at?'● Off site':'● On site'}</div>
         </div>
-      `).join('')}
-    `;
-  } else {
-    empEl.innerHTML = '<div class="empty" style="padding:16px 0">No crew checked in today</div>';
-  }
+      </div>
+    `).join('')}
+  ` : '<div class="empty" style="padding:12px 0">No crew checked in</div>';
 
-  // Updates
   const updEl = document.getElementById('detail-updates');
-  if (todayUpdates.length) {
-    updEl.innerHTML = todayUpdates.map(u => {
-      const ui = updateIcons[u.type] || updateIcons.update;
-      const time = new Date(u.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      return `
-        <div class="update-item">
-          <div class="update-icon ${ui.cls}">${ui.icon}</div>
-          <div class="update-body">
-            <div class="ub-name">${u.employees?.name || 'Unknown'}</div>
-            <div class="ub-msg">${u.message || ''}</div>
-            ${u.photo_url ? `<img src="${u.photo_url}" style="margin-top:6px;max-width:100%;border-radius:6px;cursor:pointer" onclick="window.open('${u.photo_url}','_blank')">` : ''}
-            <div class="ub-time">${time}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } else {
-    updEl.innerHTML = '<div class="empty" style="padding:16px 0">No activity today yet</div>';
-  }
+  updEl.innerHTML = todayUpdates.length ? todayUpdates.map(u => {
+    const ui = updateIcons[u.type] || updateIcons.update;
+    const time = new Date(u.created_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    return `<div class="update-item">
+      <div class="update-icon ${ui.cls}">${ui.icon}</div>
+      <div class="update-body">
+        <div class="ub-name">${u.employees?.name||'Unknown'}</div>
+        <div class="ub-msg">${u.message||''}</div>
+        ${u.photo_url?`<img src="${u.photo_url}" style="margin-top:5px;max-width:100%;border-radius:6px;cursor:pointer" onclick="window.open('${u.photo_url}','_blank')">` : ''}
+        <div class="ub-time">${time}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:12px 0">No activity today yet</div>';
 
-  // Highlight selected card
   document.querySelectorAll('.job-card').forEach(c => c.classList.remove('selected'));
   document.querySelector(`[onclick*="${jobId}"]`)?.classList.add('selected');
 }
@@ -382,16 +657,12 @@ function closeDetail() {
 }
 
 function subscribeRealtime() {
-  supabaseClient
-    .channel('dashboard')
+  supabaseClient.channel('dashboard')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'job_updates' }, () => {
-      loadDashboard();
+      loadDashboard(); loadPhotos();
       if (selectedJobId) openDetail(selectedJobId, document.getElementById('detail-title').textContent);
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests' }, () => {
-      loadSupplies();
-      loadDashboard();
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests' }, () => { loadSupplies(); loadDashboard(); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, () => {
       loadDashboard();
       if (selectedJobId) openDetail(selectedJobId, document.getElementById('detail-title').textContent);
@@ -399,110 +670,159 @@ function subscribeRealtime() {
     .subscribe();
 }
 
-function openAddJob() {
-  document.getElementById('add-job-modal').classList.add('visible');
-}
-function closeAddJob() {
-  document.getElementById('add-job-modal').classList.remove('visible');
-}
+// ── Add Job ───────────────────────────────────────────────────────────────────
+function openAddJob() { document.getElementById('add-job-modal').classList.add('visible'); }
+function closeAddJob() { document.getElementById('add-job-modal').classList.remove('visible'); }
 async function saveJob() {
   const name = document.getElementById('new-job-name').value.trim();
   const address = document.getElementById('new-job-address').value.trim();
   const manager_email = document.getElementById('new-job-email').value.trim();
   if (!name) return alert('Job name is required');
-
-  await fetch('/api/jobs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, address, manager_email })
-  });
+  await authFetch('/api/jobs', { method: 'POST', body: JSON.stringify({ name, address, manager_email }) });
   closeAddJob();
   await loadDashboard();
 }
 
-// Store data globally for overlays
-let allJobsData = [];
-let allAssignmentsData = [];
-let allSuppliesData = [];
-let allUpdatesData = [];
+// ── Team Management ───────────────────────────────────────────────────────────
+const roleCls = { owner: 'role-owner', manager: 'role-manager', crew: 'role-crew' };
 
-async function showOverlay(type) {
-  const overlay = document.getElementById('stat-overlay');
+async function openTeam() {
+  document.getElementById('team-modal').classList.add('visible');
+  await loadTeam();
+}
+function closeTeam() {
+  document.getElementById('team-modal').classList.remove('visible');
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-phone').value = '';
+  document.getElementById('emp-role').value = 'crew';
+}
+async function loadTeam() {
+  const res = await authFetch('/api/employees');
+  const employees = await res.json();
+  const el = document.getElementById('team-list');
+  if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:16px">No employees yet. Add one below.</div>'; return; }
+  el.innerHTML = employees.map(e => `
+    <div class="team-row" id="emp-row-${e.id}">
+      <div class="team-avatar">${(e.name||'?')[0].toUpperCase()}</div>
+      <div class="team-info">
+        <div class="ti-name">${e.name}</div>
+        <div class="ti-sub">📱 ${e.phone}</div>
+      </div>
+      <span class="role-badge ${roleCls[e.role]||'role-crew'}">${e.role.toUpperCase()}</span>
+      <button class="btn-delete" onclick="deleteEmployee('${e.id}')" title="Remove">🗑</button>
+    </div>
+  `).join('');
+}
+async function saveEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  const phone = document.getElementById('emp-phone').value.trim();
+  const role = document.getElementById('emp-role').value;
+  if (!name || !phone) return alert('Name and phone are required');
+  const res = await authFetch('/api/employees', { method: 'POST', body: JSON.stringify({ name, phone, role }) });
+  if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to add employee'); }
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-phone').value = '';
+  await loadTeam();
+}
+async function deleteEmployee(id) {
+  if (!confirm('Remove this employee?')) return;
+  await authFetch(`/api/employees/${id}`, { method: 'DELETE' });
+  document.getElementById(`emp-row-${id}`)?.remove();
+}
+
+// ── Admin: All Accounts ───────────────────────────────────────────────────────
+async function showAdminTenants() {
+  document.getElementById('admin-modal').classList.add('visible');
+  const res = await authFetch('/api/admin/tenants');
+  const tenants = await res.json();
+  const el = document.getElementById('admin-tenants-list');
+  if (!tenants.length) { el.innerHTML = '<div class="empty">No accounts yet.</div>'; return; }
+  el.innerHTML = tenants.map(t => `
+    <div class="tenant-card">
+      <div>
+        <div class="tc-name">${t.company_name}</div>
+        <div class="tc-meta">${t.owner_email} · Joined ${new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · ${t.plan}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="tenant-stats">
+          <div class="tenant-stat"><div class="ts-num">${t.job_count}</div><div class="ts-lbl">Jobs</div></div>
+          <div class="tenant-stat"><div class="ts-num">${t.employee_count}</div><div class="ts-lbl">Crew</div></div>
+        </div>
+        <button class="btn-view-tenant" onclick="viewTenant('${t.id}','${t.company_name.replace(/'/g,"\\'")}')">View →</button>
+      </div>
+    </div>
+  `).join('');
+}
+function closeAdminModal() { document.getElementById('admin-modal').classList.remove('visible'); }
+async function viewTenant(tenantId, name) {
+  closeAdminModal();
+  document.getElementById('tenant-switcher').value = tenantId;
+  await switchTenant(tenantId);
+}
+
+// ── Stat Overlays ─────────────────────────────────────────────────────────────
+function showOverlay(type) {
   const title = document.getElementById('overlay-title');
   const body = document.getElementById('overlay-body');
-
   document.querySelectorAll('.stat').forEach(s => s.classList.remove('active'));
   document.getElementById(`scard-${type}`)?.classList.add('active');
-
-  overlay.classList.add('visible');
+  document.getElementById('stat-overlay').classList.add('visible');
 
   if (type === 'jobs') {
     title.textContent = '📋 Active Jobs';
-    body.innerHTML = allJobsData.filter(j => j.status === 'active').map(j => `
+    const active = allJobsData.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+    body.innerHTML = active.map(j => `
       <div class="overlay-row" style="cursor:pointer" onclick="closeOverlay();openDetail('${j.id}','${j.name.replace(/'/g,"\\'")}')">
         <div class="overlay-avatar">🏗️</div>
-        <div class="overlay-info">
-          <div class="oi-name">${j.name}</div>
-          <div class="oi-sub">📍 ${j.address || 'No address'}</div>
-        </div>
-        <span class="chip chip-green" style="margin-left:auto">● active</span>
+        <div class="overlay-info"><div class="oi-name">${j.name}</div><div class="oi-sub">📍 ${j.address||'No address'}</div></div>
+        <span class="chip chip-green" style="margin-left:auto">● ${j.status}</span>
       </div>
     `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">No active jobs</div>';
-
   } else if (type === 'crew') {
     title.textContent = '👷 Crew On Site';
     const onSite = allAssignmentsData.filter(a => a.checked_in_at && !a.checked_out_at);
     body.innerHTML = onSite.map(a => `
       <div class="overlay-row">
         <div class="overlay-avatar">${(a.employees?.name||'?')[0].toUpperCase()}</div>
-        <div class="overlay-info">
-          <div class="oi-name">${a.employees?.name || 'Unknown'}</div>
-          <div class="oi-sub">📍 ${a.jobs?.name || '—'} • Checked in ${new Date(a.checked_in_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
-        </div>
+        <div class="overlay-info"><div class="oi-name">${a.employees?.name||'Unknown'}</div><div class="oi-sub">📍 ${a.jobs?.name||'—'} • In since ${new Date(a.checked_in_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div>
         <span class="chip chip-green" style="margin-left:auto">● on site</span>
       </div>
-    `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">No crew currently checked in</div>';
-
+    `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">No crew on site</div>';
   } else if (type === 'supplies') {
     title.textContent = '📦 Pending Supply Requests';
     const pending = allSuppliesData.filter(s => s.status === 'pending');
     body.innerHTML = pending.map(s => `
       <div class="overlay-row">
         <div class="overlay-avatar">📦</div>
-        <div class="overlay-info">
-          <div class="oi-name">${s.items}</div>
-          <div class="oi-sub">${s.jobs?.name} • 👷 ${s.employees?.name} • <span style="color:${s.urgency==='same_day'?'#f87171':'#fbbf24'}">${s.urgency.replace('_',' ').toUpperCase()}</span></div>
-        </div>
-        <div style="display:flex;gap:6px;margin-left:auto">
+        <div class="overlay-info"><div class="oi-name">${s.items}</div><div class="oi-sub">${s.jobs?.name} • 👷 ${s.employees?.name} • <span style="color:${s.urgency==='same_day'?'#f87171':'#fbbf24'}">${s.urgency.replace('_',' ').toUpperCase()}</span></div></div>
+        <div style="display:flex;gap:5px;margin-left:auto">
           <button class="status-btn btn-prepare" onclick="updateSupply('${s.id}','preparing');closeOverlay()">Preparing</button>
           <button class="status-btn btn-delivered" onclick="updateSupply('${s.id}','delivered');closeOverlay()">✓ Done</button>
         </div>
       </div>
-    `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">✅ No pending supply requests</div>';
-
+    `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">✅ No pending requests</div>';
   } else if (type === 'bottlenecks') {
     title.textContent = '⚠️ Bottlenecks Today';
     const today = new Date(); today.setHours(0,0,0,0);
-    const bottlenecks = allUpdatesData.filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
-    body.innerHTML = bottlenecks.map(b => `
+    const bots = allUpdatesData.filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
+    body.innerHTML = bots.map(b => `
       <div class="overlay-row" style="cursor:pointer" onclick="closeOverlay();openDetail('${b.job_id}','${(b.jobs?.name||'').replace(/'/g,"\\'")}')">
         <div class="overlay-avatar">⚠️</div>
-        <div class="overlay-info">
-          <div class="oi-name">${b.message}</div>
-          <div class="oi-sub">${b.jobs?.name} • 👷 ${b.employees?.name} • ${new Date(b.created_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
-        </div>
+        <div class="overlay-info"><div class="oi-name">${b.message}</div><div class="oi-sub">${b.jobs?.name} • 👷 ${b.employees?.name} • ${new Date(b.created_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div>
       </div>
     `).join('') || '<div style="color:#64748b;text-align:center;padding:20px">✅ No bottlenecks today</div>';
   }
 }
-
 function closeOverlay(e) {
   if (e && e.target !== document.getElementById('stat-overlay')) return;
   document.getElementById('stat-overlay').classList.remove('visible');
   document.querySelectorAll('.stat').forEach(s => s.classList.remove('active'));
 }
 
-init();
+// ── Boot ──────────────────────────────────────────────────────────────────────
+const saved = getToken();
+if (saved) { currentToken = saved; bootApp(); }
+else { document.getElementById('auth-screen').classList.add('visible'); }
 </script>
 </body>
 </html>
