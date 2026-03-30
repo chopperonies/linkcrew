@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FieldSync Client Portal</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
@@ -119,7 +120,9 @@
 <!-- Login -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
-    <div class="login-logo">Field<span>Sync</span></div>
+    <div class="login-logo" style="display:flex;align-items:center;gap:8px">
+      <img src="/logo.svg" style="width:30px;height:30px">Field<span>Sync</span>
+    </div>
     <div class="login-sub">Client Portal</div>
 
     <div style="display:flex;border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;margin-bottom:20px">
@@ -152,7 +155,10 @@
 <div class="app" id="app">
   <div class="portal-header">
     <div>
-      <div class="portal-brand" style="cursor:pointer" onclick="location.href='/'">Field<span>Sync</span> <span style="font-size:12px;font-weight:500;color:#737475">Client Portal</span></div>
+      <div class="portal-brand" style="cursor:pointer;display:flex;align-items:center;gap:8px" onclick="location.href='/'">
+      <img src="/logo.svg" alt="FieldSync" style="width:28px;height:28px">
+      Field<span>Sync</span> <span style="font-size:12px;font-weight:500;color:#737475">Client Portal</span>
+    </div>
       <div class="portal-client" id="portal-client-name"></div>
     </div>
     <button class="portal-logout" onclick="logout()">Sign out</button>

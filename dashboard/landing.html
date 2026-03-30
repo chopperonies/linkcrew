@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FieldSync — Field Crew Management</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #fff; color: #17191c; }
@@ -131,7 +132,10 @@
 
   <!-- Nav -->
   <nav>
-    <div class="nav-brand">Field<span>Sync</span></div>
+    <div class="nav-brand" style="display:flex;align-items:center;gap:10px">
+      <img src="/logo.svg" alt="FieldSync" style="width:32px;height:32px">
+      Field<span>Sync</span>
+    </div>
     <div class="nav-right">
       <button class="btn-ghost" onclick="location.href='/portal'">Client Portal</button>
       <button class="btn-ghost" onclick="location.href='/app'">Sign In</button>
