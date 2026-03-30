@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FieldSync Client Portal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
+
+    /* ── Login ── */
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .login-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; }
+    .login-logo { font-size: 24px; font-weight: 800; color: #17191c; margin-bottom: 4px; }
+    .login-logo span { color: #0265dc; }
+    .login-sub { font-size: 13px; color: #737475; margin-bottom: 28px; }
+    .login-label { font-size: 12px; font-weight: 600; color: #17191c; margin-bottom: 6px; display: block; }
+    .login-input { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 11px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+    .login-input:focus { outline: none; border-color: #0265dc; }
+    .login-btn { width: 100%; background: #0265dc; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .login-btn:hover { background: #1b5abe; }
+    .login-err { margin-top: 10px; font-size: 12px; color: #dc2626; text-align: center; min-height: 18px; }
+
+    /* ── App shell ── */
+    .app { display: none; flex-direction: column; min-height: 100vh; }
+    .app.visible { display: flex; }
+
+    /* ── Header ── */
+    .portal-header { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .portal-brand { font-size: 18px; font-weight: 800; color: #17191c; }
+    .portal-brand span { color: #0265dc; }
+    .portal-client { font-size: 13px; color: #737475; margin-top: 2px; }
+    .portal-logout { background: none; border: 1px solid #e8e8e8; color: #737475; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .portal-logout:hover { background: #f5f5f5; }
+
+    /* ── Tabs ── */
+    .portal-tabs { background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; padding: 0 24px; }
+    .portal-tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: #737475; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s; }
+    .portal-tab:hover { color: #17191c; }
+    .portal-tab.active { color: #0265dc; border-bottom-color: #0265dc; }
+
+    /* ── Content ── */
+    .portal-content { flex: 1; padding: 24px; max-width: 900px; width: 100%; margin: 0 auto; }
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    /* ── Jobs ── */
+    .section-title { font-size: 18px; font-weight: 700; color: #17191c; margin-bottom: 16px; }
+    .job-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+    .job-info { flex: 1; }
+    .job-name { font-size: 15px; font-weight: 600; color: #17191c; margin-bottom: 3px; }
+    .job-address { font-size: 12px; color: #737475; }
+    .job-date { font-size: 11px; color: #b0b0b0; margin-top: 4px; }
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+    /* ── Photos ── */
+    .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .photo-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
+    .photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; cursor: pointer; }
+    .photo-meta { padding: 10px 12px; }
+    .photo-job { font-size: 12px; font-weight: 600; color: #17191c; }
+    .photo-caption { font-size: 11px; color: #737475; margin-top: 2px; }
+    .photo-date { font-size: 10px; color: #b0b0b0; margin-top: 3px; }
+
+    /* ── Lightbox ── */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; }
+    .lightbox.visible { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+    .lightbox-close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 28px; cursor: pointer; background: none; border: none; line-height: 1; }
+
+    /* ── Request form ── */
+    .request-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 28px; max-width: 560px; }
+    .form-label { font-size: 12px; font-weight: 600; color: #17191c; margin-bottom: 6px; display: block; }
+    .form-input { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+    .form-input:focus { outline: none; border-color: #0265dc; }
+    .form-textarea { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px; resize: vertical; font-family: inherit; }
+    .form-textarea:focus { outline: none; border-color: #0265dc; }
+    .submit-btn { background: #0265dc; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .submit-btn:hover { background: #1b5abe; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-success { margin-top: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #166534; display: none; }
+    .form-success.visible { display: block; }
+
+    /* ── Empty states ── */
+    .empty-state { text-align: center; padding: 60px 20px; color: #b0b0b0; }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-text { font-size: 14px; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 40px; color: #b0b0b0; font-size: 14px; }
+
+    @media (max-width: 600px) {
+      .portal-content { padding: 16px; }
+      .portal-tabs { padding: 0 16px; }
+      .portal-tab { padding: 12px 14px; font-size: 13px; }
+      .photos-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Field<span>Sync</span></div>
+    <div class="login-sub">Enter your portal access code to continue.</div>
+    <label class="login-label">Access Code</label>
+    <input class="login-input" type="text" id="token-input" placeholder="Paste your access code here..." autocomplete="off">
+    <button class="login-btn" onclick="loginWithToken()">Access Portal</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="portal-header">
+    <div>
+      <div class="portal-brand">Field<span>Sync</span> <span style="font-size:12px;font-weight:500;color:#737475">Client Portal</span></div>
+      <div class="portal-client" id="portal-client-name"></div>
+    </div>
+    <button class="portal-logout" onclick="logout()">Sign out</button>
+  </div>
+
+  <div class="portal-tabs">
+    <div class="portal-tab active" onclick="switchTab('jobs')">My Jobs</div>
+    <div class="portal-tab" onclick="switchTab('photos')">Site Photos</div>
+    <div class="portal-tab" onclick="switchTab('request')">Request Service</div>
+  </div>
+
+  <div class="portal-content">
+    <!-- Jobs -->
+    <div class="tab-view active" id="tab-jobs">
+      <div class="section-title">My Jobs</div>
+      <div id="jobs-list"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- Photos -->
+    <div class="tab-view" id="tab-photos">
+      <div class="section-title">Site Photos</div>
+      <div id="photos-grid"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- Request -->
+    <div class="tab-view" id="tab-request">
+      <div class="section-title">Request New Service</div>
+      <div class="request-card">
+        <label class="form-label">What do you need done? *</label>
+        <textarea class="form-textarea" id="req-description" rows="4" placeholder="Describe the work you'd like done..."></textarea>
+        <label class="form-label">Property Address</label>
+        <input class="form-input" type="text" id="req-address" placeholder="123 Main St, Miami FL">
+        <button class="submit-btn" id="req-btn" onclick="submitRequest()">Submit Request</button>
+        <div class="form-success" id="req-success">
+          ✅ Your request has been submitted! We'll be in touch soon.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+  const STATUS_COLORS = {
+    quoted:      { bg: '#ede9fe', text: '#6d28d9' },
+    scheduled:   { bg: '#dbeafe', text: '#1d4ed8' },
+    in_progress: { bg: '#dbeafe', text: '#0265dc' },
+    active:      { bg: '#dbeafe', text: '#0265dc' },
+    complete:    { bg: '#dcfce7', text: '#166534' },
+    invoiced:    { bg: '#f3e8ff', text: '#7c3aed' },
+    on_hold:     { bg: '#fef3c7', text: '#b45309' },
+  };
+
+  let portalToken = null;
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  function init() {
+    // Check URL for token (magic link)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      localStorage.setItem('portal_token', urlToken);
+      // Clean the URL
+      history.replaceState({}, '', '/portal');
+    }
+
+    const saved = localStorage.getItem('portal_token');
+    if (saved) {
+      portalToken = saved;
+      showApp();
+    }
+  }
+
+  async function showApp() {
+    // Verify token and get client info
+    const res = await portalFetch('/portal/api/me');
+    if (!res.ok) {
+      localStorage.removeItem('portal_token');
+      portalToken = null;
+      document.getElementById('login-err').textContent = 'Access code is invalid or expired. Please request a new link.';
+      return;
+    }
+    const client = await res.json();
+    document.getElementById('portal-client-name').textContent = client.name || '';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    loadJobs();
+  }
+
+  async function loginWithToken() {
+    const val = document.getElementById('token-input').value.trim();
+    if (!val) return;
+    localStorage.setItem('portal_token', val);
+    portalToken = val;
+    document.getElementById('login-err').textContent = '';
+    await showApp();
+  }
+
+  function logout() {
+    localStorage.removeItem('portal_token');
+    portalToken = null;
+    document.getElementById('app').classList.remove('visible');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('token-input').value = '';
+  }
+
+  // ── Auth fetch ────────────────────────────────────────────────────────────
+
+  function portalFetch(url, options = {}) {
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${portalToken}`,
+        ...(options.headers || {}),
+      },
+      body: options.body,
+    });
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  let tabsLoaded = { jobs: false, photos: false };
+
+  function switchTab(tab) {
+    document.querySelectorAll('.portal-tab').forEach((t, i) => {
+      const tabs = ['jobs','photos','request'];
+      t.classList.toggle('active', tabs[i] === tab);
+    });
+    document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+
+    if (tab === 'photos' && !tabsLoaded.photos) loadPhotos();
+  }
+
+  // ── Jobs ──────────────────────────────────────────────────────────────────
+
+  async function loadJobs() {
+    const res = await portalFetch('/portal/api/jobs');
+    const jobs = await res.json();
+    const el = document.getElementById('jobs-list');
+
+    if (!jobs.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔨</div><div class="empty-text">No jobs yet.</div></div>';
+      return;
+    }
+
+    el.innerHTML = jobs.map(j => {
+      const sc = STATUS_COLORS[j.status] || { bg: '#f5f5f5', text: '#737475' };
+      const label = j.status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const date = new Date(j.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `
+        <div class="job-card">
+          <div class="job-info">
+            <div class="job-name">${j.name}</div>
+            ${j.address ? `<div class="job-address">${j.address}</div>` : ''}
+            <div class="job-date">Added ${date}</div>
+          </div>
+          <span class="status-badge" style="background:${sc.bg};color:${sc.text}">${label}</span>
+        </div>
+      `;
+    }).join('');
+    tabsLoaded.jobs = true;
+  }
+
+  // ── Photos ────────────────────────────────────────────────────────────────
+
+  async function loadPhotos() {
+    const res = await portalFetch('/portal/api/photos');
+    const photos = await res.json();
+    const el = document.getElementById('photos-grid');
+
+    if (!photos.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📸</div><div class="empty-text">No site photos yet.</div></div>';
+      tabsLoaded.photos = true;
+      return;
+    }
+
+    el.innerHTML = `<div class="photos-grid">${photos.map(p => {
+      const date = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `
+        <div class="photo-card">
+          <img src="${p.photo_url}" alt="Site photo" loading="lazy" onclick="openLightbox('${p.photo_url}')">
+          <div class="photo-meta">
+            <div class="photo-job">${p.jobs?.name || ''}</div>
+            ${p.message ? `<div class="photo-caption">${p.message}</div>` : ''}
+            <div class="photo-date">${date}</div>
+          </div>
+        </div>
+      `;
+    }).join('')}</div>`;
+    tabsLoaded.photos = true;
+  }
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+
+  function openLightbox(url) {
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('lightbox').classList.add('visible');
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('visible');
+  }
+
+  // ── Request ───────────────────────────────────────────────────────────────
+
+  async function submitRequest() {
+    const description = document.getElementById('req-description').value.trim();
+    const address = document.getElementById('req-address').value.trim();
+    if (!description) { document.getElementById('req-description').focus(); return; }
+
+    const btn = document.getElementById('req-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    const res = await portalFetch('/portal/api/requests', {
+      method: 'POST',
+      body: JSON.stringify({ description, address }),
+    });
+
+    if (res.ok) {
+      document.getElementById('req-description').value = '';
+      document.getElementById('req-address').value = '';
+      document.getElementById('req-success').classList.add('visible');
+      setTimeout(() => document.getElementById('req-success').classList.remove('visible'), 5000);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+  }
+
+  // ── Start ─────────────────────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>

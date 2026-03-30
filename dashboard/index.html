@@ -524,6 +524,22 @@
 
 </div><!-- end #app-shell -->
 
+<!-- ── Portal Invite Modal ── -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal" style="width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0">Client Portal Link</h3>
+      <button class="btn-cancel" onclick="document.getElementById('invite-modal').classList.remove('visible')" style="padding:4px 10px">✕</button>
+    </div>
+    <p style="font-size:13px;color:#737475;margin-bottom:14px">Share this link with your client. They can use it to view their jobs, see site photos, and request new services.</p>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="invite-link" readonly style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:9px 12px;font-size:12px;color:#17191c">
+      <button id="copy-btn" onclick="copyInviteLink()" style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Copy</button>
+    </div>
+    <p style="font-size:11px;color:#b0b0b0;margin-top:10px">⚠ Clicking "Invite" again generates a new link, invalidating the old one.</p>
+  </div>
+</div>
+
 <!-- ── Add / Edit Client Modal ── -->
 <div class="modal-overlay" id="client-modal">
   <div class="modal" style="width:460px">
@@ -1158,7 +1174,10 @@ async function openClientDetail(clientId) {
         <div class="cd-name">${client.name}</div>
         <div class="cd-contact">${[client.phone, client.email, client.address].filter(Boolean).join(' · ') || 'No contact info'}</div>
       </div>
-      <button class="btn-edit-client" onclick="openEditClient('${client.id}')">✏️ Edit</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-edit-client" onclick="openEditClient('${client.id}')">✏️ Edit</button>
+        <button class="btn-edit-client" style="background:#e8f0fd;color:#0265dc;border-color:#0265dc22" onclick="inviteToPortal('${client.id}')">🔗 Invite</button>
+      </div>
     </div>
 
     <!-- Notes -->
@@ -1238,6 +1257,27 @@ async function deleteFollowup(clientId, fid) {
   await authFetch(`/api/clients/${clientId}/followups/${fid}`, { method: 'DELETE' });
   document.getElementById(`fu-${fid}`)?.remove();
   await loadClients();
+}
+
+// ── Portal Invite ─────────────────────────────────────────────────────────────
+async function inviteToPortal(clientId) {
+  const res = await authFetch(`/api/clients/${clientId}/invite`, { method: 'POST' });
+  const { portalUrl, error } = await res.json();
+  if (error) return alert('Error: ' + error);
+
+  // Show a modal with the link
+  const overlay = document.getElementById('invite-modal');
+  document.getElementById('invite-link').value = portalUrl;
+  overlay.classList.add('visible');
+}
+
+function copyInviteLink() {
+  const input = document.getElementById('invite-link');
+  input.select();
+  document.execCommand('copy');
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
 }
 
 // ── Add / Edit Client Modal ───────────────────────────────────────────────────

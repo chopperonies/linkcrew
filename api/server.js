@@ -1,6 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
 const { sendDailyDigest, sendNote } = require('../email/digest');
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '../dashboard'), { index: false }));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
+app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/portal.html')));
 
 // Super-admin emails (comma-separated in env, e.g. "you@example.com")
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
@@ -431,6 +433,94 @@ app.get('/api/reports', auth, async (req, res) => {
     activeJobs: (allJobs || []).filter(j => ['active','in_progress','scheduled'].includes(j.status)).length,
     totalCrewHours,
   });
+});
+
+// ── Client Portal Auth ────────────────────────────────────────────────────────
+
+async function portalAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { data: clientUser } = await supabaseAdmin
+    .from('client_users')
+    .select('client_id, tenant_id')
+    .eq('portal_token', token)
+    .single();
+
+  if (!clientUser) return res.status(401).json({ error: 'Invalid portal token' });
+
+  req.clientId = clientUser.client_id;
+  req.tenantId = clientUser.tenant_id;
+  next();
+}
+
+// Generate (or regenerate) a portal invite link for a client
+app.post('/api/clients/:id/invite', auth, async (req, res) => {
+  const { id } = req.params;
+  const token = crypto.randomBytes(32).toString('hex');
+
+  const { data, error } = await supabaseAdmin
+    .from('client_users')
+    .upsert({ client_id: id, portal_token: token, tenant_id: req.tenantId }, { onConflict: 'client_id' })
+    .select().single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  const portalUrl = `${req.protocol}://${req.get('host')}/portal?token=${token}`;
+  res.json({ portalUrl });
+});
+
+// Portal: client info
+app.get('/portal/api/me', portalAuth, async (req, res) => {
+  const { data } = await supabaseAdmin.from('clients').select('name, email, phone').eq('id', req.clientId).single();
+  res.json(data);
+});
+
+// Portal: client's jobs
+app.get('/portal/api/jobs', portalAuth, async (req, res) => {
+  const { data } = await supabaseAdmin
+    .from('jobs')
+    .select('id, name, address, status, created_at')
+    .eq('client_id', req.clientId)
+    .order('created_at', { ascending: false });
+  res.json(data || []);
+});
+
+// Portal: photos for client's jobs
+app.get('/portal/api/photos', portalAuth, async (req, res) => {
+  const { data: jobs } = await supabaseAdmin.from('jobs').select('id').eq('client_id', req.clientId);
+  if (!jobs?.length) return res.json([]);
+
+  const { data } = await supabaseAdmin
+    .from('job_updates')
+    .select('id, message, photo_url, created_at, jobs(name)')
+    .in('job_id', jobs.map(j => j.id))
+    .eq('type', 'photo')
+    .not('photo_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(60);
+
+  res.json(data || []);
+});
+
+// Portal: submit a new job request
+app.post('/portal/api/requests', portalAuth, async (req, res) => {
+  const { description, address } = req.body;
+  if (!description) return res.status(400).json({ error: 'Description is required' });
+
+  const { data: client } = await supabaseAdmin.from('clients').select('name').eq('id', req.clientId).single();
+
+  const { data: job, error } = await supabaseAdmin
+    .from('jobs')
+    .insert({ name: `Request – ${client?.name || 'Client'}`, address: address || '', status: 'quoted', client_id: req.clientId, tenant_id: req.tenantId })
+    .select().single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  await supabaseAdmin.from('job_updates').insert({ job_id: job.id, message: description, type: 'note' });
+
+  res.json(job);
 });
 
 // ── Super-admin Routes ────────────────────────────────────────────────────────
