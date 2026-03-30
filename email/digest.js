@@ -218,4 +218,26 @@ async function sendPhotoAlert({ jobName, employeeName, caption, photoUrl }) {
   });
 }
 
-module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert };
+async function sendNote({ subject, body }) {
+  const html = `
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
+<div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:#1a1a2e;padding:20px 24px">
+    <h2 style="margin:0;color:white;font-size:18px">⚡ FieldSync Note</h2>
+  </div>
+  <div style="padding:24px;white-space:pre-wrap;font-size:14px;color:#111827;line-height:1.6">${body}</div>
+  <div style="padding:16px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">
+    FieldSync • Sent on ${new Date().toLocaleString()}
+  </div>
+</div>
+</body></html>`;
+
+  await resend.emails.send({
+    from: 'FieldSync <onboarding@resend.dev>',
+    to: process.env.MANAGER_EMAIL,
+    subject: subject || 'Note from FieldSync',
+    html,
+  });
+}
+
+module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote };

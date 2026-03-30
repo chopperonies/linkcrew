@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
-const { sendDailyDigest } = require('../email/digest');
+const { sendDailyDigest, sendNote } = require('../email/digest');
 const { handleMessage } = require('../bot/whatsapp');
 
 const app = express();
@@ -104,6 +104,14 @@ app.patch('/api/jobs/:id', async (req, res) => {
     .select()
     .single();
   res.json(data);
+});
+
+// Send a note to manager email
+app.post('/api/send-note', async (req, res) => {
+  const { subject, body } = req.body;
+  if (!body) return res.status(400).json({ error: 'body is required' });
+  await sendNote({ subject, body });
+  res.json({ ok: true });
 });
 
 // Supabase config for frontend (public values only)
