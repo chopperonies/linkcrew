@@ -15,9 +15,9 @@
     .auth-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 40px; width: 380px; }
     .auth-logo { font-size: 26px; font-weight: 800; color: #17191c; margin-bottom: 4px; }
     .auth-logo span { color: #0265dc; }
-    .auth-subtitle { font-size: 13px; color: #949596; margin-bottom: 28px; }
+    .auth-subtitle { font-size: 13px; color: #17191c; margin-bottom: 28px; }
     .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
-    .auth-tab { flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 600; color: #949596; cursor: pointer; background: #f5f5f5; }
+    .auth-tab { flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 600; color: #17191c; cursor: pointer; background: #f5f5f5; }
     .auth-tab.active { color: #17191c; background: #e8e8e8; }
     .auth-input { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 11px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
     .auth-input:focus { outline: none; border-color: #0265dc; }
@@ -46,7 +46,7 @@
     .admin-bar { background: #1a0a3a; border-bottom: 1px solid #4c1d95; padding: 8px 24px; display: flex; align-items: center; gap: 12px; font-size: 12px; }
     .admin-badge { background: #6d28d9; color: #17191c; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 10px; letter-spacing: 0.05em; }
     .tenant-select { background: #f5f5f5; border: 1px solid #4c1d95; color: #17191c; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
-    .admin-stat { color: #737475; }
+    .admin-stat { color: #17191c; }
     .admin-stat strong { color: #17191c; }
 
     /* ── Stats bar ── */
@@ -55,7 +55,7 @@
     .stat:hover { border-color: #0265dc; transform: translateY(-1px); }
     .stat.active { border-color: #0265dc; background: #e8f0fd; }
     .stat .num { font-size: 26px; font-weight: 700; color: #17191c; }
-    .stat .label { font-size: 10px; color: #737475; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat .label { font-size: 10px; color: #17191c; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* ── Overlays ── */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; align-items: flex-start; justify-content: center; padding-top: 80px; }
@@ -63,14 +63,14 @@
     .overlay-box { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; width: 520px; max-height: 70vh; overflow-y: auto; }
     .overlay-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #e8e8e8; position: sticky; top: 0; background: #fff; }
     .overlay-header h3 { font-size: 14px; font-weight: 600; color: #17191c; }
-    .overlay-close { background: none; border: none; color: #737475; font-size: 18px; cursor: pointer; }
+    .overlay-close { background: none; border: none; color: #17191c; font-size: 18px; cursor: pointer; }
     .overlay-close:hover { color: #17191c; }
     .overlay-body { padding: 14px 18px; }
     .overlay-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #e8e8e8; }
     .overlay-row:last-child { border-bottom: none; }
-    .overlay-avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #737475; flex-shrink: 0; }
+    .overlay-avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #17191c; flex-shrink: 0; }
     .overlay-info .oi-name { font-size: 13px; font-weight: 500; color: #17191c; }
-    .overlay-info .oi-sub { font-size: 11px; color: #949596; margin-top: 2px; }
+    .overlay-info .oi-sub { font-size: 11px; color: #17191c; margin-top: 2px; }
 
     /* ── Main layout ── */
     .main { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 112px); }
@@ -78,12 +78,12 @@
     .side-panel { background: #fff; border-left: 1px solid #e8e8e8; padding: 18px; overflow-y: auto; }
 
     /* ── Job cards ── */
-    .panel-title { font-size: 12px; font-weight: 600; color: #737475; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .panel-title { font-size: 12px; font-weight: 600; color: #17191c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
     .job-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
     .job-card:hover { border-color: #0265dc; }
     .job-card.selected { border-color: #0265dc; background: #e8f0fd; }
     .job-card .job-name { font-size: 14px; font-weight: 600; color: #17191c; margin-bottom: 3px; }
-    .job-card .job-address { font-size: 11px; color: #737475; margin-bottom: 8px; }
+    .job-card .job-address { font-size: 11px; color: #17191c; margin-bottom: 8px; }
     .job-meta { display: flex; gap: 6px; flex-wrap: wrap; }
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 500; }
     .chip-blue { background: #e8f0fd; color: #0265dc; }
@@ -93,10 +93,10 @@
 
     /* ── Supply items ── */
     .supply-item { background: #f5f5f5; border: 1px solid #e8e8e8; border-left: 3px solid #f87171; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
-    .supply-item .si-job { font-size: 11px; color: #737475; margin-bottom: 3px; }
+    .supply-item .si-job { font-size: 11px; color: #17191c; margin-bottom: 3px; }
     .supply-item .si-items { font-size: 12px; color: #17191c; margin-bottom: 5px; }
     .supply-item .si-meta { display: flex; align-items: center; justify-content: space-between; }
-    .supply-item .si-by { font-size: 10px; color: #949596; }
+    .supply-item .si-by { font-size: 10px; color: #17191c; }
     .status-btn { padding: 3px 9px; border-radius: 4px; font-size: 10px; font-weight: 600; border: none; cursor: pointer; }
     .btn-prepare { background: #e8f0fd; color: #0265dc; }
     .btn-delivered { background: #f0fdf4; color: #16a34a; }
@@ -112,11 +112,11 @@
     .ui-supply_request { background: #fef2f2; }
     .ui-photo { background: #ede9fe; }
     .ui-update { background: #fff; }
-    .update-body .ub-name { font-size: 10px; color: #737475; }
+    .update-body .ub-name { font-size: 10px; color: #17191c; }
     .update-body .ub-msg { font-size: 12px; color: #17191c; margin-top: 1px; }
-    .update-body .ub-time { font-size: 10px; color: #737475; margin-top: 1px; }
+    .update-body .ub-time { font-size: 10px; color: #17191c; margin-top: 1px; }
     .emp-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #e8e8e8; }
-    .emp-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #737475; }
+    .emp-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #17191c; }
 
     /* ── Modals ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
@@ -124,7 +124,7 @@
     .modal { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 22px; width: 440px; max-height: 82vh; overflow-y: auto; }
     .modal h3 { margin-bottom: 14px; color: #17191c; font-size: 15px; }
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 11px; color: #737475; margin-bottom: 5px; }
+    .form-group label { display: block; font-size: 11px; color: #17191c; margin-bottom: 5px; }
     .form-group input, .form-group select { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 8px 11px; border-radius: 6px; font-size: 13px; }
     .form-group input:focus, .form-group select:focus { outline: none; border-color: #0265dc; }
     .form-group select option { background: #fff; }
@@ -136,15 +136,15 @@
     /* ── Team modal ── */
     .team-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #e8e8e8; }
     .team-row:last-child { border-bottom: none; }
-    .team-avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #737475; flex-shrink: 0; }
+    .team-avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8e8e8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #17191c; flex-shrink: 0; }
     .team-info { flex: 1; }
     .team-info .ti-name { font-size: 13px; font-weight: 500; color: #17191c; }
-    .team-info .ti-sub { font-size: 11px; color: #949596; margin-top: 1px; }
+    .team-info .ti-sub { font-size: 11px; color: #17191c; margin-top: 1px; }
     .role-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
     .role-owner { background: #ede9fe; color: #7c3aed; }
     .role-manager { background: #e8f0fd; color: #0265dc; }
     .role-crew { background: #f0fdf4; color: #16a34a; }
-    .btn-delete { background: none; border: none; color: #737475; cursor: pointer; font-size: 15px; padding: 4px; border-radius: 4px; }
+    .btn-delete { background: none; border: none; color: #17191c; cursor: pointer; font-size: 15px; padding: 4px; border-radius: 4px; }
     .btn-delete:hover { color: #dc2626; background: #fef2f2; }
     .section-divider { border: none; border-top: 1px solid #e8e8e8; margin: 18px 0; }
 
@@ -155,26 +155,26 @@
     .photo-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
     .photo-meta { padding: 5px 7px; }
     .photo-meta .pm-job { font-size: 10px; color: #0265dc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .photo-meta .pm-info { font-size: 9px; color: #949596; margin-top: 1px; }
+    .photo-meta .pm-info { font-size: 9px; color: #17191c; margin-top: 1px; }
 
     /* ── Side tabs ── */
     .side-tabs { display: flex; border-bottom: 1px solid #e8e8e8; margin-bottom: 12px; }
-    .side-tab { flex: 1; padding: 7px; text-align: center; font-size: 11px; font-weight: 600; color: #949596; cursor: pointer; border-bottom: 2px solid transparent; }
+    .side-tab { flex: 1; padding: 7px; text-align: center; font-size: 11px; font-weight: 600; color: #17191c; cursor: pointer; border-bottom: 2px solid transparent; }
     .side-tab.active { color: #0265dc; border-bottom-color: #0265dc; }
 
     /* ── Admin tenants list ── */
     .tenant-card { background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
     .tenant-card .tc-name { font-size: 14px; font-weight: 600; color: #17191c; }
-    .tenant-card .tc-meta { font-size: 11px; color: #949596; margin-top: 2px; }
+    .tenant-card .tc-meta { font-size: 11px; color: #17191c; margin-top: 2px; }
     .tenant-stats { display: flex; gap: 12px; }
     .tenant-stat { text-align: right; }
     .tenant-stat .ts-num { font-size: 16px; font-weight: 700; color: #0265dc; }
-    .tenant-stat .ts-lbl { font-size: 10px; color: #949596; }
+    .tenant-stat .ts-lbl { font-size: 10px; color: #17191c; }
     .btn-view-tenant { background: #e8e8e8; color: #17191c; border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
     .btn-view-tenant:hover { background: #0265dc; color: #fff; }
 
     /* ── Empty state ── */
-    .empty { text-align: center; padding: 36px; color: #737475; }
+    .empty { text-align: center; padding: 36px; color: #17191c; }
     .empty .e-icon { font-size: 36px; margin-bottom: 8px; }
   </style>
 </head>
