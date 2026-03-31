@@ -36,12 +36,53 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
+  const planMaxUsers = { solo: 1, team: 5, pro: 10, business: 20 };
+
   if (event.type === 'checkout.session.completed') {
-    const jobId = event.data.object.metadata?.job_id;
-    if (jobId) {
-      await supabaseAdmin.from('jobs').update({ payment_status: 'paid' }).eq('id', jobId);
+    const session = event.data.object;
+    // Client invoice payment
+    if (session.metadata?.job_id) {
+      await supabaseAdmin.from('jobs').update({ payment_status: 'paid' }).eq('id', session.metadata.job_id);
+    }
+    // Subscription checkout
+    if (session.mode === 'subscription' && session.metadata?.tenant_id) {
+      const plan = session.metadata.plan;
+      await supabaseAdmin.from('tenants').update({
+        plan,
+        subscription_status: 'active',
+        stripe_customer_id: session.customer,
+        stripe_subscription_id: session.subscription,
+        max_users: planMaxUsers[plan] || 1,
+      }).eq('id', session.metadata.tenant_id);
     }
   }
+
+  if (event.type === 'customer.subscription.updated') {
+    const sub = event.data.object;
+    if (sub.metadata?.tenant_id) {
+      await supabaseAdmin.from('tenants').update({
+        subscription_status: sub.status,
+        stripe_subscription_id: sub.id,
+      }).eq('id', sub.metadata.tenant_id);
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    if (sub.metadata?.tenant_id) {
+      await supabaseAdmin.from('tenants')
+        .update({ subscription_status: 'canceled' }).eq('id', sub.metadata.tenant_id);
+    }
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    const { data: tenant } = await supabaseAdmin.from('tenants')
+      .select('id').eq('stripe_customer_id', event.data.object.customer).single();
+    if (tenant) {
+      await supabaseAdmin.from('tenants').update({ subscription_status: 'past_due' }).eq('id', tenant.id);
+    }
+  }
+
   res.json({ received: true });
 });
 
@@ -52,6 +93,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landi
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
 app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/portal.html')));
 app.get('/invoice', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/invoice.html')));
+app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/pricing.html')));
 
 // Super-admin emails (comma-separated in env, e.g. "you@example.com")
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
@@ -90,6 +132,28 @@ async function auth(req, res, next) {
   }
 
   req.tenantId = tenantUser.tenant_id;
+
+  // Subscription check — skip for billing and auth routes
+  const skipPaths = ['/api/billing/', '/api/auth/', '/api/admin/', '/api/config', '/api/onboarding', '/api/settings'];
+  const skipSub = skipPaths.some(p => req.path.startsWith(p));
+  if (!skipSub) {
+    const { data: tenant } = await supabaseAdmin.from('tenants')
+      .select('subscription_status, trial_ends_at, plan')
+      .eq('id', req.tenantId).single();
+    if (tenant && tenant.subscription_status) {
+      const now = new Date();
+      const trialExpired = tenant.subscription_status === 'trialing' && new Date(tenant.trial_ends_at) < now;
+      const locked = trialExpired || tenant.subscription_status === 'past_due' || tenant.subscription_status === 'canceled';
+      if (locked) {
+        return res.status(402).json({
+          error: 'subscription_required',
+          subscription_status: trialExpired ? 'trial_expired' : tenant.subscription_status,
+          trial_ends_at: tenant.trial_ends_at,
+        });
+      }
+    }
+  }
+
   next();
 }
 
@@ -658,6 +722,68 @@ app.post('/portal/api/checkout', portalAuth, async (req, res) => {
   }
 
   res.json({ url: session.url });
+});
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+app.get('/api/billing/status', auth, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const { data } = await supabaseAdmin.from('tenants')
+    .select('plan, subscription_status, trial_ends_at, stripe_customer_id')
+    .eq('id', tenantId).single();
+  res.json(data || {});
+});
+
+app.post('/api/billing/checkout', auth, async (req, res) => {
+  const { plan } = req.body;
+  const priceMap = {
+    solo:      process.env.STRIPE_PRICE_SOLO,
+    team:      process.env.STRIPE_PRICE_TEAM,
+    pro:       process.env.STRIPE_PRICE_PRO,
+    business:  process.env.STRIPE_PRICE_BUSINESS,
+    voicebot:  process.env.STRIPE_PRICE_VOICEBOT,
+  };
+  const priceId = priceMap[plan];
+  if (!priceId) return res.status(400).json({ error: 'Invalid plan' });
+  const tenantId = await getEffectiveTenantId(req);
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_customer_id, owner_email').eq('id', tenantId).single();
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      ...(tenant.stripe_customer_id
+        ? { customer: tenant.stripe_customer_id }
+        : { customer_email: tenant.owner_email }),
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${req.protocol}://${req.get('host')}/app?billing=success`,
+      cancel_url: `${req.protocol}://${req.get('host')}/pricing`,
+      metadata: { tenant_id: tenantId, plan },
+      subscription_data: { metadata: { tenant_id: tenantId, plan } },
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/billing/portal', auth, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_customer_id').eq('id', tenantId).single();
+  if (!tenant?.stripe_customer_id) return res.status(400).json({ error: 'No billing account found. Please subscribe first.' });
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: tenant.stripe_customer_id,
+      return_url: `${req.protocol}://${req.get('host')}/app`,
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // ── Onboarding ────────────────────────────────────────────────────────────────

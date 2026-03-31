@@ -643,6 +643,25 @@
   </div>
 </div>
 
+<!-- ── Subscription lock-out overlay ── -->
+<div id="lockout-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:48px 40px;max-width:480px;width:90%;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px" id="lockout-icon">⏰</div>
+    <h2 style="font-size:22px;font-weight:800;color:#17191c;margin-bottom:10px" id="lockout-title">Your free trial has ended</h2>
+    <p style="font-size:14px;color:#737475;line-height:1.6;margin-bottom:28px" id="lockout-body">Choose a plan to keep access to your dashboard, jobs, clients, and crew.</p>
+    <a href="/pricing" style="display:inline-block;background:#0265dc;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;margin-bottom:12px">View Plans & Pricing</a>
+    <br>
+    <button id="lockout-portal-btn" onclick="openBillingPortal()" style="display:none;background:none;border:none;color:#737475;font-size:13px;cursor:pointer;margin-top:8px;text-decoration:underline">Manage existing subscription</button>
+  </div>
+</div>
+
+<!-- ── Trial countdown banner ── -->
+<div id="trial-banner" style="display:none;background:#fefce8;border-bottom:1px solid #fde68a;padding:10px 24px;text-align:center;font-size:13px;color:#92400e">
+  <span id="trial-banner-text"></span>
+  &nbsp;·&nbsp;
+  <a href="/pricing" style="color:#92400e;font-weight:700">View Plans →</a>
+</div>
+
 <!-- ── Admin: All Accounts modal ── -->
 <div class="modal-overlay" id="admin-modal">
   <div class="modal" style="width:580px">
@@ -715,7 +734,75 @@ async function authFetch(url, opts = {}) {
   if (currentTenantId && isAdmin) headers['x-tenant-id'] = currentTenantId;
   const res = await fetch(url, { ...opts, headers });
   if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+  if (res.status === 402) { showLockout(await res.json()); throw new Error('Subscription required'); }
   return res;
+}
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+async function loadBillingStatus() {
+  try {
+    const res = await fetch('/api/billing/status', {
+      headers: { Authorization: `Bearer ${currentToken}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const now = new Date();
+
+    if (data.subscription_status === 'trialing' && data.trial_ends_at) {
+      const ends = new Date(data.trial_ends_at);
+      const daysLeft = Math.ceil((ends - now) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 7 && daysLeft > 0) {
+        document.getElementById('trial-banner-text').textContent =
+          `⏰ Your free trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+        document.getElementById('trial-banner').style.display = 'block';
+      }
+    }
+
+    // Show Manage Billing in header if subscribed
+    if (data.stripe_customer_id) {
+      const btn = document.createElement('button');
+      btn.className = 'hdr-btn';
+      btn.textContent = 'Billing';
+      btn.onclick = openBillingPortal;
+      document.querySelector('.header-right').insertBefore(btn, document.querySelector('.header-right').firstChild);
+    }
+  } catch (_) {}
+}
+
+function showLockout(data) {
+  const status = data?.subscription_status;
+  const titleEl = document.getElementById('lockout-title');
+  const bodyEl = document.getElementById('lockout-body');
+  const iconEl = document.getElementById('lockout-icon');
+  if (status === 'past_due') {
+    iconEl.textContent = '💳';
+    titleEl.textContent = 'Payment failed';
+    bodyEl.textContent = 'Your last payment didn\'t go through. Update your billing info to restore access.';
+    document.getElementById('lockout-portal-btn').style.display = 'inline';
+  } else if (status === 'canceled') {
+    iconEl.textContent = '🔒';
+    titleEl.textContent = 'Subscription canceled';
+    bodyEl.textContent = 'Your subscription has been canceled. Resubscribe to regain access.';
+  } else {
+    iconEl.textContent = '⏰';
+    titleEl.textContent = 'Your free trial has ended';
+    bodyEl.textContent = 'Choose a plan to keep access to your dashboard, jobs, clients, and crew.';
+  }
+  document.getElementById('lockout-overlay').style.display = 'flex';
+}
+
+async function openBillingPortal() {
+  try {
+    const res = await fetch('/api/billing/portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` }
+    });
+    const json = await res.json();
+    if (!res.ok) return alert('Error: ' + json.error);
+    location.href = json.url;
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
 }
 
 function switchAuthTab(tab) {
@@ -826,6 +913,7 @@ async function bootApp() {
   }
 
   await init();
+  if (!isAdmin) loadBillingStatus();
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
