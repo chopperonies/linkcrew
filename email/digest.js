@@ -138,7 +138,7 @@ ${bottlenecks.length > 0 ? `
   `;
 
   await resend.emails.send({
-    from: 'FieldSync <onboarding@resend.dev>',
+    from: 'LinkCrew Alerts <alerts@linkcrew.io>',
     to: process.env.MANAGER_EMAIL,
     subject: `FieldSync Daily Digest — ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} | ${jobs.length} active jobs`,
     html
@@ -170,7 +170,7 @@ async function sendAlertEmail({ subject, title, color, rows, photoUrl }) {
 </body></html>`;
 
   await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: 'LinkCrew Alerts <alerts@linkcrew.io>',
     to: process.env.MANAGER_EMAIL,
     subject,
     html
@@ -233,11 +233,99 @@ async function sendNote({ subject, body }) {
 </body></html>`;
 
   await resend.emails.send({
-    from: 'FieldSync <onboarding@resend.dev>',
+    from: 'LinkCrew Alerts <alerts@linkcrew.io>',
     to: process.env.MANAGER_EMAIL,
     subject: subject || 'Note from FieldSync',
     html,
   });
 }
 
-module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote };
+async function sendInvoiceToClient({ clientName, clientEmail, jobName, amount, portalUrl, tenantName }) {
+  const formattedAmount = Number(amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const html = `
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
+<div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:#0a0a0a;padding:24px">
+    <h2 style="margin:0;color:white;font-size:20px">Invoice from ${tenantName || 'Your Contractor'}</h2>
+    <p style="margin:6px 0 0;color:#888;font-size:14px">You have a new invoice ready to view and pay</p>
+  </div>
+  <div style="padding:28px">
+    <p style="font-size:15px;color:#111827;margin:0 0 20px">Hi ${clientName},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 24px">
+      An invoice has been created for <strong>${jobName}</strong>.
+    </p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Invoice Total</div>
+      <div style="font-size:36px;font-weight:800;color:#0a0a0a">${formattedAmount}</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:4px">${jobName}</div>
+    </div>
+    ${portalUrl ? `
+    <a href="${portalUrl}" style="display:block;background:#0265dc;color:white;text-decoration:none;text-align:center;padding:14px 24px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:16px">
+      View &amp; Pay Invoice
+    </a>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">Or copy this link: ${portalUrl}</p>
+    ` : ''}
+  </div>
+  <div style="padding:16px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center">
+    LinkCrew — Field Service Management
+  </div>
+</div>
+</body></html>`;
+
+  await resend.emails.send({
+    from: 'LinkCrew <hello@linkcrew.io>',
+    to: clientEmail,
+    subject: `Invoice for ${jobName} — ${formattedAmount}`,
+    html,
+  });
+}
+
+async function sendPaymentReceivedToOwner({ ownerEmail, clientName, jobName, amount, tenantName }) {
+  const formattedAmount = Number(amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const html = `
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
+<div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:#052e16;padding:24px">
+    <h2 style="margin:0;color:#4ade80;font-size:20px">Payment Received</h2>
+    <p style="margin:6px 0 0;color:#86efac;font-size:14px">${clientName} paid their invoice</p>
+  </div>
+  <div style="padding:28px">
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Amount Paid</div>
+      <div style="font-size:36px;font-weight:800;color:#15803d">${formattedAmount}</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:4px">${jobName}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280;width:80px">Client</td>
+        <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600">${clientName}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280">Job</td>
+        <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600">${jobName}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280">Amount</td>
+        <td style="padding:8px 0;font-size:13px;color:#15803d;font-weight:700">${formattedAmount}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280">Date</td>
+        <td style="padding:8px 0;font-size:13px;color:#111827">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+      </tr>
+    </table>
+  </div>
+  <div style="padding:16px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center">
+    LinkCrew — Field Service Management
+  </div>
+</div>
+</body></html>`;
+
+  await resend.emails.send({
+    from: 'LinkCrew Alerts <alerts@linkcrew.io>',
+    to: ownerEmail,
+    subject: `Payment received — ${formattedAmount} from ${clientName}`,
+    html,
+  });
+}
+
+module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner };

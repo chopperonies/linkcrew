@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
-const { sendDailyDigest, sendNote } = require('../email/digest');
+const { sendDailyDigest, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner } = require('../email/digest');
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
 const twilio = require('twilio');
@@ -88,6 +88,27 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     // Client invoice payment
     if (session.metadata?.job_id) {
       await supabaseAdmin.from('jobs').update({ payment_status: 'paid' }).eq('id', session.metadata.job_id);
+      // Notify owner
+      try {
+        const { data: job } = await supabaseAdmin.from('jobs')
+          .select('name, invoice_amount, tenant_id, clients(name)')
+          .eq('id', session.metadata.job_id).single();
+        if (job?.tenant_id) {
+          const { data: tenant } = await supabaseAdmin.from('tenants')
+            .select('owner_email, company_name').eq('id', job.tenant_id).single();
+          if (tenant?.owner_email) {
+            await sendPaymentReceivedToOwner({
+              ownerEmail: tenant.owner_email,
+              clientName: job.clients?.name || 'Client',
+              jobName: job.name,
+              amount: job.invoice_amount,
+              tenantName: tenant.company_name,
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error('[webhook] payment email error:', emailErr.message);
+      }
     }
     // Subscription checkout
     if (session.mode === 'subscription' && session.metadata?.tenant_id) {
@@ -728,8 +749,35 @@ app.post('/api/jobs/:id/invoice', auth, async (req, res) => {
     return res.status(400).json({ error: 'Valid amount required' });
   const { data, error } = await supabaseAdmin.from('jobs')
     .update({ invoice_amount: parseFloat(amount), status: 'invoiced', payment_status: 'unpaid' })
-    .eq('id', req.params.id).select().single();
+    .eq('id', req.params.id).select('*, clients(name, email)').single();
   if (error) return res.status(400).json({ error: error.message });
+
+  // Send invoice email to client if they have an email
+  const client = data.clients;
+  if (client?.email) {
+    try {
+      const tenantId = await getEffectiveTenantId(req);
+      const [{ data: tenant }, { data: clientUser }] = await Promise.all([
+        supabaseAdmin.from('tenants').select('company_name').eq('id', tenantId).single(),
+        supabaseAdmin.from('client_users').select('portal_token').eq('client_id', data.client_id).single(),
+      ]);
+      const host = `${req.protocol}://${req.get('host')}`;
+      const portalUrl = clientUser?.portal_token
+        ? `${host}/portal?token=${clientUser.portal_token}`
+        : `${host}/portal`;
+      await sendInvoiceToClient({
+        clientName: client.name,
+        clientEmail: client.email,
+        jobName: data.name,
+        amount: parseFloat(amount),
+        portalUrl,
+        tenantName: tenant?.company_name,
+      });
+    } catch (emailErr) {
+      console.error('[invoice] email error:', emailErr.message);
+    }
+  }
+
   res.json(data);
 });
 
