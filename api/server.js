@@ -305,7 +305,7 @@ app.get('/api/clients/:id', auth, async (req, res) => {
   const [{ data: client }, { data: followUps }, { data: jobs }] = await Promise.all([
     supabaseAdmin.from('clients').select('*').eq('id', id).single(),
     supabaseAdmin.from('client_follow_ups').select('*').eq('client_id', id).order('due_date').order('created_at'),
-    supabaseAdmin.from('jobs').select('id, name, address, status, created_at').eq('client_id', id).order('created_at', { ascending: false }),
+    supabaseAdmin.from('jobs').select('id, name, address, status, created_at, invoice_amount, payment_status').eq('client_id', id).order('created_at', { ascending: false }),
   ]);
   res.json({ client, followUps: followUps || [], jobs: jobs || [] });
 });

@@ -1306,6 +1306,7 @@ async function openClientDetail(clientId) {
           <div style="flex:1">
             <div class="jh-name">${j.name}</div>
             <div class="jh-address">${j.address || 'No address'}</div>
+            ${j.invoice_amount > 0 ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>` : ''}
           </div>
           <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
         </div>
@@ -1613,6 +1614,7 @@ async function openAgreementDetail(id) {
           <div style="flex:1">
             <div class="jh-name">${j.name}</div>
             <div class="jh-address">${j.address || 'No address'}</div>
+            ${j.invoice_amount > 0 ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>` : ''}
           </div>
           <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
         </div>

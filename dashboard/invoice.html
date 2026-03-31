@@ -123,7 +123,7 @@
             headers: { Authorization: `Bearer ${token}` }
           });
         } else {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem('fs_token');
           res = await fetch(`/api/invoice/${jobId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
