@@ -295,6 +295,73 @@
     .jh-name { font-size: 13px; font-weight: 600; color: #17191c; flex: 1; }
     .jh-address { font-size: 11px; color: #737475; margin-top: 1px; }
     .jh-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+
+    /* ── Mobile / Responsive ── */
+    @media (max-width: 768px) {
+      /* Header */
+      .header { padding: 10px 14px; }
+      .header-brand { font-size: 16px; }
+      .live-badge span:last-child { display: none; }
+      .hdr-btn { padding: 5px 10px; font-size: 11px; }
+
+      /* Stats bar */
+      .stats { padding: 10px 14px; gap: 8px; }
+      .stat { min-width: 100px; padding: 9px 12px; }
+      .stat .num { font-size: 20px; }
+
+      /* Main nav tabs */
+      .main-tabs { padding: 0 8px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .main-tabs::-webkit-scrollbar { display: none; }
+      .main-tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+
+      /* Auth card */
+      .auth-card { width: 90vw; padding: 28px 20px; }
+
+      /* Main layout — stack vertically */
+      .main { grid-template-columns: 1fr; height: auto; }
+      .jobs-panel { height: auto; min-height: 50vh; }
+      .side-panel { border-left: none; border-top: 1px solid #e8e8e8; min-height: 40vh; }
+
+      /* Modals — full-width on phone */
+      .modal { width: 92vw; padding: 18px; }
+      .overlay-box { width: 92vw; }
+      .modal-overlay { padding: 16px; align-items: flex-end; }
+
+      /* Reports */
+      .reports-view { padding: 16px; height: auto; }
+      .reports-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .report-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .charts-row { grid-template-columns: 1fr; }
+
+      /* CRM layout — stack vertically */
+      .crm-layout { grid-template-columns: 1fr; height: auto; }
+      .crm-list-panel { border-right: none; border-bottom: 1px solid #e8e8e8; max-height: 45vh; overflow-y: auto; }
+      .crm-detail-panel { padding: 16px; min-height: 200px; }
+      .cd-header { flex-direction: column; gap: 10px; }
+
+      /* Agreements layout — stack vertically */
+      .ag-layout { grid-template-columns: 1fr; height: auto; }
+      .ag-list-panel { border-right: none; border-bottom: 1px solid #e8e8e8; max-height: 40vh; overflow-y: auto; }
+      .ag-detail-panel { padding: 16px; }
+      .agd-header { flex-direction: column; gap: 10px; }
+      .agd-grid { grid-template-columns: 1fr; }
+
+      /* Photo grid */
+      .photo-grid { grid-template-columns: 1fr 1fr; }
+
+      /* Side panel detail */
+      .detail-panel.visible { display: block; }
+    }
+
+    @media (max-width: 480px) {
+      .report-stat-grid { grid-template-columns: 1fr 1fr; }
+      .report-stat .rs-val { font-size: 24px; }
+      .main-tab { padding: 10px 12px; font-size: 11px; }
+      .stats { padding: 8px 10px; }
+      .stat { min-width: 80px; padding: 7px 10px; }
+      .stat .num { font-size: 18px; }
+      .modal { width: 96vw; }
+    }
   </style>
 </head>
 <body>
