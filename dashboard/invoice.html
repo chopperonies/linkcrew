@@ -103,6 +103,7 @@
     <div class="state" id="loading">Loading invoice…</div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const jobId = params.get('job_id');
@@ -114,6 +115,18 @@
       loadInvoice();
     }
 
+    async function getDashboardToken() {
+      // Try to get a fresh token via Supabase client (handles auto-refresh)
+      try {
+        const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
+        const sb = supabase.createClient(supabaseUrl, supabaseKey);
+        const { data } = await sb.auth.getSession();
+        if (data?.session?.access_token) return data.session.access_token;
+      } catch (_) {}
+      // Fallback to stored token
+      return localStorage.getItem('fs_token');
+    }
+
     async function loadInvoice() {
       let res;
       try {
@@ -123,18 +136,20 @@
             headers: { Authorization: `Bearer ${token}` }
           });
         } else {
-          const token = localStorage.getItem('fs_token');
+          const token = await getDashboardToken();
           res = await fetch(`/api/invoice/${jobId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
         }
       } catch (err) {
-        document.getElementById('loading').textContent = 'Failed to load invoice.';
+        document.getElementById('loading').textContent = 'Failed to load: ' + err.message;
         return;
       }
 
       if (!res.ok) {
-        document.getElementById('loading').textContent = 'Invoice not found.';
+        const body = await res.json().catch(() => ({}));
+        document.getElementById('loading').textContent =
+          `Error ${res.status}: ${body.error || 'Invoice not found'}`;
         return;
       }
 
