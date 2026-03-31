@@ -669,7 +669,8 @@ app.get('/api/invoice/:jobId', auth, async (req, res) => {
     .eq('id', req.params.jobId)
     .eq('tenant_id', req.tenantId)
     .single();
-  if (!job || error) return res.status(404).json({ error: 'Not found' });
+  console.log('[invoice]', { jobId: req.params.jobId, tenantId: req.tenantId, found: !!job, err: error?.message });
+  if (!job || error) return res.status(404).json({ error: error?.message || 'Not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
     .select('company_name, owner_email')
     .eq('id', req.tenantId)
