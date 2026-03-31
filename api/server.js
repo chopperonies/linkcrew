@@ -9,6 +9,35 @@ const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
 const { sendDailyDigest, sendNote } = require('../email/digest');
 const { handleMessage } = require('../bot/whatsapp');
+const Anthropic = require('@anthropic-ai/sdk');
+const twilio = require('twilio');
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const VoiceResponse = twilio.twiml.VoiceResponse;
+
+// In-memory voice conversation store (keyed by CallSid)
+const voiceConversations = new Map();
+// Clean up old conversations every hour
+setInterval(() => {
+  const cutoff = Date.now() - 3600000;
+  for (const [sid, data] of voiceConversations) {
+    if (data.ts < cutoff) voiceConversations.delete(sid);
+  }
+}, 3600000);
+
+const LINKCREW_SYSTEM = `You are an AI assistant for LinkCrew, a field service management platform built for contractors and field crews.
+
+LinkCrew helps contractors manage jobs, track crew in real time, handle client invoices, and give clients their own portal.
+
+Key facts:
+- Plans: Solo $49/mo (1 user), Team $97/mo (up to 5), Pro $165/mo (up to 10), Business $299/mo (up to 20)
+- Voice Bot add-on: $30/mo on any plan
+- 14-day free trial, no credit card required
+- Website: linkcrew.io
+- Features: live job tracking, client CRM, crew check-ins, site photos, supply requests, client portal, Stripe invoicing, service agreements, reporting
+
+For support or billing issues tell them to visit linkcrew.io or email support@linkcrew.io.
+Keep answers SHORT and friendly (2-3 sentences). Never make up information you don't know.`;
 
 const app = express();
 
@@ -882,6 +911,98 @@ app.get('/portal/api/invoice/:jobId', portalAuth, async (req, res) => {
     .eq('id', job.tenant_id)
     .single();
   res.json({ job, tenant });
+});
+
+// ── Voice Bot ─────────────────────────────────────────────────────────────────
+
+// Incoming call from Twilio
+app.post('/api/voice/incoming', (req, res) => {
+  const callSid = req.body.CallSid;
+  voiceConversations.set(callSid, { ts: Date.now(), history: [] });
+
+  const twiml = new VoiceResponse();
+  const gather = twiml.gather({
+    input: 'speech',
+    action: '/api/voice/respond',
+    speechTimeout: 'auto',
+    language: 'en-US',
+  });
+  gather.say({ voice: 'Polly.Joanna' },
+    'Hi! Thanks for calling LinkCrew. I\'m an AI assistant. How can I help you today?');
+  twiml.say({ voice: 'Polly.Joanna' }, 'I didn\'t catch that. Please call back and try again. Goodbye!');
+
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+// Handle caller's speech, respond with Claude
+app.post('/api/voice/respond', async (req, res) => {
+  const callSid = req.body.CallSid;
+  const speech = (req.body.SpeechResult || '').trim();
+
+  if (!voiceConversations.has(callSid)) {
+    voiceConversations.set(callSid, { ts: Date.now(), history: [] });
+  }
+  const conv = voiceConversations.get(callSid);
+  conv.ts = Date.now();
+  conv.history.push({ role: 'user', content: speech || '(no speech detected)' });
+
+  let reply = 'I\'m sorry, I had trouble understanding that. Could you say it again?';
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 150,
+      system: LINKCREW_SYSTEM + '\nYou are on a phone call. Keep responses to 1-3 short sentences.',
+      messages: conv.history.slice(-10),
+    });
+    reply = result.content[0].text;
+    conv.history.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    console.error('[voice] Claude error:', err.message);
+  }
+
+  const twiml = new VoiceResponse();
+  const endWords = ['goodbye', 'bye', 'hang up', 'that\'s all', 'no thanks'];
+  const ending = endWords.some(w => speech.toLowerCase().includes(w));
+
+  if (ending) {
+    twiml.say({ voice: 'Polly.Joanna' }, reply + ' Have a great day!');
+    twiml.hangup();
+    voiceConversations.delete(callSid);
+  } else {
+    const gather = twiml.gather({
+      input: 'speech',
+      action: '/api/voice/respond',
+      speechTimeout: 'auto',
+      language: 'en-US',
+    });
+    gather.say({ voice: 'Polly.Joanna' }, reply);
+    twiml.say({ voice: 'Polly.Joanna' }, 'Is there anything else I can help you with?');
+  }
+
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+// ── Web Chat ──────────────────────────────────────────────────────────────────
+
+app.post('/api/chat', async (req, res) => {
+  const { messages } = req.body;
+  if (!Array.isArray(messages) || !messages.length) {
+    return res.status(400).json({ error: 'Messages required' });
+  }
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      system: LINKCREW_SYSTEM + '\nYou are in a web chat. Responses can be 2-4 sentences.',
+      messages: messages.slice(-10),
+    });
+    res.json({ reply: result.content[0].text });
+  } catch (err) {
+    console.error('[chat] Claude error:', err.message);
+    res.status(500).json({ error: 'Could not get a response. Please try again.' });
+  }
 });
 
 // ── Super-admin Routes ────────────────────────────────────────────────────────
