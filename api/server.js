@@ -161,6 +161,7 @@ app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, '../dashboard
 app.get('/invoice', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/invoice.html')));
 app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/pricing.html')));
 app.get('/kdg', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg.html')));
+app.get('/kdg-logos', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg-logos.html')));
 
 // KDG contact form
 app.post('/api/contact-kdg', async (req, res) => {
