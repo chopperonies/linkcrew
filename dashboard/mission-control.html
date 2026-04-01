@@ -426,14 +426,40 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Auth token
-  const token = localStorage.getItem('fs_token');
-  if (!token) { window.location.href = 'https://linkcrew.io/app'; }
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+  // Auth — uses Supabase client so the session auto-refreshes every hour
+  let headers = { 'Content-Type': 'application/json' };
+  let supabaseClient = null;
 
-  // Date
-  document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  async function initAuth() {
+    // Fetch config (same as index.html)
+    const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
+    supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Supabase client finds the existing session from localStorage automatically
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'https://linkcrew.io/app'; return; }
+
+    // Sync fs_token and headers with the (possibly refreshed) session
+    headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` };
+    localStorage.setItem('fs_token', session.access_token);
+
+    // Keep headers updated whenever Supabase silently refreshes the token
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` };
+        localStorage.setItem('fs_token', session.access_token);
+      } else {
+        window.location.href = 'https://linkcrew.io/app';
+      }
+    });
+
+    // Boot the rest of the page once auth is ready
+    initPage();
+  }
+
+  initAuth();
 
   // Section nav
   function showSection(name) {
@@ -839,13 +865,15 @@
     renderEvents();
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-  loadStats();
-  renderProjects('overviewProjects');
-  renderProjects('projectsGrid');
-  // Set default event date to today
-  const todayStr = new Date().toISOString().slice(0,10);
-  document.getElementById('evDate').value = todayStr;
+  // ── Init (called by initAuth once session is ready) ───────────────────────
+  function initPage() {
+    document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    loadStats();
+    renderProjects('overviewProjects');
+    renderProjects('projectsGrid');
+    const todayStr = new Date().toISOString().slice(0,10);
+    document.getElementById('evDate').value = todayStr;
+  }
 </script>
 
 </body>
