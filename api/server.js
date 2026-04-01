@@ -1555,8 +1555,9 @@ ${turnsLeft <= 0 ? `This is the last exchange. After your answer, output the exa
     if (readyMatch) {
       conv.demoData = { trade: readyMatch[1].trim(), company: readyMatch[2].trim(), city: readyMatch[3].trim() };
       conv.mode = 'demo_running';
-      conv.history = []; // fresh history for the demo persona
-      spokenReply = rawReply.replace(/##READY:.+?##/, '').trim();
+      conv.history = [];
+      // Skip Claude's transition text — open the demo immediately as their company
+      spokenReply = `Hello, thank you for calling ${conv.demoData.company}! I'm Choppy, your AI assistant. How can I help you today?`;
     }
 
   } else if (conv.mode === 'demo_running' && rawReply.includes('##END##')) {
