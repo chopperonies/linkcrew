@@ -1452,6 +1452,9 @@ app.post('/api/voice/contractor/:tenantId', async (req, res) => {
     knowledge: tenant.voicebot_knowledge || '',
     callerNumber,
     startTime: Date.now(),
+    mode: 'support',       // support | demo_collecting | demo_running
+    demoData: {},          // { trade, company, city }
+    demoTurns: 0,
   });
 
   const twiml = new VoiceResponse();
@@ -1464,8 +1467,7 @@ app.post('/api/voice/contractor/:tenantId', async (req, res) => {
     language: 'en-US',
   });
   gather.say({ voice: 'Polly.Joanna' },
-    `Hi! Thanks for calling ${tenant.company_name}. I'm Choppy, the AI assistant. How can I help you today?`);
-  // If no speech detected, send transcript and hang up
+    `Hi! Thanks for calling ${tenant.company_name}. I'm Choppy, the AI assistant. I can answer questions about LinkCrew, or say "demo" to hear a live personalized demo of the voice bot working for your own business. How can I help?`);
   twiml.redirect(`/api/voice/contractor/${tenantId}/end?sid=${callSid}`);
 
   res.type('text/xml');
@@ -1479,13 +1481,15 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
 
   if (!voiceConversations.has(callSid)) {
     const { data: tenant } = await supabaseAdmin.from('tenants')
-      .select('company_name, owner_email').eq('id', tenantId).single();
+      .select('company_name, owner_email, voicebot_knowledge').eq('id', tenantId).single();
     voiceConversations.set(callSid, {
       ts: Date.now(), history: [], tenantId,
-      companyName: tenant?.company_name || 'the company',
+      companyName: tenant?.company_name || 'LinkCrew',
       ownerEmail: tenant?.owner_email,
+      knowledge: tenant?.voicebot_knowledge || '',
       callerNumber: req.body.From || 'Unknown',
       startTime: Date.now(),
+      mode: 'support', demoData: {}, demoTurns: 0,
     });
   }
 
@@ -1493,30 +1497,80 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
   conv.ts = Date.now();
   if (speech) conv.history.push({ role: 'user', content: speech });
 
-  let reply = 'I\'m sorry, I didn\'t catch that. Could you say it again?';
+  // ── Build system prompt based on current mode ────────────────────────────
+  let systemPrompt = '';
+
+  if (conv.mode === 'support') {
+    systemPrompt = `You are Choppy, an AI phone assistant for LinkCrew (linkcrew.io), a field service management platform for contractors.
+Be friendly and concise — this is a phone call, so keep every response to 1-3 short sentences.
+If the caller asks for a demo or wants to try the voice bot, output the exact marker ##DEMO## somewhere in your reply and invite them to hear a personalized demo.
+If asked something you don't know, say you'll have someone follow up.
+${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
+
+  } else if (conv.mode === 'demo_collecting') {
+    const got = conv.demoData;
+    systemPrompt = `You are Choppy, setting up a personalized voice bot demo for a contractor.
+You need to collect three things conversationally, one at a time:
+1. Their trade or industry (e.g. roofing, HVAC, plumbing, landscaping)
+2. Their company name
+3. Their city or service area
+
+So far you have: trade="${got.trade||'not yet'}", company="${got.company||'not yet'}", city="${got.city||'not yet'}".
+Ask for the next missing piece naturally. Once you have all three, confirm them briefly and output the exact marker ##READY:${'{trade}'}|${'{company}'}|${'{city}'}## replacing the placeholders with what they told you. Keep it short — 1-2 sentences.`;
+
+  } else if (conv.mode === 'demo_running') {
+    const { trade, company, city } = conv.demoData;
+    conv.demoTurns++;
+    const turnsLeft = 3 - conv.demoTurns;
+    systemPrompt = `You are an AI phone assistant for ${company}, a ${trade} company in ${city}. Answer exactly as if you work for this company — be helpful and realistic.
+Keep every response to 1-2 sentences. Make up reasonable details (hours, services, pricing range) if needed — this is a demo.
+${turnsLeft <= 0 ? `This is the last exchange. After your answer, output the exact marker ##END## and add: "That was the LinkCrew voice bot. To get your own, visit linkcrew dot io or call us back and say support."` : ''}`;
+  }
+
+  let rawReply = "I'm sorry, I didn't catch that. Could you say that again?";
   try {
     const result = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 150,
-      system: `You are Choppy, an AI phone assistant for ${conv.companyName}. You answer calls on their behalf.
-Be friendly and professional. Keep responses to 1-3 short sentences — you are on a phone call.
-If the caller wants to leave a message, acknowledge it and tell them someone will be in touch shortly.
-If asked something you don't know, say you'll pass the message along and someone will follow up.
-${conv.knowledge ? `\nBUSINESS INFORMATION — use this to answer caller questions:\n${conv.knowledge}` : ''}`,
+      max_tokens: 180,
+      system: systemPrompt,
       messages: conv.history.slice(-10),
     });
-    reply = result.content[0].text;
-    conv.history.push({ role: 'assistant', content: reply });
+    rawReply = result.content[0].text;
+    conv.history.push({ role: 'assistant', content: rawReply });
   } catch (err) {
     console.error('[contractor voice] Claude error:', err.message);
   }
 
-  const twiml = new VoiceResponse();
-  const endWords = ['goodbye', 'bye', 'hang up', 'that\'s all', 'no thanks', 'thank you'];
-  const ending = endWords.some(w => speech.toLowerCase().includes(w));
+  // ── Parse mode-transition markers ────────────────────────────────────────
+  let spokenReply = rawReply;
+  let ending = false;
 
+  if (conv.mode === 'support' && rawReply.includes('##DEMO##')) {
+    conv.mode = 'demo_collecting';
+    spokenReply = rawReply.replace('##DEMO##', '').trim();
+
+  } else if (conv.mode === 'demo_collecting') {
+    const readyMatch = rawReply.match(/##READY:(.+?)\|(.+?)\|(.+?)##/);
+    if (readyMatch) {
+      conv.demoData = { trade: readyMatch[1].trim(), company: readyMatch[2].trim(), city: readyMatch[3].trim() };
+      conv.mode = 'demo_running';
+      conv.history = []; // fresh history for the demo persona
+      spokenReply = rawReply.replace(/##READY:.+?##/, '').trim();
+    }
+
+  } else if (conv.mode === 'demo_running' && rawReply.includes('##END##')) {
+    spokenReply = rawReply.replace('##END##', '').trim();
+    ending = true;
+  }
+
+  // Also end on goodbye words
+  const endWords = ['goodbye', 'bye', 'hang up', "that's all", 'no thanks'];
+  if (endWords.some(w => speech.toLowerCase().includes(w))) ending = true;
+
+  // ── Build TwiML response ──────────────────────────────────────────────────
+  const twiml = new VoiceResponse();
   if (ending) {
-    twiml.say({ voice: 'Polly.Joanna' }, reply + ' Have a great day!');
+    twiml.say({ voice: 'Polly.Joanna' }, spokenReply + (endWords.some(w => speech.toLowerCase().includes(w)) ? ' Have a great day!' : ''));
     twiml.redirect(`/api/voice/contractor/${tenantId}/end?sid=${callSid}`);
   } else {
     const gather = twiml.gather({
@@ -1527,7 +1581,7 @@ ${conv.knowledge ? `\nBUSINESS INFORMATION — use this to answer caller questio
       enhanced: 'true',
       language: 'en-US',
     });
-    gather.say({ voice: 'Polly.Joanna' }, reply);
+    gather.say({ voice: 'Polly.Joanna' }, spokenReply);
     twiml.redirect(`/api/voice/contractor/${tenantId}/end?sid=${callSid}`);
   }
 
