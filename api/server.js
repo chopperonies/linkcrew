@@ -57,6 +57,17 @@ Never make up information. If unsure, direct them to linkcrew.io.`;
 
 const app = express();
 
+// CORS — allow linkcrew.io and kingstondatagroup.com
+app.use((req, res, next) => {
+  const allowed = ['https://www.linkcrew.io', 'https://linkcrew.io', 'https://www.kingstondatagroup.com', 'https://kingstondatagroup.com', 'https://kdg-site.onrender.com'];
+  const origin = req.headers.origin;
+  if (allowed.includes(origin)) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 // Regular client (anon key) — used for realtime/public config
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
