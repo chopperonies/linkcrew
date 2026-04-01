@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KDG Logo Options</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #08090a; color: #f0f0f0; padding: 60px; }
+    h1 { font-size: 18px; font-weight: 700; color: #6b7280; margin-bottom: 16px; letter-spacing: 0.05em; text-transform: uppercase; }
+    h2 { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 28px; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 48px; border-top: 1px solid #1e2024; margin-top: 12px; }
+    h2:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 16px; }
+
+    /* ── Real logo styles ── */
+    .real-logo { display: flex; align-items: center; gap: 14px; }
+    .real-logo img { width: 52px; height: 52px; object-fit: contain; }
+    .real-logo-stack { display: flex; flex-direction: column; }
+    .real-logo-name { font-size: 17px; font-weight: 800; color: #f0f0f0; line-height: 1.1; }
+    .real-logo-name span { color: #f97316; }
+    .real-logo-sub { font-size: 10px; font-weight: 600; color: #6b7280; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+    .real-logo-lg { display: flex; align-items: center; gap: 16px; }
+    .real-logo-lg img { width: 68px; height: 68px; object-fit: contain; }
+    .real-logo-lg-stack { display: flex; flex-direction: column; }
+    .real-logo-lg-name { font-size: 20px; font-weight: 900; color: #f0f0f0; line-height: 1.1; letter-spacing: -0.01em; }
+    .real-logo-lg-name span { color: #f97316; }
+    .real-logo-lg-sub { font-size: 11px; font-weight: 600; color: #f97316; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 5px; }
+
+    .real-logo-centered { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .real-logo-centered img { width: 72px; height: 72px; object-fit: contain; }
+    .real-logo-centered-name { font-size: 18px; font-weight: 900; color: #f0f0f0; letter-spacing: 0.02em; }
+    .real-logo-centered-name span { color: #f97316; }
+    .real-logo-centered-sub { font-size: 10px; font-weight: 600; color: #6b7280; letter-spacing: 0.14em; text-transform: uppercase; }
+
+    .real-logo-pill { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .real-logo-pill img { width: 60px; height: 60px; object-fit: contain; }
+    .real-logo-pill-row { display: flex; align-items: center; gap: 0; }
+    .real-logo-pill-name { background: #f97316; color: #fff; padding: 5px 14px; border-radius: 6px 0 0 6px; font-size: 14px; font-weight: 900; }
+    .real-logo-pill-sub { background: #1e2024; color: #9ca3af; padding: 5px 14px; border-radius: 0 6px 6px 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; border: 1px solid #2a2d32; border-left: none; }
+
+    .real-logo-divider { display: flex; align-items: center; gap: 14px; }
+    .real-logo-divider img { width: 56px; height: 56px; object-fit: contain; }
+    .real-logo-divider-vr { width: 1px; height: 44px; background: #f97316; opacity: 0.5; }
+    .real-logo-divider-stack { display: flex; flex-direction: column; }
+    .real-logo-divider-name { font-size: 16px; font-weight: 800; color: #f0f0f0; }
+    .real-logo-divider-sub { font-size: 10px; font-weight: 600; color: #f97316; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+    .real-logo-glow { display: flex; align-items: center; gap: 14px; }
+    .real-logo-glow img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(249,115,22,0.5)); }
+    .real-logo-glow-stack { display: flex; flex-direction: column; }
+    .real-logo-glow-name { font-size: 18px; font-weight: 900; color: #f0f0f0; }
+    .real-logo-glow-name span { color: #f97316; }
+    .real-logo-glow-sub { font-size: 10px; font-weight: 600; color: #6b7280; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+
+    .logo-card {
+      background: #111214; border: 1px solid #1e2024; border-radius: 16px;
+      padding: 40px 28px; display: flex; flex-direction: column;
+      align-items: center; gap: 20px; cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .logo-card:hover { border-color: #f97316; transform: translateY(-2px); }
+    .logo-card .label { font-size: 11px; color: #4b5563; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* ── Option 1 — Current (K block) ── */
+    .opt1 { display: flex; align-items: center; gap: 10px; }
+    .opt1-icon { width: 36px; height: 36px; border-radius: 8px; background: #f97316; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #fff; }
+    .opt1-text { font-size: 17px; font-weight: 800; color: #f0f0f0; }
+    .opt1-text span { color: #f97316; }
+
+    /* ── Option 2 — Monogram KDG stacked ── */
+    .opt2 { display: flex; align-items: center; gap: 12px; }
+    .opt2-mono {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 14px; color: #fff; letter-spacing: -0.02em;
+    }
+    .opt2-stack { display: flex; flex-direction: column; }
+    .opt2-top { font-size: 16px; font-weight: 900; color: #f0f0f0; line-height: 1; }
+    .opt2-bottom { font-size: 10px; font-weight: 600; color: #6b7280; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3px; }
+
+    /* ── Option 3 — Wordmark only, gradient ── */
+    .opt3 {
+      font-size: 22px; font-weight: 900; letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #f97316, #fb923c);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .opt3 span { background: linear-gradient(90deg, #f0f0f0, #9ca3af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ── Option 4 — Diamond icon ── */
+    .opt4 { display: flex; align-items: center; gap: 12px; }
+    .opt4-icon {
+      width: 38px; height: 38px; background: #f97316;
+      transform: rotate(45deg); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .opt4-icon span { transform: rotate(-45deg); font-weight: 900; font-size: 14px; color: #fff; }
+    .opt4-text { font-size: 17px; font-weight: 800; color: #f0f0f0; }
+
+    /* ── Option 5 — Outlined circle monogram ── */
+    .opt5 { display: flex; align-items: center; gap: 12px; }
+    .opt5-circle {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 2.5px solid #f97316;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 15px; color: #f97316;
+    }
+    .opt5-text { font-size: 17px; font-weight: 800; color: #f0f0f0; }
+    .opt5-text span { color: #f97316; }
+
+    /* ── Option 6 — Slash / tech mark ── */
+    .opt6 { display: flex; align-items: center; gap: 10px; }
+    .opt6-badge {
+      background: #111214; border: 1px solid #f97316;
+      border-radius: 8px; padding: 6px 10px;
+      font-size: 15px; font-weight: 900; color: #f97316; letter-spacing: 0.04em;
+    }
+    .opt6-text { font-size: 15px; font-weight: 700; color: #9ca3af; }
+
+    /* ── Option 7 — Two-tone split wordmark ── */
+    .opt7 { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; }
+    .opt7 .k { color: #f97316; }
+    .opt7 .rest { color: #f0f0f0; }
+    .opt7 .d { color: #f97316; }
+    .opt7 .g { color: #f97316; }
+
+    /* ── Option 8 — Dark pill badge ── */
+    .opt8 { display: flex; align-items: center; gap: 0; }
+    .opt8-left {
+      background: #f97316; color: #fff;
+      padding: 8px 14px; border-radius: 8px 0 0 8px;
+      font-size: 15px; font-weight: 900; letter-spacing: 0.04em;
+    }
+    .opt8-right {
+      background: #1e2024; color: #f0f0f0;
+      padding: 8px 14px; border-radius: 0 8px 8px 0;
+      font-size: 15px; font-weight: 700;
+      border: 1px solid #1e2024; border-left: none;
+    }
+
+    /* ── Option 9 — Minimal dot accent ── */
+    .opt9 { display: flex; align-items: center; gap: 8px; }
+    .opt9-dot { width: 10px; height: 10px; background: #f97316; border-radius: 50%; }
+    .opt9-text { font-size: 18px; font-weight: 800; color: #f0f0f0; letter-spacing: -0.01em; }
+    .opt9-text em { font-style: normal; color: #f97316; }
+
+    /* ── Option 10 — Brackets tech style ── */
+    .opt10 {
+      font-size: 18px; font-weight: 800; color: #f0f0f0; letter-spacing: 0.02em;
+      font-family: 'Courier New', monospace;
+    }
+    .opt10 .bracket { color: #f97316; }
+
+    /* ── Option 11 — Layered initials ── */
+    .opt11 { display: flex; align-items: center; gap: 12px; }
+    .opt11-mark {
+      position: relative; width: 44px; height: 44px;
+    }
+    .opt11-bg {
+      position: absolute; inset: 0; background: rgba(249,115,22,0.15);
+      border-radius: 10px; border: 1px solid rgba(249,115,22,0.3);
+    }
+    .opt11-letter {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; color: #f97316;
+    }
+    .opt11-text { font-size: 16px; font-weight: 800; color: #f0f0f0; }
+    .opt11-text small { display: block; font-size: 10px; font-weight: 600; color: #6b7280; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+    /* ── Option 12 — Full dark card lockup ── */
+    .opt12 { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .opt12-top { display: flex; align-items: center; gap: 8px; }
+    .opt12-bar {
+      width: 28px; height: 4px; background: #f97316; border-radius: 2px;
+    }
+    .opt12-name { font-size: 20px; font-weight: 900; color: #f0f0f0; letter-spacing: 0.02em; }
+    .opt12-sub { font-size: 10px; font-weight: 600; color: #4b5563; letter-spacing: 0.18em; text-transform: uppercase; }
+
+    @media (max-width: 768px) {
+      body { padding: 24px; }
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Kingston Data Group — Logo Options</h1>
+
+  <h2>With Your Logo — Real Options</h2>
+  <div class="grid">
+
+    <!-- R1 — Logo + stacked name + tagline -->
+    <div class="logo-card">
+      <div class="real-logo">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-stack">
+          <div class="real-logo-name">Kingston <span>Data</span> Group</div>
+          <div class="real-logo-sub">AI Automation & SaaS Solutions</div>
+        </div>
+      </div>
+      <div class="label">Option A — Inline + Tagline</div>
+    </div>
+
+    <!-- R2 — Larger logo, bold name, orange tagline -->
+    <div class="logo-card">
+      <div class="real-logo-lg">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-lg-stack">
+          <div class="real-logo-lg-name">Kingston <span>Data</span> Group</div>
+          <div class="real-logo-lg-sub">AI Automation & SaaS Solutions</div>
+        </div>
+      </div>
+      <div class="label">Option B — Bold + Orange Tagline</div>
+    </div>
+
+    <!-- R3 — Centered stacked -->
+    <div class="logo-card">
+      <div class="real-logo-centered">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-centered-name">Kingston <span>Data</span> Group</div>
+        <div class="real-logo-centered-sub">AI Automation & SaaS Solutions</div>
+      </div>
+      <div class="label">Option C — Centered Stack</div>
+    </div>
+
+    <!-- R4 — Logo above pill bar -->
+    <div class="logo-card">
+      <div class="real-logo-pill">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-pill-row">
+          <div class="real-logo-pill-name">Kingston Data Group</div>
+          <div class="real-logo-pill-sub">AI & SaaS</div>
+        </div>
+      </div>
+      <div class="label">Option D — Logo + Split Pill</div>
+    </div>
+
+    <!-- R5 — Vertical divider -->
+    <div class="logo-card">
+      <div class="real-logo-divider">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-divider-vr"></div>
+        <div class="real-logo-divider-stack">
+          <div class="real-logo-divider-name">Kingston Data Group</div>
+          <div class="real-logo-divider-sub">AI Automation & SaaS Solutions</div>
+        </div>
+      </div>
+      <div class="label">Option E — Divider Line</div>
+    </div>
+
+    <!-- R6 — Glow effect -->
+    <div class="logo-card">
+      <div class="real-logo-glow">
+        <img src="https://img1.wsimg.com/isteam/ip/c5f5ffee-4efb-4d10-a9a1-f04c8bfcbb7f/Orange%20Minimalist%20Connection%20Technology%20Logo-3.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="KDG Logo" />
+        <div class="real-logo-glow-stack">
+          <div class="real-logo-glow-name">Kingston <span>Data</span> Group</div>
+          <div class="real-logo-glow-sub">AI Automation & SaaS Solutions</div>
+        </div>
+      </div>
+      <div class="label">Option F — Logo Glow</div>
+    </div>
+
+  </div>
+
+  <h2>Text-Only Options</h2>
+  <div class="grid">
+
+    <!-- 1 -->
+    <div class="logo-card">
+      <div class="opt1">
+        <div class="opt1-icon">K</div>
+        <div class="opt1-text">Kingston <span>Data</span> Group</div>
+      </div>
+      <div class="label">Option 1 — Current</div>
+    </div>
+
+    <!-- 2 -->
+    <div class="logo-card">
+      <div class="opt2">
+        <div class="opt2-mono">KDG</div>
+        <div class="opt2-stack">
+          <div class="opt2-top">Kingston Data Group</div>
+          <div class="opt2-bottom">AI & SaaS Solutions</div>
+        </div>
+      </div>
+      <div class="label">Option 2 — Monogram + Tagline</div>
+    </div>
+
+    <!-- 3 -->
+    <div class="logo-card">
+      <div class="opt3">Kingston <span>Data Group</span></div>
+      <div class="label">Option 3 — Gradient Wordmark</div>
+    </div>
+
+    <!-- 4 -->
+    <div class="logo-card">
+      <div class="opt4">
+        <div class="opt4-icon"><span>K</span></div>
+        <div class="opt4-text">Kingston Data Group</div>
+      </div>
+      <div class="label">Option 4 — Diamond Mark</div>
+    </div>
+
+    <!-- 5 -->
+    <div class="logo-card">
+      <div class="opt5">
+        <div class="opt5-circle">KDG</div>
+        <div class="opt5-text">Kingston <span>Data</span> Group</div>
+      </div>
+      <div class="label">Option 5 — Circle Outline</div>
+    </div>
+
+    <!-- 6 -->
+    <div class="logo-card">
+      <div class="opt6">
+        <div class="opt6-badge">KDG</div>
+        <div class="opt6-text">Kingston Data Group</div>
+      </div>
+      <div class="label">Option 6 — Badge Mark</div>
+    </div>
+
+    <!-- 7 -->
+    <div class="logo-card">
+      <div class="opt7">
+        <span class="k">K</span><span class="rest">ingston </span><span class="d">D</span><span class="rest">ata </span><span class="g">G</span><span class="rest">roup</span>
+      </div>
+      <div class="label">Option 7 — Initials Highlighted</div>
+    </div>
+
+    <!-- 8 -->
+    <div class="logo-card">
+      <div class="opt8">
+        <div class="opt8-left">KDG</div>
+        <div class="opt8-right">Kingston Data Group</div>
+      </div>
+      <div class="label">Option 8 — Split Pill</div>
+    </div>
+
+    <!-- 9 -->
+    <div class="logo-card">
+      <div class="opt9">
+        <div class="opt9-dot"></div>
+        <div class="opt9-text">Kingston <em>Data</em> Group</div>
+      </div>
+      <div class="label">Option 9 — Dot Accent</div>
+    </div>
+
+    <!-- 10 -->
+    <div class="logo-card">
+      <div class="opt10">
+        <span class="bracket">[</span> KDG <span class="bracket">]</span>
+      </div>
+      <div class="label">Option 10 — Tech Brackets</div>
+    </div>
+
+    <!-- 11 -->
+    <div class="logo-card">
+      <div class="opt11">
+        <div class="opt11-mark">
+          <div class="opt11-bg"></div>
+          <div class="opt11-letter">K</div>
+        </div>
+        <div class="opt11-text">
+          Kingston Data Group
+          <small>AI Automation & SaaS</small>
+        </div>
+      </div>
+      <div class="label">Option 11 — Frosted Mark</div>
+    </div>
+
+    <!-- 12 -->
+    <div class="logo-card">
+      <div class="opt12">
+        <div class="opt12-top">
+          <div class="opt12-bar"></div>
+          <div class="opt12-name">Kingston Data Group</div>
+          <div class="opt12-bar"></div>
+        </div>
+        <div class="opt12-sub">AI Automation & SaaS Solutions</div>
+      </div>
+      <div class="label">Option 12 — Centered Bar</div>
+    </div>
+
+  </div>
+
+</body>
+</html>
