@@ -1205,13 +1205,12 @@ app.post('/api/voice/kdg/respond', async (req, res) => {
   let reply = "I'm sorry, I didn't catch that. Could you repeat that?";
   try {
     const result = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 150,
-      system: `You are an AI phone assistant for Kingston Data Group, an AI automation and SaaS development studio. You answer calls on their behalf.
-Be friendly, professional, and consultative. Keep responses to 2-3 short sentences — you are on a phone call.
-If someone wants to schedule a meeting or demo, ask for their name and email and tell them someone will follow up within one business day to confirm a time.
-If asked about pricing, explain that pricing is custom based on project scope and invite them to schedule a discovery call.
-Services: AI Automation, SaaS Development, AI Voice & Chat Agents, System Integration, Dashboards, Cloud Infrastructure.
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 80,
+      system: `You are a phone assistant for Kingston Data Group, an AI automation and SaaS studio. Be brief — max 2 sentences per response.
+For meetings: get name and email, say someone follows up within 1 business day.
+For pricing: custom quotes only, invite discovery call.
+Services: AI Automation, SaaS Dev, Voice/Chat Agents, Integrations, Dashboards, Cloud.
 Contact: sales@kingstondatagroup.com${searchContext}`,
       messages: conv.history.slice(-10),
     });
