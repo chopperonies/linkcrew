@@ -312,7 +312,7 @@
 
 <script>
   // Auth token
-  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  const token = localStorage.getItem('fs_token');
   if (!token) { window.location.href = '/app'; }
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
