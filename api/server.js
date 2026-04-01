@@ -1072,7 +1072,12 @@ BOOKING:
 
 You have access to web search to answer questions about AI, automation, SaaS, technology trends, and anything relevant to the user's business needs. Use search when you need current information or specific technical details.
 
-Be consultative and helpful. Ask about their business and pain points. Keep responses concise but thorough. Never make up pricing — tell them to reach out for a custom quote.`;
+RESPONSE RULES:
+- Keep responses SHORT — 2-4 sentences max. Never use bullet lists or long paragraphs.
+- When mentioning email, always format it as: [sales@kingstondatagroup.com](mailto:sales@kingstondatagroup.com)
+- When mentioning phone, always format it as: [(260) 544-6900](tel:+12605446900)
+- Be conversational, ask one follow-up question at a time.
+- Never make up pricing — direct them to email or call for a custom quote.`;
 
 app.post('/api/chat-kdg', async (req, res) => {
   const { message, sessionId } = req.body;
