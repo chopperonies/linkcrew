@@ -238,6 +238,42 @@ app.delete('/api/mc/notes/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/mc/events', auth, async (req, res) => {
+  const { data, error } = await supabaseAdmin.from('mc_events')
+    .select('*').order('event_date', { ascending: true }).order('event_time', { ascending: true, nullsFirst: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.post('/api/mc/events', auth, async (req, res) => {
+  const { title, event_date, event_time, description, type } = req.body;
+  const { data, error } = await supabaseAdmin.from('mc_events')
+    .insert({ title, event_date, event_time, description, type }).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.patch('/api/mc/events/:id', auth, async (req, res) => {
+  const { title, event_date, event_time, description, type, done } = req.body;
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (event_date !== undefined) updates.event_date = event_date;
+  if (event_time !== undefined) updates.event_time = event_time;
+  if (description !== undefined) updates.description = description;
+  if (type !== undefined) updates.type = type;
+  if (done !== undefined) updates.done = done;
+  const { data, error } = await supabaseAdmin.from('mc_events')
+    .update(updates).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.delete('/api/mc/events/:id', auth, async (req, res) => {
+  const { error } = await supabaseAdmin.from('mc_events').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // KDG contact form
 app.post('/api/contact-kdg', async (req, res) => {
   const { name, company, email, phone, service, message } = req.body;

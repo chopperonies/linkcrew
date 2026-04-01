@@ -148,6 +148,43 @@
     .transcript-line.bot .role { color: var(--accent2); }
     .modal-close { float: right; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; margin-top: -4px; }
 
+    /* Calendar */
+    .cal-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+    .cal-list { display: flex; flex-direction: column; gap: 12px; }
+    .cal-day-group { margin-bottom: 8px; }
+    .cal-day-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .cal-event {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;
+      transition: border-color 0.15s; cursor: pointer;
+    }
+    .cal-event:hover { border-color: var(--accent); }
+    .cal-event.done { opacity: 0.45; }
+    .cal-event-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .cal-event-dot.reminder { background: var(--accent); }
+    .cal-event-dot.meeting { background: var(--accent2); }
+    .cal-event-dot.task { background: var(--yellow); }
+    .cal-event-dot.deploy { background: var(--green); }
+    .cal-event-dot.choppy { background: #a78bfa; }
+    .cal-event-body { flex: 1; }
+    .cal-event-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .cal-event.done .cal-event-title { text-decoration: line-through; }
+    .cal-event-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+    .cal-event-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .cal-event-check { background: none; border: 1px solid var(--border); color: var(--muted); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 12px; flex-shrink: 0; transition: all 0.15s; }
+    .cal-event-check:hover { border-color: var(--green); color: var(--green); }
+    .cal-event-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: sticky; top: 89px; }
+    .cal-event-form h3 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+    .type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .type-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); color: var(--muted); background: none; transition: all 0.15s; }
+    .type-pill.active.reminder { background: rgba(249,115,22,0.15); color: var(--accent); border-color: rgba(249,115,22,0.4); }
+    .type-pill.active.meeting { background: rgba(2,101,220,0.15); color: #60a5fa; border-color: rgba(2,101,220,0.4); }
+    .type-pill.active.task { background: rgba(251,191,36,0.15); color: var(--yellow); border-color: rgba(251,191,36,0.4); }
+    .type-pill.active.deploy { background: rgba(74,222,128,0.15); color: var(--green); border-color: rgba(74,222,128,0.4); }
+
+    /* Choppy notes */
+    .note-cat.choppy { color: #a78bfa; }
+
     /* Loading */
     .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
 
@@ -182,6 +219,7 @@
     <button class="sidebar-link" onclick="showSection('projects')"><span class="icon">🏗️</span> Projects</button>
     <button class="sidebar-link" onclick="showSection('leads')"><span class="icon">🎯</span> KDG Leads</button>
     <button class="sidebar-link" onclick="showSection('notes')"><span class="icon">📝</span> Notes</button>
+    <button class="sidebar-link" onclick="showSection('calendar')"><span class="icon">📅</span> Calendar</button>
     <div class="sidebar-section">Links</div>
     <a class="sidebar-link" href="https://kingstondatagroup.com" target="_blank"><span class="icon">🌐</span> KDG Site</a>
     <a class="sidebar-link" href="https://linkcrew.io" target="_blank"><span class="icon">🔗</span> LinkCrew</a>
@@ -284,6 +322,7 @@
               <option value="idea">Idea</option>
               <option value="todo">To Do</option>
               <option value="memory">Memory</option>
+              <option value="choppy">🤖 Choppy</option>
             </select>
           </div>
           <div class="form-field">
@@ -293,6 +332,52 @@
           <div class="btn-row">
             <button class="btn-primary" onclick="saveNote()">Save</button>
             <button class="btn-ghost" id="deleteNoteBtn" onclick="deleteNote()" style="display:none">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="section" id="section-calendar">
+      <div class="page-header">
+        <h1>Calendar</h1>
+        <p>Upcoming events, reminders, meetings, and tasks.</p>
+      </div>
+      <div class="cal-layout">
+        <div>
+          <button class="btn-new" onclick="newEvent()">+ Add Event</button>
+          <div class="cal-list" id="calList"><div class="loading">Loading...</div></div>
+        </div>
+        <div class="cal-event-form" id="calForm">
+          <h3 id="calFormTitle">New Event</h3>
+          <div class="form-field">
+            <label>Title</label>
+            <input type="text" id="evTitle" placeholder="Event title..." />
+          </div>
+          <div class="form-field">
+            <label>Type</label>
+            <div class="type-pills">
+              <button class="type-pill active reminder" onclick="selectType('reminder')" id="pill-reminder">Reminder</button>
+              <button class="type-pill meeting" onclick="selectType('meeting')" id="pill-meeting">Meeting</button>
+              <button class="type-pill task" onclick="selectType('task')" id="pill-task">Task</button>
+              <button class="type-pill deploy" onclick="selectType('deploy')" id="pill-deploy">Deploy</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Date</label>
+            <input type="date" id="evDate" />
+          </div>
+          <div class="form-field">
+            <label>Time (optional)</label>
+            <input type="time" id="evTime" />
+          </div>
+          <div class="form-field">
+            <label>Notes</label>
+            <textarea id="evDesc" placeholder="Details..." style="height:100px"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="saveEvent()">Save</button>
+            <button class="btn-ghost" id="deleteEvBtn" onclick="deleteEvent()" style="display:none">Delete</button>
           </div>
         </div>
       </div>
@@ -313,7 +398,7 @@
 <script>
   // Auth token
   const token = localStorage.getItem('fs_token');
-  if (!token) { window.location.href = '/app'; }
+  if (!token) { window.location.href = 'https://linkcrew.io/app'; }
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
   // Date
@@ -327,6 +412,7 @@
     event.currentTarget.classList.add('active');
     if (name === 'leads') loadLeads();
     if (name === 'notes') loadNotes();
+    if (name === 'calendar') loadEvents();
   }
 
   // ── Projects data ─────────────────────────────────────────────────────────
@@ -560,10 +646,140 @@
     newNote();
   }
 
+  // ── Calendar ──────────────────────────────────────────────────────────────
+  let allEvents = [];
+  let editingEventId = null;
+  let selectedType = 'reminder';
+
+  function selectType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+    const pill = document.getElementById(`pill-${type}`);
+    if (pill) { pill.classList.add('active', type); }
+  }
+
+  async function loadEvents() {
+    const list = document.getElementById('calList');
+    list.innerHTML = '<div class="loading">Loading...</div>';
+    try {
+      const res = await fetch('/api/mc/events', { headers });
+      allEvents = await res.json();
+      renderEvents();
+    } catch(e) {
+      list.innerHTML = '<div class="loading">Failed to load events.</div>';
+    }
+  }
+
+  function renderEvents() {
+    const list = document.getElementById('calList');
+    const upcoming = allEvents.filter(e => !e.done || new Date(e.event_date) >= new Date(Date.now() - 86400000*3));
+    if (!upcoming.length) {
+      list.innerHTML = '<div class="loading">No events yet. Add your first event →</div>';
+      return;
+    }
+    // Group by date
+    const groups = {};
+    upcoming.forEach(e => {
+      const d = e.event_date;
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(e);
+    });
+    const today = new Date().toISOString().slice(0,10);
+    const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
+    list.innerHTML = Object.keys(groups).sort().map(date => {
+      let label = date;
+      if (date === today) label = 'Today';
+      else if (date === tomorrow) label = 'Tomorrow';
+      else label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      return `
+        <div class="cal-day-group">
+          <div class="cal-day-label">${label}</div>
+          ${groups[date].map(e => `
+            <div class="cal-event ${e.done ? 'done' : ''}" onclick="editEvent('${e.id}')">
+              <div class="cal-event-dot ${e.type}"></div>
+              <div class="cal-event-body">
+                <div class="cal-event-title">${e.title}</div>
+                ${e.description ? `<div class="cal-event-desc">${e.description}</div>` : ''}
+                ${e.event_time ? `<div class="cal-event-time">⏰ ${e.event_time.slice(0,5)}</div>` : ''}
+              </div>
+              <button class="cal-event-check" onclick="toggleEventDone(event, '${e.id}', ${e.done})">${e.done ? '↩' : '✓'}</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function newEvent() {
+    editingEventId = null;
+    document.getElementById('calFormTitle').textContent = 'New Event';
+    document.getElementById('evTitle').value = '';
+    document.getElementById('evDate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('evTime').value = '';
+    document.getElementById('evDesc').value = '';
+    document.getElementById('deleteEvBtn').style.display = 'none';
+    selectType('reminder');
+  }
+
+  function editEvent(id) {
+    const ev = allEvents.find(e => e.id === id);
+    if (!ev) return;
+    editingEventId = id;
+    document.getElementById('calFormTitle').textContent = 'Edit Event';
+    document.getElementById('evTitle').value = ev.title || '';
+    document.getElementById('evDate').value = ev.event_date || '';
+    document.getElementById('evTime').value = ev.event_time?.slice(0,5) || '';
+    document.getElementById('evDesc').value = ev.description || '';
+    document.getElementById('deleteEvBtn').style.display = 'inline-block';
+    selectType(ev.type || 'reminder');
+  }
+
+  async function saveEvent() {
+    const title = document.getElementById('evTitle').value.trim();
+    const event_date = document.getElementById('evDate').value;
+    const event_time = document.getElementById('evTime').value || null;
+    const description = document.getElementById('evDesc').value.trim();
+    if (!title || !event_date) return;
+    const body = JSON.stringify({ title, event_date, event_time, description, type: selectedType });
+    if (editingEventId) {
+      const res = await fetch(`/api/mc/events/${editingEventId}`, { method: 'PATCH', headers, body });
+      const updated = await res.json();
+      const idx = allEvents.findIndex(e => e.id === editingEventId);
+      if (idx !== -1) allEvents[idx] = updated;
+    } else {
+      const res = await fetch('/api/mc/events', { method: 'POST', headers, body });
+      const created = await res.json();
+      allEvents.push(created);
+      editingEventId = created.id;
+      document.getElementById('deleteEvBtn').style.display = 'inline-block';
+    }
+    renderEvents();
+  }
+
+  async function deleteEvent() {
+    if (!editingEventId || !confirm('Delete this event?')) return;
+    await fetch(`/api/mc/events/${editingEventId}`, { method: 'DELETE', headers });
+    allEvents = allEvents.filter(e => e.id !== editingEventId);
+    newEvent();
+    renderEvents();
+  }
+
+  async function toggleEventDone(e, id, current) {
+    e.stopPropagation();
+    const res = await fetch(`/api/mc/events/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ done: !current }) });
+    const updated = await res.json();
+    const idx = allEvents.findIndex(ev => ev.id === id);
+    if (idx !== -1) allEvents[idx] = updated;
+    renderEvents();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
   loadStats();
   renderProjects('overviewProjects');
   renderProjects('projectsGrid');
+  // Set default event date to today
+  const todayStr = new Date().toISOString().slice(0,10);
+  document.getElementById('evDate').value = todayStr;
 </script>
 
 </body>
