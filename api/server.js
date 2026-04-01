@@ -1500,6 +1500,7 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
 
   // ── Build system prompt based on current mode ────────────────────────────
   let systemPrompt = '';
+  let spokenReply = '';
 
   if (conv.mode === 'support') {
     systemPrompt = `You are Choppy, an AI phone assistant for LinkCrew (linkcrew.io), a field service management platform for contractors.
@@ -1591,7 +1592,7 @@ ${isLastTurn ? `After your answer to this question, wrap up naturally and output
   }
 
   // ── Parse mode-transition markers ────────────────────────────────────────
-  let spokenReply = rawReply;
+  spokenReply = rawReply;
   let ending = false;
 
   if (conv.mode === 'support' && rawReply.includes('##DEMO##')) {
