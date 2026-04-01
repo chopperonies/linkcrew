@@ -1547,7 +1547,8 @@ ${turnsLeft <= 0 ? `This is the last exchange. After your answer, output the exa
 
   if (conv.mode === 'support' && rawReply.includes('##DEMO##')) {
     conv.mode = 'demo_collecting';
-    spokenReply = rawReply.replace('##DEMO##', '').trim();
+    // Drop Claude's transition text entirely — go straight to the first question
+    spokenReply = "Perfect! Let's set up your demo. First — what trade or industry are you in? For example, roofing, HVAC, plumbing, or landscaping.";
 
   } else if (conv.mode === 'demo_collecting') {
     const readyMatch = rawReply.match(/##READY:(.+?)\|(.+?)\|(.+?)##/);
