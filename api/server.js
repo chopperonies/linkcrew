@@ -1479,6 +1479,15 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
   const { tenantId } = req.params;
   const callSid = req.body.CallSid;
   const speech = (req.body.SpeechResult || '').trim();
+  const safeFallback = (msg) => {
+    const t = new VoiceResponse();
+    const g = t.gather({ input: 'speech', action: `/api/voice/contractor/${tenantId}/respond`, speechTimeout: '3', timeout: 10, enhanced: 'true', language: 'en-US' });
+    g.say({ voice: 'Polly.Joanna' }, msg);
+    t.redirect(`/api/voice/contractor/${tenantId}/end?sid=${callSid}`);
+    res.type('text/xml');
+    res.send(t.toString());
+  };
+  try {
 
   if (!voiceConversations.has(callSid)) {
     const { data: tenant } = await supabaseAdmin.from('tenants')
@@ -1629,6 +1638,10 @@ ${isLastTurn ? `After your answer to this question, wrap up naturally and output
 
   res.type('text/xml');
   res.send(twiml.toString());
+  } catch (err) {
+    console.error('[contractor voice/respond] CRASH:', err.message, err.stack);
+    safeFallback("I'm sorry, something went wrong. Please try again.");
+  }
 });
 
 app.post('/api/voice/contractor/:tenantId/end', async (req, res) => {
