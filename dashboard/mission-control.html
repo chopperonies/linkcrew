@@ -588,7 +588,7 @@
       <div class="note-card ${editingNoteId === n.id ? 'selected' : ''}" onclick="editNote('${n.id}')">
         <div class="note-card-header">
           <div class="note-title">${n.title || 'Untitled'}</div>
-          <div class="note-cat">${n.category || 'general'}</div>
+          <div class="note-cat ${n.category || 'general'}">${n.category || 'general'}</div>
         </div>
         <div class="note-preview">${n.content || ''}</div>
         <div class="note-date">${new Date(n.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
