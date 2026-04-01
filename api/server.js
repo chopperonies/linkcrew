@@ -1026,6 +1026,261 @@ app.delete('/api/settings/voicebot', auth, async (req, res) => {
   res.json({ success: true });
 });
 
+// ── KDG Chat Bot ─────────────────────────────────────────────────────────────
+
+const kdgChatSessions = new Map();
+setInterval(() => {
+  const cutoff = Date.now() - 3600000;
+  for (const [id, data] of kdgChatSessions) {
+    if (data.ts < cutoff) kdgChatSessions.delete(id);
+  }
+}, 3600000);
+
+const KDG_SYSTEM = `You are an AI assistant for Kingston Data Group (KDG), an AI automation and SaaS development studio based in Silicon Valley.
+
+KDG builds AI-powered software that automates business operations. Their flagship product is LinkCrew (linkcrew.io) — a field crew management platform for contractors.
+
+SERVICES:
+- AI Automation: Automate repetitive workflows — scheduling, dispatching, reporting, invoicing, customer communication
+- SaaS Product Development: Full-stack development from concept to live product, mobile apps, cloud infrastructure
+- AI Voice & Chat Agents: Intelligent voice bots and chat assistants, 24/7, no staff required
+- System Integration: Connect CRMs, ERPs, accounting software, field apps into unified automated pipelines
+- Dashboards & Reporting: Real-time operations dashboards with custom metrics and alerts
+- Cloud & Infrastructure: Secure, scalable cloud architecture
+
+ABOUT KDG:
+- 15+ years of IT infrastructure and data center experience
+- Native AI integration in every product
+- 24/7 always-on systems
+- Full product development from idea to live launch
+- Contact: sales@kingstondatagroup.com
+- Website: kingstondatagroup.com
+
+BOOKING:
+- When someone wants to schedule a call or meeting, direct them to: https://calendar.google.com/calendar/u/0/r (or tell them to email sales@kingstondatagroup.com to schedule)
+
+You have access to web search to answer questions about AI, automation, SaaS, technology trends, and anything relevant to the user's business needs. Use search when you need current information or specific technical details.
+
+Be consultative and helpful. Ask about their business and pain points. Keep responses concise but thorough. Never make up pricing — tell them to reach out for a custom quote.`;
+
+app.post('/api/chat-kdg', async (req, res) => {
+  const { message, sessionId } = req.body;
+  if (!message) return res.status(400).json({ error: 'Message required' });
+
+  const sid = sessionId || crypto.randomUUID();
+  if (!kdgChatSessions.has(sid)) {
+    kdgChatSessions.set(sid, { ts: Date.now(), history: [] });
+  }
+  const session = kdgChatSessions.get(sid);
+  session.ts = Date.now();
+  session.history.push({ role: 'user', content: message });
+
+  // Decide if web search would help
+  let searchContext = '';
+  const searchTriggers = ['how', 'what is', 'latest', 'best', 'price', 'cost', 'compare', 'vs', 'difference', 'trend', 'tool', 'software', 'platform', 'integration', 'api', 'automate'];
+  const needsSearch = searchTriggers.some(t => message.toLowerCase().includes(t));
+
+  if (needsSearch && process.env.TAVILY_API_KEY) {
+    try {
+      const searchRes = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: process.env.TAVILY_API_KEY,
+          query: message,
+          search_depth: 'basic',
+          max_results: 3,
+          include_answer: true,
+        }),
+      });
+      const searchData = await searchRes.json();
+      if (searchData.answer || searchData.results?.length) {
+        searchContext = '\n\nWEB SEARCH RESULTS:\n';
+        if (searchData.answer) searchContext += `Summary: ${searchData.answer}\n\n`;
+        (searchData.results || []).forEach((r, i) => {
+          searchContext += `[${i + 1}] ${r.title}\n${r.content?.slice(0, 300)}\nSource: ${r.url}\n\n`;
+        });
+      }
+    } catch (err) {
+      console.error('[kdg chat] Tavily error:', err.message);
+    }
+  }
+
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 500,
+      system: KDG_SYSTEM + searchContext,
+      messages: session.history.slice(-12),
+    });
+    const reply = result.content[0].text;
+    session.history.push({ role: 'assistant', content: reply });
+    res.json({ reply, sessionId: sid });
+  } catch (err) {
+    console.error('[kdg chat] Claude error:', err.message);
+    res.status(500).json({ error: 'Failed to get response' });
+  }
+});
+
+// ── KDG Voice Bot ─────────────────────────────────────────────────────────────
+
+const kdgVoiceConversations = new Map();
+setInterval(() => {
+  const cutoff = Date.now() - 3600000;
+  for (const [sid, data] of kdgVoiceConversations) {
+    if (data.ts < cutoff) kdgVoiceConversations.delete(sid);
+  }
+}, 3600000);
+
+app.post('/api/voice/kdg', async (req, res) => {
+  const callSid = req.body.CallSid;
+  const callerNumber = req.body.From || 'Unknown';
+
+  kdgVoiceConversations.set(callSid, {
+    ts: Date.now(),
+    history: [],
+    callerNumber,
+    startTime: Date.now(),
+  });
+
+  const twiml = new VoiceResponse();
+  const gather = twiml.gather({
+    input: 'speech',
+    action: '/api/voice/kdg/respond',
+    speechTimeout: '3',
+    timeout: 10,
+    enhanced: 'true',
+    language: 'en-US',
+  });
+  gather.say({ voice: 'Polly.Joanna' },
+    "Hi! Thanks for calling Kingston Data Group. I'm an AI assistant and I'm here to help. Are you looking to automate your business, build a SaaS product, or do you have a different question?");
+  twiml.redirect(`/api/voice/kdg/end?sid=${callSid}`);
+
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+app.post('/api/voice/kdg/respond', async (req, res) => {
+  const callSid = req.body.CallSid;
+  const speech = (req.body.SpeechResult || '').trim();
+
+  if (!kdgVoiceConversations.has(callSid)) {
+    kdgVoiceConversations.set(callSid, {
+      ts: Date.now(), history: [],
+      callerNumber: req.body.From || 'Unknown',
+      startTime: Date.now(),
+    });
+  }
+
+  const conv = kdgVoiceConversations.get(callSid);
+  conv.ts = Date.now();
+  if (speech) conv.history.push({ role: 'user', content: speech });
+
+  // Web search for voice too
+  let searchContext = '';
+  if (speech && process.env.TAVILY_API_KEY) {
+    const searchTriggers = ['how', 'what is', 'cost', 'price', 'how much', 'can you', 'do you', 'what are'];
+    const needsSearch = searchTriggers.some(t => speech.toLowerCase().includes(t));
+    if (needsSearch) {
+      try {
+        const searchRes = await fetch('https://api.tavily.com/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api_key: process.env.TAVILY_API_KEY,
+            query: speech,
+            search_depth: 'basic',
+            max_results: 2,
+            include_answer: true,
+          }),
+        });
+        const searchData = await searchRes.json();
+        if (searchData.answer) searchContext = `\n\nRelevant info from web: ${searchData.answer}`;
+      } catch (err) {
+        console.error('[kdg voice] Tavily error:', err.message);
+      }
+    }
+  }
+
+  let reply = "I'm sorry, I didn't catch that. Could you repeat that?";
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 150,
+      system: `You are an AI phone assistant for Kingston Data Group, an AI automation and SaaS development studio. You answer calls on their behalf.
+Be friendly, professional, and consultative. Keep responses to 2-3 short sentences — you are on a phone call.
+If someone wants to schedule a meeting or demo, ask for their name and email and tell them someone will follow up within one business day to confirm a time.
+If asked about pricing, explain that pricing is custom based on project scope and invite them to schedule a discovery call.
+Services: AI Automation, SaaS Development, AI Voice & Chat Agents, System Integration, Dashboards, Cloud Infrastructure.
+Contact: sales@kingstondatagroup.com${searchContext}`,
+      messages: conv.history.slice(-10),
+    });
+    reply = result.content[0].text;
+    conv.history.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    console.error('[kdg voice] Claude error:', err.message);
+  }
+
+  const twiml = new VoiceResponse();
+  const endWords = ['goodbye', 'bye', 'hang up', "that's all", 'no thanks', 'thank you', 'thanks'];
+  const ending = endWords.some(w => speech.toLowerCase().includes(w));
+
+  if (ending) {
+    twiml.say({ voice: 'Polly.Joanna' }, reply + ' Have a great day!');
+    twiml.redirect(`/api/voice/kdg/end?sid=${callSid}`);
+  } else {
+    const gather = twiml.gather({
+      input: 'speech',
+      action: '/api/voice/kdg/respond',
+      speechTimeout: '3',
+      timeout: 10,
+      enhanced: 'true',
+      language: 'en-US',
+    });
+    gather.say({ voice: 'Polly.Joanna' }, reply);
+    twiml.redirect(`/api/voice/kdg/end?sid=${callSid}`);
+  }
+
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+app.post('/api/voice/kdg/end', async (req, res) => {
+  const callSid = req.query.sid || req.body.CallSid;
+  const conv = kdgVoiceConversations.get(callSid);
+
+  if (conv?.history?.length) {
+    const duration = conv.startTime
+      ? Math.round((Date.now() - conv.startTime) / 1000) + 's'
+      : null;
+    try {
+      const { Resend } = require('resend');
+      const r = new Resend(process.env.RESEND_API_KEY);
+      const transcript = conv.history.map(m => `${m.role === 'user' ? 'Caller' : 'Bot'}: ${m.content}`).join('\n');
+      await r.emails.send({
+        from: 'KDG Voice Bot <alerts@linkcrew.io>',
+        to: 'sales@kingstondatagroup.com',
+        subject: `KDG Call from ${conv.callerNumber}${duration ? ' (' + duration + ')' : ''}`,
+        html: `<div style="font-family:sans-serif;max-width:600px">
+          <h2 style="color:#f97316">Incoming Call Transcript</h2>
+          <p><strong>Caller:</strong> ${conv.callerNumber}</p>
+          ${duration ? `<p><strong>Duration:</strong> ${duration}</p>` : ''}
+          <div style="margin-top:16px;padding:16px;background:#f5f5f5;border-radius:8px;white-space:pre-wrap;font-size:14px">${transcript}</div>
+        </div>`,
+      });
+    } catch (err) {
+      console.error('[kdg voice] transcript email error:', err.message);
+    }
+  }
+
+  if (callSid) kdgVoiceConversations.delete(callSid);
+
+  const twiml = new VoiceResponse();
+  twiml.hangup();
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
 // ── Contractor Voice Bot ──────────────────────────────────────────────────────
 
 app.post('/api/voice/contractor/:tenantId', async (req, res) => {
