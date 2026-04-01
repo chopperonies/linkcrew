@@ -165,6 +165,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// ── KDG host-based routing ────────────────────────────────────────────────────
+const KDG_HOSTS = ['kingstondatagroup.com', 'www.kingstondatagroup.com'];
+app.use((req, res, next) => {
+  if (KDG_HOSTS.includes(req.hostname)) {
+    if (req.path === '/' || req.path === '/index.html') {
+      return res.sendFile(path.join(__dirname, '../kdg-site/index.html'));
+    }
+    return express.static(path.join(__dirname, '../kdg-site'))(req, res, next);
+  }
+  next();
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use(express.static(path.join(__dirname, '../dashboard'), { index: false }));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
