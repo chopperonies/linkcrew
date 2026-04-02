@@ -225,6 +225,17 @@
     .ev-chip.deploy   { background: rgba(74,222,128,0.15); color: var(--green); border-color: rgba(74,222,128,0.3); }
     .ev-chip.choppy   { background: rgba(167,139,250,0.15); color: #a78bfa; border-color: rgba(167,139,250,0.3); }
 
+    /* Day detail panel */
+    .day-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .day-detail-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .day-detail-event { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+    .day-detail-event:hover { border-color: var(--accent); }
+    .day-detail-event.done .day-detail-event-title { opacity: 0.45; text-decoration: line-through; }
+    .day-detail-event-body { flex: 1; min-width: 0; }
+    .day-detail-event-title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .day-detail-event-meta { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: capitalize; }
+    .day-detail-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px 0; }
+
     /* Choppy notes */
     .note-cat.choppy { color: #a78bfa; }
 
@@ -395,6 +406,9 @@
             <button class="btn-new" style="margin-bottom:0" onclick="newEvent()">+ Add</button>
           </div>
           <div class="week-grid" id="calList"><div class="loading">Loading...</div></div>
+        </div>
+        <div class="cal-event-form" id="calPanelDetail" style="display:none">
+          <div id="calDetailContent"></div>
         </div>
         <div class="cal-event-form" id="calForm">
           <h3 id="calFormTitle">New Event</h3>
@@ -799,6 +813,11 @@
   let selectedType = 'reminder';
   let currentWeekOffset = 0;
 
+  function localDateStr(d) {
+    const dt = d || new Date();
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+
   function getWeekDates(offset) {
     const now = new Date();
     const monday = new Date(now);
@@ -845,7 +864,7 @@
     document.getElementById('weekRange').textContent = `${start} – ${end}`;
 
     list.innerHTML = days.map(day => {
-      const dateStr = day.toISOString().slice(0, 10);
+      const dateStr = localDateStr(day);
       const isToday = dateStr === today;
       const isPast = dateStr < today;
       const dayName = day.toLocaleDateString('en-US', { weekday: 'short' });
@@ -877,16 +896,58 @@
     editEvent(id);
   }
 
-  function selectDay(dateStr) {
+  function showFormPanel() {
+    document.getElementById('calPanelDetail').style.display = 'none';
+    document.getElementById('calForm').style.display = 'block';
+  }
+
+  function showDayDetail(dateStr) {
+    const dayEvents = allEvents.filter(e => e.event_date === dateStr)
+      .sort((a, b) => (a.event_time || '99:99') > (b.event_time || '99:99') ? 1 : -1);
+    const d = new Date(dateStr + 'T00:00:00');
+    const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const items = dayEvents.map(e => {
+      const meta = [e.type, e.event_time ? e.event_time.slice(0, 5) : ''].filter(Boolean).join(' · ');
+      return `<div class="day-detail-event ${e.done ? 'done' : ''}" onclick="editEvent('${e.id}')">
+        <div class="cal-event-dot ${e.type}"></div>
+        <div class="day-detail-event-body">
+          <div class="day-detail-event-title">${e.title}</div>
+          ${meta ? `<div class="day-detail-event-meta">${meta}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('calDetailContent').innerHTML = `
+      <div class="day-detail-header">
+        <div class="day-detail-title">${label}</div>
+      </div>
+      ${items}
+      <button class="btn-primary" style="width:100%;margin-top:12px" onclick="newEventForDay('${dateStr}')">+ New Event</button>
+    `;
+    document.getElementById('calPanelDetail').style.display = 'block';
+    document.getElementById('calForm').style.display = 'none';
+  }
+
+  function newEventForDay(dateStr) {
     newEvent();
     document.getElementById('evDate').value = dateStr;
   }
 
+  function selectDay(dateStr) {
+    const dayEvents = allEvents.filter(e => e.event_date === dateStr);
+    if (dayEvents.length > 0) {
+      showDayDetail(dateStr);
+    } else {
+      newEvent();
+      document.getElementById('evDate').value = dateStr;
+    }
+  }
+
   function newEvent() {
+    showFormPanel();
     editingEventId = null;
     document.getElementById('calFormTitle').textContent = 'New Event';
     document.getElementById('evTitle').value = '';
-    document.getElementById('evDate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('evDate').value = localDateStr();
     document.getElementById('evTime').value = '';
     document.getElementById('evDesc').value = '';
     document.getElementById('deleteEvBtn').style.display = 'none';
@@ -896,6 +957,7 @@
   function editEvent(id) {
     const ev = allEvents.find(e => e.id === id);
     if (!ev) return;
+    showFormPanel();
     editingEventId = id;
     document.getElementById('calFormTitle').textContent = 'Edit Event';
     document.getElementById('evTitle').value = ev.title || '';
@@ -951,7 +1013,7 @@
     loadStats();
     renderProjects('overviewProjects');
     renderProjects('projectsGrid');
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = localDateStr();
     document.getElementById('evDate').value = todayStr;
     restoreSection();
   }
