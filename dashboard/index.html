@@ -815,7 +815,8 @@
       <h3 style="margin:0">👥 Team</h3>
       <button class="btn-cancel" onclick="closeTeam()" style="padding:4px 10px">✕</button>
     </div>
-    <div id="team-list"><div class="empty">Loading...</div></div>
+    <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Team Members</div>
+    <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
     <hr class="section-divider">
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
     <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
@@ -1400,21 +1401,25 @@ function closeTeam() {
   document.getElementById('emp-role').value = 'crew';
 }
 async function loadTeam() {
-  const res = await authFetch('/api/employees');
-  const employees = await res.json();
   const el = document.getElementById('team-list');
-  if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:16px">No employees yet. Add one below.</div>'; return; }
-  el.innerHTML = employees.map(e => `
-    <div class="team-row" id="emp-row-${e.id}">
-      <div class="team-avatar">${(e.name||'?')[0].toUpperCase()}</div>
-      <div class="team-info">
-        <div class="ti-name">${e.name}</div>
-        <div class="ti-sub">📱 ${e.phone}</div>
+  try {
+    const res = await authFetch('/api/employees');
+    const employees = await res.json();
+    if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>'; return; }
+    el.innerHTML = employees.map(e => `
+      <div class="team-row" id="emp-row-${e.id}">
+        <div class="team-avatar">${(e.name||'?')[0].toUpperCase()}</div>
+        <div class="team-info">
+          <div class="ti-name">${e.name}</div>
+          <div class="ti-sub">📱 ${e.phone}</div>
+        </div>
+        <span class="role-badge ${roleCls[e.role]||'role-crew'}">${e.role.toUpperCase()}</span>
+        <button class="btn-delete" onclick="deleteEmployee('${e.id}')" title="Remove">🗑</button>
       </div>
-      <span class="role-badge ${roleCls[e.role]||'role-crew'}">${e.role.toUpperCase()}</span>
-      <button class="btn-delete" onclick="deleteEmployee('${e.id}')" title="Remove">🗑</button>
-    </div>
-  `).join('');
+    `).join('');
+  } catch (err) {
+    el.innerHTML = '<div class="empty" style="padding:12px;color:#dc2626">Failed to load team. Please try again.</div>';
+  }
 }
 async function saveEmployee() {
   const name = document.getElementById('emp-name').value.trim();
@@ -1430,7 +1435,7 @@ async function saveEmployee() {
 async function deleteEmployee(id) {
   if (!confirm('Remove this employee?')) return;
   await authFetch(`/api/employees/${id}`, { method: 'DELETE' });
-  document.getElementById(`emp-row-${id}`)?.remove();
+  await loadTeam();
 }
 
 // ── Admin: All Accounts ───────────────────────────────────────────────────────
