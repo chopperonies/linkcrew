@@ -1468,7 +1468,7 @@ app.post('/api/voice/contractor/:tenantId', async (req, res) => {
     language: 'en-US',
   });
   gather.say({ voice: 'Polly.Joanna' },
-    `Hi! Thanks for calling ${tenant.company_name}. I'm Choppy, the AI assistant. I can answer questions about LinkCrew, or say "demo" to hear a live personalized demo of the voice bot working for your own business. How can I help?`);
+    `Hi! Thanks for calling ${tenant.company_name}. I'm your AI assistant. I can answer questions about LinkCrew, or say "demo" to hear a live personalized demo of the voice bot working for your own business. How can I help?`);
   twiml.redirect(`/api/voice/contractor/${tenantId}/end?sid=${callSid}`);
 
   res.type('text/xml');
@@ -1512,7 +1512,7 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
   let spokenReply = '';
 
   if (conv.mode === 'support') {
-    systemPrompt = `You are Choppy, an AI phone assistant for LinkCrew (linkcrew.io), a field service management platform for contractors.
+    systemPrompt = `You are an AI assistant for LinkCrew (linkcrew.io), a field service management platform for contractors.
 Be friendly and concise — this is a phone call, so keep every response to 1-3 short sentences.
 If the caller asks for a demo or wants to try the voice bot, output the exact marker ##DEMO## somewhere in your reply and invite them to hear a personalized demo.
 If asked something you don't know, say you'll have someone follow up.
@@ -1541,7 +1541,7 @@ ${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
       // All collected — transition to demo_running
       conv.mode = 'demo_running';
       conv.history = [];
-      const greeting = `Hello, thank you for calling ${conv.demoData.company}! I'm Choppy, your AI assistant. How can I help you today?`;
+      const greeting = `Hello, thank you for calling ${conv.demoData.company}! I'm your AI assistant. How can I help you today?`;
       conv.history.push({ role: 'assistant', content: greeting });
       spokenReply = greeting;
     }
@@ -1582,8 +1582,8 @@ ${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
     const isLastTurn = conv.demoTurns >= maxTurns;
     systemPrompt = `You are an AI phone assistant for ${company}, a ${trade} company in ${city}. Answer calls on their behalf — be helpful, friendly, and realistic.
 Keep every response to 1-2 short sentences. Make up reasonable details (hours, services, pricing ranges) if needed — this is a live demo.
-Do NOT mention LinkCrew, Choppy, or any other software platform. Stay in character as ${company}.
-${isLastTurn ? `After your answer to this question, wrap up naturally and output the exact marker ##END## followed by this exact text: "...That was the LinkCrew AI voice bot in action. Imagine that answering every call for your business, 24 hours a day. To get your own, visit linkcrew dot io or press 0 to speak with someone now."` : ''}`;
+Do NOT mention LinkCrew, Choppy, or any other software platform. Stay in character as ${company} at all times.
+${isLastTurn ? `After answering this question, wrap up warmly as ${company} — say something like "Thanks for calling ${company}, have a great day!" — then output ##END## on a new line with nothing after it.` : ''}`;
   }
 
   let rawReply = "I'm sorry, I didn't catch that. Could you say that again?";
