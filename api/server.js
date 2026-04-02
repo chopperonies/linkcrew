@@ -542,6 +542,30 @@ app.get('/api/workorder/:jobId', async (req, res) => {
   res.json({ job, tenant });
 });
 
+// Send work order SMS to linked client
+app.post('/api/jobs/:id/sms-workorder', auth, async (req, res) => {
+  const { data: job } = await supabaseAdmin.from('jobs')
+    .select('*, clients(name, phone)')
+    .eq('id', req.params.id).single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job.clients?.phone) return res.status(400).json({ error: 'No client phone — link a client with a phone number first' });
+
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('company_name, twilio_account_sid, twilio_auth_token, twilio_phone')
+    .eq('id', req.tenantId).single();
+  if (!tenant?.twilio_account_sid) return res.status(400).json({ error: 'Twilio not configured — set up your voice bot number in Settings first' });
+
+  const host = `${req.protocol}://${req.get('host')}`;
+  const workorderUrl = `${host}/workorder?job_id=${job.id}`;
+  const twilioClient = twilio(tenant.twilio_account_sid, tenant.twilio_auth_token);
+  await twilioClient.messages.create({
+    from: tenant.twilio_phone,
+    to: job.clients.phone,
+    body: `Hi ${job.clients.name}, ${tenant.company_name || 'Your contractor'} sent you a work order for "${job.name}". View it here: ${workorderUrl}`,
+  });
+  res.json({ ok: true });
+});
+
 // Send work order email to linked client
 app.post('/api/jobs/:id/send-workorder', auth, async (req, res) => {
   const { data: job } = await supabaseAdmin.from('jobs')

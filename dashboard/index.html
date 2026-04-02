@@ -489,18 +489,6 @@
       <div id="supplies-content"><div id="supplies-list"><div class="empty"><div class="e-icon">📦</div>No pending requests</div></div></div>
       <div id="photos-content" style="display:none"><div id="photos-list"><div class="empty"><div class="e-icon">📸</div>Loading photos...</div></div></div>
     </div>
-    <div id="detail-view" class="detail-panel">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <button onclick="closeDetail()" style="background:none;border:none;color:#666;cursor:pointer;font-size:17px;">←</button>
-        <div class="panel-title" style="margin:0" id="detail-title">Job Detail</div>
-      </div>
-      <div id="detail-employees" style="margin-bottom:16px;"></div>
-      <div id="detail-client" style="margin-bottom:16px;"></div>
-      <div id="detail-workorder" style="margin-bottom:16px;"></div>
-      <div id="detail-invoice" style="margin-bottom:16px;"></div>
-      <div class="panel-title">Today's Activity</div>
-      <div id="detail-updates"></div>
-    </div>
   </div>
 </div>
 </div><!-- end jobs-view -->
@@ -808,6 +796,22 @@
       <button class="btn-cancel" onclick="closeAddJob()">Cancel</button>
       <button class="btn-save" onclick="saveJob()">Create Job</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Job Detail Modal ── -->
+<div class="modal-overlay" id="job-detail-modal">
+  <div class="modal" style="width:680px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h3 style="margin:0;font-size:16px;" id="detail-title">Job Detail</h3>
+      <button class="btn-cancel" onclick="closeDetail()" style="padding:4px 10px">✕</button>
+    </div>
+    <div id="detail-employees" style="margin-bottom:16px;"></div>
+    <div id="detail-client" style="margin-bottom:16px;"></div>
+    <div id="detail-workorder" style="margin-bottom:16px;"></div>
+    <div id="detail-invoice" style="margin-bottom:16px;"></div>
+    <div class="panel-title">Today's Activity</div>
+    <div id="detail-updates"></div>
   </div>
 </div>
 
@@ -1244,8 +1248,7 @@ async function updateSupply(id, status) {
 
 async function openDetail(jobId, jobName) {
   selectedJobId = jobId;
-  document.getElementById('supplies-view').style.display = 'none';
-  document.getElementById('detail-view').classList.add('visible');
+  document.getElementById('job-detail-modal').classList.add('visible');
   document.getElementById('detail-title').textContent = jobName;
 
   const res = await authFetch(`/api/jobs/${jobId}`);
@@ -1287,12 +1290,17 @@ async function openDetail(jobId, jobName) {
   woEl.innerHTML = `
     <div class="panel-title">Work Order / Estimate</div>
     ${job?.description ? `<div style="font-size:13px;color:#17191c;line-height:1.6;margin-bottom:10px;white-space:pre-wrap">${job.description}</div>` : ''}
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
       ${hasEstimate ? `<span style="font-size:13px;font-weight:600;color:#0265dc">Est: $${parseFloat(job.estimate_amount).toFixed(2)}</span>` : ''}
       <a href="${woUrl}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View</a>
+      <button onclick="copyWoLink('${woUrl}')" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475">Copy Link</button>
       <button id="wo-send-btn-${job?.id}" onclick="sendWorkOrder('${job?.id}')"
         style="font-size:12px;background:#0265dc;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:600">
-        Email to Client
+        Email Client
+      </button>
+      <button id="wo-sms-btn-${job?.id}" onclick="smsWorkOrder('${job?.id}')"
+        style="font-size:12px;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:600">
+        SMS Client
       </button>
     </div>
   `;
@@ -1374,8 +1382,7 @@ function openSetInvoice(jobId, current) {
 
 function closeDetail() {
   selectedJobId = null;
-  document.getElementById('supplies-view').style.display = 'block';
-  document.getElementById('detail-view').classList.remove('visible');
+  document.getElementById('job-detail-modal').classList.remove('visible');
   document.querySelectorAll('.job-card').forEach(c => c.classList.remove('selected'));
 }
 
@@ -1411,6 +1418,19 @@ async function saveJob() {
   document.getElementById('new-job-estimate').value = '';
   document.getElementById('new-job-email').value = '';
   await loadDashboard();
+}
+
+function copyWoLink(url) {
+  navigator.clipboard.writeText(location.origin + url).then(() => alert('Link copied to clipboard!'));
+}
+
+async function smsWorkOrder(jobId) {
+  const btn = document.getElementById(`wo-sms-btn-${jobId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const res = await authFetch(`/api/jobs/${jobId}/sms-workorder`, { method: 'POST' });
+  const json = await res.json();
+  if (!res.ok) { alert('Error: ' + (json.error || 'Failed to send SMS')); if (btn) { btn.disabled = false; btn.textContent = 'SMS Client'; } return; }
+  if (btn) { btn.textContent = '✅ Sent!'; }
 }
 
 async function sendWorkOrder(jobId) {
