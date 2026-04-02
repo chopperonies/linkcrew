@@ -364,4 +364,49 @@ async function sendCallTranscriptToOwner({ ownerEmail, companyName, callerNumber
   });
 }
 
-module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner };
+async function sendWorkOrderToClient({ clientName, clientEmail, jobName, description, estimateAmount, workorderUrl, tenantName }) {
+  const fmtAmount = estimateAmount
+    ? Number(estimateAmount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+    : 'TBD';
+  const html = `
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
+<div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:#0a0a0a;padding:24px">
+    <h2 style="margin:0;color:white;font-size:20px">Work Order from ${tenantName || 'Your Contractor'}</h2>
+    <p style="margin:6px 0 0;color:#888;font-size:14px">Estimate ready for your review</p>
+  </div>
+  <div style="padding:28px">
+    <p style="font-size:15px;color:#111827;margin:0 0 20px">Hi ${clientName},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 24px">
+      A work order has been prepared for <strong>${jobName}</strong>. You can view the full details and estimated pricing below.
+    </p>
+    ${description ? `
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px">
+      <div style="font-size:12px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Scope of Work</div>
+      <div style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap">${description}</div>
+    </div>` : ''}
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Estimate Total</div>
+      <div style="font-size:36px;font-weight:800;color:#0a0a0a">${fmtAmount}</div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:4px">Subject to change as work progresses</div>
+    </div>
+    <a href="${workorderUrl}" style="display:block;background:#0265dc;color:white;text-decoration:none;text-align:center;padding:14px 24px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:16px">
+      View Full Work Order
+    </a>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">Or copy this link: ${workorderUrl}</p>
+  </div>
+  <div style="padding:16px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center">
+    LinkCrew — Field Service Management
+  </div>
+</div>
+</body></html>`;
+
+  await resend.emails.send({
+    from: 'LinkCrew <hello@linkcrew.io>',
+    to: clientEmail,
+    subject: `Work Order from ${tenantName || 'Your Contractor'} — ${jobName}`,
+    html,
+  });
+}
+
+module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient };

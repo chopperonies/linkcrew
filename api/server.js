@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
-const { sendDailyDigest, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner } = require('../email/digest');
+const { sendDailyDigest, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient } = require('../email/digest');
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
 const twilio = require('twilio');
@@ -184,6 +184,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landi
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
 app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/portal.html')));
 app.get('/invoice', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/invoice.html')));
+app.get('/workorder', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/workorder.html')));
 app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/pricing.html')));
 app.get('/kdg', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg.html')));
 app.get('/kdg-logos', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg-logos.html')));
@@ -523,10 +524,44 @@ app.patch('/api/supplies/:id', auth, async (req, res) => {
 });
 
 app.post('/api/jobs', auth, async (req, res) => {
-  const { name, address, manager_email } = req.body;
+  const { name, address, manager_email, description, estimate_amount } = req.body;
   const { data } = await supabaseAdmin.from('jobs')
-    .insert({ name, address, manager_email, tenant_id: req.tenantId }).select().single();
+    .insert({ name, address, manager_email, description, estimate_amount: estimate_amount || null, tenant_id: req.tenantId }).select().single();
   res.json(data);
+});
+
+// Public work order page data (no auth — UUID is the access control)
+app.get('/api/workorder/:jobId', async (req, res) => {
+  const { data: job, error } = await supabaseAdmin.from('jobs')
+    .select('*, clients(name, email, phone, address)')
+    .eq('id', req.params.jobId).single();
+  if (error || !job) return res.status(404).json({ error: 'Work order not found' });
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('company_name, logo_url, address, phone, owner_email')
+    .eq('id', job.tenant_id).single();
+  res.json({ job, tenant });
+});
+
+// Send work order email to linked client
+app.post('/api/jobs/:id/send-workorder', auth, async (req, res) => {
+  const { data: job } = await supabaseAdmin.from('jobs')
+    .select('*, clients(name, email)')
+    .eq('id', req.params.id).single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job.clients?.email) return res.status(400).json({ error: 'No client email — link a client with an email first' });
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('company_name').eq('id', req.tenantId).single();
+  const host = `${req.protocol}://${req.get('host')}`;
+  await sendWorkOrderToClient({
+    clientName: job.clients.name,
+    clientEmail: job.clients.email,
+    jobName: job.name,
+    description: job.description,
+    estimateAmount: job.estimate_amount,
+    workorderUrl: `${host}/workorder?job_id=${job.id}`,
+    tenantName: tenant?.company_name,
+  });
+  res.json({ ok: true });
 });
 
 app.patch('/api/jobs/:id', auth, async (req, res) => {

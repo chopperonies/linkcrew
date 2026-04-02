@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Order — LinkCrew</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; }
+
+    .actions {
+      display: flex; gap: 12px; justify-content: flex-end;
+      padding: 20px 40px; background: #fff; border-bottom: 1px solid #e8e8e8;
+    }
+    .btn { border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; padding: 10px 22px; }
+    .btn-print { background: #0265dc; color: #fff; }
+    .btn-print:hover { background: #1b5abe; }
+    .btn-back { background: #f5f5f5; color: #17191c; border: 1px solid #e8e8e8; }
+    .btn-back:hover { background: #ebebeb; }
+
+    .page { max-width: 760px; margin: 40px auto; background: #fff;
+      border: 1px solid #e8e8e8; border-radius: 12px; padding: 60px; }
+
+    .wo-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-name { font-size: 22px; font-weight: 800; color: #17191c; }
+    .brand-name span { color: #0265dc; }
+    .wo-meta { text-align: right; }
+    .wo-title { font-size: 32px; font-weight: 800; color: #17191c; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .wo-number { font-size: 13px; color: #737475; margin-bottom: 4px; }
+    .wo-date { font-size: 13px; color: #737475; }
+    .status-badge {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px; margin-top: 10px;
+      background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+    }
+
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 48px; }
+    .party-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #737475; margin-bottom: 10px; }
+    .party-name { font-size: 16px; font-weight: 700; color: #17191c; margin-bottom: 4px; }
+    .party-detail { font-size: 13px; color: #737475; line-height: 1.7; }
+
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #737475;
+      padding: 10px 0; border-bottom: 2px solid #17191c; margin-bottom: 0;
+    }
+    .detail-row {
+      padding: 20px 0; border-bottom: 1px solid #e8e8e8;
+    }
+    .detail-job-name { font-size: 15px; font-weight: 600; color: #17191c; margin-bottom: 4px; }
+    .detail-address { font-size: 13px; color: #737475; margin-bottom: 12px; }
+    .detail-description { font-size: 14px; color: #17191c; line-height: 1.7; white-space: pre-wrap; }
+
+    .estimate-row {
+      display: flex; justify-content: flex-end; align-items: center;
+      gap: 40px; padding: 20px 0; border-top: 2px solid #17191c;
+    }
+    .estimate-label { font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #737475; }
+    .estimate-amount { font-size: 24px; font-weight: 800; color: #17191c; }
+
+    .wo-footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #e8e8e8;
+      font-size: 12px; color: #737475; text-align: center; line-height: 1.6; }
+
+    .state { text-align: center; padding: 80px 40px; color: #737475; font-size: 15px; }
+
+    @media print {
+      body { background: #fff; }
+      .actions { display: none; }
+      .page { margin: 0; border: none; border-radius: 0; padding: 40px; box-shadow: none; }
+    }
+    @media (max-width: 600px) {
+      .page { padding: 28px 20px; margin: 16px; }
+      .wo-header { flex-direction: column; gap: 20px; }
+      .wo-meta { text-align: left; }
+      .parties { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="actions" id="actions">
+    <button class="btn btn-back" onclick="history.back()">← Back</button>
+    <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <div class="page" id="wo-page">
+    <div class="state" id="loading">Loading work order…</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const jobId = params.get('job_id');
+
+    if (!jobId) {
+      document.getElementById('loading').textContent = 'No job specified.';
+    } else {
+      loadWorkOrder();
+    }
+
+    async function loadWorkOrder() {
+      let res;
+      try {
+        res = await fetch(`/api/workorder/${jobId}`);
+      } catch (err) {
+        document.getElementById('loading').textContent = 'Failed to load: ' + err.message;
+        return;
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        document.getElementById('loading').textContent = `Error ${res.status}: ${body.error || 'Work order not found'}`;
+        return;
+      }
+      const { job, tenant } = await res.json();
+      renderWorkOrder(job, tenant);
+    }
+
+    function fmt(amount) {
+      if (!amount) return 'TBD';
+      return '$' + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function woNumber(id, date) {
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `WO-${y}${m}${day}-${id.slice(0, 6).toUpperCase()}`;
+    }
+
+    function renderWorkOrder(job, tenant) {
+      const client = job.clients || {};
+      const woDate = job.created_at;
+
+      document.title = `Work Order ${woNumber(job.id, woDate)} — ${tenant?.company_name || 'LinkCrew'}`;
+
+      document.getElementById('wo-page').innerHTML = `
+        <div class="wo-header">
+          <div class="brand">
+            ${tenant?.logo_url
+              ? `<img src="${tenant.logo_url}" alt="${tenant.company_name || ''}" style="max-height:60px;max-width:180px;object-fit:contain">`
+              : `<img src="/logo.svg" alt="LinkCrew" style="width:40px;height:40px">`}
+            <div class="brand-name">${tenant?.company_name || 'Link<span>Crew</span>'}</div>
+          </div>
+          <div class="wo-meta">
+            <div class="wo-title">Work Order</div>
+            <div class="wo-number">${woNumber(job.id, woDate)}</div>
+            <div class="wo-date">Date: ${fmtDate(woDate)}</div>
+            <span class="status-badge">📋 Estimate</span>
+          </div>
+        </div>
+
+        <div class="parties">
+          <div>
+            <div class="party-label">From</div>
+            <div class="party-name">${tenant?.company_name || 'LinkCrew'}</div>
+            <div class="party-detail">
+              ${[tenant?.address, tenant?.phone, tenant?.owner_email].filter(Boolean).join('<br>')}
+            </div>
+          </div>
+          <div>
+            <div class="party-label">Prepared For</div>
+            <div class="party-name">${client.name || '—'}</div>
+            <div class="party-detail">
+              ${[client.address, client.email, client.phone].filter(Boolean).join('<br>')}
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Scope of Work</div>
+        <div class="detail-row">
+          <div class="detail-job-name">${job.name}</div>
+          ${job.address ? `<div class="detail-address">📍 ${job.address}</div>` : ''}
+          ${job.description ? `<div class="detail-description">${job.description}</div>` : '<div style="color:#737475;font-size:13px">No description provided.</div>'}
+        </div>
+
+        <div class="estimate-row">
+          <span class="estimate-label">Estimate Total</span>
+          <span class="estimate-amount">${fmt(job.estimate_amount)}</span>
+        </div>
+
+        <div class="wo-footer">
+          This is an estimate only. Final pricing may change as work progresses based on actual labor, materials, and scope adjustments.<br>
+          Questions? Contact us at ${tenant?.phone || tenant?.owner_email || 'the number above'}.
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
