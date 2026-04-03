@@ -61,6 +61,16 @@
   .metric { color: #888; font-variant-numeric: tabular-nums; }
   .login-btn { background: #0265dc; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .login-btn:hover { background: #0256c0; }
+  .action-btn { background: none; border: 1px solid #2a2a2a; color: #888; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .action-btn:hover { border-color: #444; color: #fff; }
+  .action-btn.pause { color: #fb923c; border-color: #78350f44; }
+  .action-btn.pause:hover { background: #78350f22; }
+  .action-btn.block { color: #f87171; border-color: #7f1d1d44; }
+  .action-btn.block:hover { background: #7f1d1d22; }
+  .action-btn.delete { color: #f87171; border-color: #7f1d1d44; }
+  .action-btn.delete:hover { background: #7f1d1d33; }
+  .action-btn.active-pause { background: #78350f22; color: #fb923c; border-color: #fb923c66; }
+  .action-btn.active-block { background: #7f1d1d22; color: #f87171; border-color: #f8717166; }
   .last-seen { color: #555; font-size: 12px; }
   .company { font-weight: 600; color: #fff; }
   .email { color: #555; font-size: 12px; margin-top: 2px; }
@@ -335,13 +345,40 @@ function renderTable() {
       <td class="metric">${t.client_count ?? 0}</td>
       <td class="last-seen">${timeSince(t.last_seen_at)}</td>
       <td>
-        <button class="login-btn" onclick="loginAs('${t.id}', '${(t.company_name||'').replace(/'/g,'')}')" >Login as</button>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="login-btn" onclick="loginAs('${t.id}')">Login as</button>
+          <button class="action-btn pause ${t.paused ? 'active-pause' : ''}" onclick="togglePause('${t.id}', this)">${t.paused ? 'Unpause' : 'Pause'}</button>
+          <button class="action-btn block ${t.blocked ? 'active-block' : ''}" onclick="toggleBlock('${t.id}', this)">${t.blocked ? 'Unblock' : 'Block'}</button>
+          <button class="action-btn delete" onclick="deleteTenant('${t.id}', '${(t.company_name||'').replace(/'/g,'')}')">Delete</button>
+        </div>
       </td>
     </tr>
   `).join('');
 }
 
-async function loginAs(tenantId, name) {
+async function togglePause(tenantId, btn) {
+  const res = await fetch(`/api/admin/tenants/${tenantId}/pause`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || 'Failed'); return; }
+  btn.textContent = data.paused ? 'Unpause' : 'Pause';
+  btn.classList.toggle('active-pause', data.paused);
+}
+
+async function toggleBlock(tenantId, btn) {
+  const res = await fetch(`/api/admin/tenants/${tenantId}/block`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || 'Failed'); return; }
+  btn.textContent = data.blocked ? 'Unblock' : 'Block';
+  btn.classList.toggle('active-block', data.blocked);
+}
+
+async function deleteTenant(tenantId, name) {
+  if (!confirm(`Permanently delete "${name}" and all their data? This cannot be undone.`)) return;
+  const res = await fetch(`/api/admin/tenants/${tenantId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  if (res.ok) { loadTenants(); } else { alert('Delete failed'); }
+}
+
+async function loginAs(tenantId) {
   const res = await fetch(`/api/admin/impersonate/${tenantId}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` }

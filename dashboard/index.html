@@ -872,6 +872,10 @@ async function authFetch(url, opts = {}) {
   const res = await fetch(url, { ...opts, headers });
   if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
   if (res.status === 402) { showLockout(await res.json()); throw new Error('Subscription required'); }
+  if (res.status === 403) {
+    const body = await res.json().catch(() => ({}));
+    if (body.error === 'account_blocked') { showLockout({ error: 'account_blocked' }); throw new Error('Account blocked'); }
+  }
   return res;
 }
 
@@ -910,10 +914,19 @@ async function loadBillingStatus() {
 
 function showLockout(data) {
   const status = data?.subscription_status;
+  const error = data?.error;
   const titleEl = document.getElementById('lockout-title');
   const bodyEl = document.getElementById('lockout-body');
   const iconEl = document.getElementById('lockout-icon');
-  if (status === 'past_due') {
+  if (error === 'account_blocked') {
+    iconEl.textContent = '🚫';
+    titleEl.textContent = 'Account suspended';
+    bodyEl.textContent = 'Your account has been suspended. Contact hello@linkcrew.io for more information.';
+  } else if (error === 'account_paused') {
+    iconEl.textContent = '⏸';
+    titleEl.textContent = 'Account paused';
+    bodyEl.textContent = 'Your account has been paused. Choose a plan to restore access.';
+  } else if (status === 'past_due') {
     iconEl.textContent = '💳';
     titleEl.textContent = 'Payment failed';
     bodyEl.textContent = 'Your last payment didn\'t go through. Update your billing info to restore access.';

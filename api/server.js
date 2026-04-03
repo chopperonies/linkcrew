@@ -451,14 +451,20 @@ async function auth(req, res, next) {
   // Track last activity (fire-and-forget)
   supabaseAdmin.from('tenants').update({ last_seen_at: new Date().toISOString() }).eq('id', req.tenantId).then(() => {});
 
-  // Subscription check — skip for billing and auth routes
+  // Subscription / account status check — skip for billing and auth routes
   const skipPaths = ['/api/billing/', '/api/auth/', '/api/admin/', '/api/config', '/api/onboarding', '/api/settings'];
   const skipSub = skipPaths.some(p => req.path.startsWith(p));
   if (!skipSub) {
     const { data: tenant } = await supabaseAdmin.from('tenants')
-      .select('subscription_status, trial_ends_at, plan')
+      .select('subscription_status, trial_ends_at, plan, paused, blocked')
       .eq('id', req.tenantId).single();
-    if (tenant && tenant.subscription_status) {
+    if (tenant) {
+      if (tenant.blocked) {
+        return res.status(403).json({ error: 'account_blocked' });
+      }
+      if (tenant.paused) {
+        return res.status(402).json({ error: 'account_paused' });
+      }
       const now = new Date();
       const trialExpired = tenant.subscription_status === 'trialing' && new Date(tenant.trial_ends_at) < now;
       const locked = trialExpired || tenant.subscription_status === 'past_due' || tenant.subscription_status === 'canceled';
@@ -2107,6 +2113,46 @@ app.patch('/api/admin/invites/:id', auth, async (req, res) => {
 app.delete('/api/admin/invites/:id', auth, async (req, res) => {
   if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
   await supabaseAdmin.from('beta_invites').delete().eq('id', req.params.id);
+  res.json({ ok: true });
+});
+
+// Pause / unpause a tenant
+app.post('/api/admin/tenants/:id/pause', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { data } = await supabaseAdmin.from('tenants').select('paused').eq('id', req.params.id).single();
+  if (!data) return res.status(404).json({ error: 'Not found' });
+  await supabaseAdmin.from('tenants').update({ paused: !data.paused }).eq('id', req.params.id);
+  res.json({ paused: !data.paused });
+});
+
+// Block / unblock a tenant
+app.post('/api/admin/tenants/:id/block', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { data } = await supabaseAdmin.from('tenants').select('blocked').eq('id', req.params.id).single();
+  if (!data) return res.status(404).json({ error: 'Not found' });
+  await supabaseAdmin.from('tenants').update({ blocked: !data.blocked }).eq('id', req.params.id);
+  res.json({ blocked: !data.blocked });
+});
+
+// Delete a tenant and all their data + auth user
+app.delete('/api/admin/tenants/:id', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const tenantId = req.params.id;
+  // Delete data in dependency order
+  for (const table of ['job_updates', 'job_assignments', 'job_photos', 'supply_requests', 'client_follow_ups']) {
+    await supabaseAdmin.from(table).delete().eq('tenant_id', tenantId);
+  }
+  await supabaseAdmin.from('jobs').delete().eq('tenant_id', tenantId);
+  await supabaseAdmin.from('client_users').delete().eq('tenant_id', tenantId);
+  await supabaseAdmin.from('clients').delete().eq('tenant_id', tenantId);
+  await supabaseAdmin.from('employees').delete().eq('tenant_id', tenantId);
+  await supabaseAdmin.from('beta_invites').delete().eq('tenant_id', tenantId);
+  // Get auth user id before deleting tenant_users
+  const { data: tenantUser } = await supabaseAdmin.from('tenant_users').select('user_id').eq('tenant_id', tenantId).single();
+  await supabaseAdmin.from('tenant_users').delete().eq('tenant_id', tenantId);
+  await supabaseAdmin.from('tenants').delete().eq('id', tenantId);
+  // Delete Supabase auth user
+  if (tenantUser?.user_id) await supabaseAdmin.auth.admin.deleteUser(tenantUser.user_id);
   res.json({ ok: true });
 });
 
