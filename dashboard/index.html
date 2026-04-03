@@ -2247,9 +2247,18 @@ async function saveAgreement() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-const saved = getToken();
-if (saved) { currentToken = saved; bootApp(); }
-else { document.getElementById('auth-screen').classList.add('visible'); }
+// Support admin impersonation tokens passed via URL
+const urlParams = new URLSearchParams(location.search);
+const impToken = urlParams.get('admin_token');
+if (impToken) {
+  currentToken = impToken;
+  history.replaceState({}, '', '/app'); // clean URL
+  bootApp();
+} else {
+  const saved = getToken();
+  if (saved) { currentToken = saved; bootApp(); }
+  else { document.getElementById('auth-screen').classList.add('visible'); }
+}
 </script>
 </body>
 </html>

@@ -204,6 +204,7 @@ app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboar
 app.get('/kdg', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg.html')));
 app.get('/kdg-logos', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg-logos.html')));
 app.get('/mission-control', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/mission-control.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/admin.html')));
 
 // ── Mission Control API ───────────────────────────────────────────────────────
 
@@ -392,12 +393,28 @@ app.post('/api/contact-kdg', async (req, res) => {
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .split(',').map(e => e.trim()).filter(Boolean);
 
+// Short-lived impersonation tokens: token → { tenantId, expires }
+const impersonationSessions = new Map();
+
 // ── Auth middleware ───────────────────────────────────────────────────────────
 
 async function auth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  // Impersonation token (admin "Login as" feature)
+  if (token.startsWith('imp_')) {
+    const session = impersonationSessions.get(token);
+    if (!session || session.expires < Date.now()) {
+      impersonationSessions.delete(token);
+      return res.status(401).json({ error: 'Impersonation token expired' });
+    }
+    req.tenantId = session.tenantId;
+    req.isAdmin = false;
+    req.isImpersonating = true;
+    return next();
+  }
 
   // Verify the Supabase JWT and get the user
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
@@ -425,6 +442,9 @@ async function auth(req, res, next) {
   }
 
   req.tenantId = tenantUser.tenant_id;
+
+  // Track last activity (fire-and-forget)
+  supabaseAdmin.from('tenants').update({ last_seen_at: new Date().toISOString() }).eq('id', req.tenantId).then(() => {});
 
   // Subscription check — skip for billing and auth routes
   const skipPaths = ['/api/billing/', '/api/auth/', '/api/admin/', '/api/config', '/api/onboarding', '/api/settings'];
@@ -464,12 +484,29 @@ app.get('/api/config', (req, res) => {
 
 // Create a new owner account + tenant
 app.post('/api/auth/signup', async (req, res) => {
-  const { email, password, company_name } = req.body;
+  const { email, password, company_name, invite_code } = req.body;
   if (!email || !password || !company_name) {
     return res.status(400).json({ error: 'Email, password, and company name are required' });
   }
   if (password.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  // Resolve invite code if provided
+  let trialDays = 14;
+  let inviteId = null;
+  if (invite_code) {
+    const { data: invite } = await supabaseAdmin.from('beta_invites')
+      .select('id, trial_days, max_uses, use_count, expires_at')
+      .eq('code', invite_code.trim().toUpperCase()).single();
+    if (invite) {
+      const notExpired = !invite.expires_at || new Date(invite.expires_at) > new Date();
+      const notFull = invite.max_uses === null || invite.use_count < invite.max_uses;
+      if (notExpired && notFull) {
+        trialDays = invite.trial_days || 14;
+        inviteId = invite.id;
+      }
+    }
   }
 
   // Create Supabase Auth user
@@ -480,10 +517,12 @@ app.post('/api/auth/signup', async (req, res) => {
   });
   if (authError) return res.status(400).json({ error: authError.message });
 
+  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+
   // Create tenant record
   const { data: tenant, error: tenantError } = await supabaseAdmin
     .from('tenants')
-    .insert({ company_name: company_name.trim(), owner_email: email.toLowerCase() })
+    .insert({ company_name: company_name.trim(), owner_email: email.toLowerCase(), trial_ends_at: trialEndsAt })
     .select()
     .single();
 
@@ -500,6 +539,15 @@ app.post('/api/auth/signup', async (req, res) => {
   if (linkError) {
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return res.status(400).json({ error: 'Failed to link account to organization' });
+  }
+
+  // Increment invite use count if one was applied (fire-and-forget)
+  if (inviteId) {
+    supabaseAdmin.from('beta_invites').select('use_count').eq('id', inviteId).single()
+      .then(({ data }) => {
+        if (data) supabaseAdmin.from('beta_invites')
+          .update({ use_count: (data.use_count || 0) + 1 }).eq('id', inviteId).then(() => {});
+      });
   }
 
   res.json({ ok: true });
@@ -1995,14 +2043,66 @@ app.get('/api/admin/tenants', auth, async (req, res) => {
     .from('tenants').select('*').order('created_at', { ascending: false });
 
   const enriched = await Promise.all((tenants || []).map(async t => {
-    const [{ count: jobCount }, { count: empCount }] = await Promise.all([
+    const [{ count: jobCount }, { count: empCount }, { count: clientCount }] = await Promise.all([
       supabaseAdmin.from('jobs').select('id', { count: 'exact', head: true }).eq('tenant_id', t.id),
       supabaseAdmin.from('employees').select('id', { count: 'exact', head: true }).eq('tenant_id', t.id),
+      supabaseAdmin.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', t.id),
     ]);
-    return { ...t, job_count: jobCount || 0, employee_count: empCount || 0 };
+    const trialDaysLeft = t.trial_ends_at
+      ? Math.max(0, Math.ceil((new Date(t.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)))
+      : null;
+    return { ...t, job_count: jobCount || 0, employee_count: empCount || 0, client_count: clientCount || 0, trial_days_left: trialDaysLeft };
   }));
 
   res.json(enriched);
+});
+
+// Generate a short-lived impersonation token for a tenant
+app.post('/api/admin/impersonate/:tenantId', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { tenantId } = req.params;
+  const { data: tenant } = await supabaseAdmin.from('tenants').select('id, company_name').eq('id', tenantId).single();
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+  const token = 'imp_' + require('crypto').randomBytes(24).toString('hex');
+  impersonationSessions.set(token, { tenantId, expires: Date.now() + 60 * 60 * 1000 }); // 1 hour
+  res.json({ token, company_name: tenant.company_name });
+});
+
+// ── Invite routes ─────────────────────────────────────────────────────────────
+
+app.get('/api/admin/invites', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { data } = await supabaseAdmin.from('beta_invites').select('*').order('created_at', { ascending: false });
+  res.json(data || []);
+});
+
+app.post('/api/admin/invites', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { label, trial_days = 30, max_uses = null, expires_at = null } = req.body;
+  const code = require('crypto').randomBytes(4).toString('hex').toUpperCase();
+  const { data, error } = await supabaseAdmin.from('beta_invites')
+    .insert({ code, label, trial_days, max_uses, expires_at }).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.patch('/api/admin/invites/:id', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { label, trial_days, max_uses, expires_at } = req.body;
+  const updates = {};
+  if (label !== undefined) updates.label = label;
+  if (trial_days !== undefined) updates.trial_days = trial_days;
+  if (max_uses !== undefined) updates.max_uses = max_uses;
+  if (expires_at !== undefined) updates.expires_at = expires_at;
+  const { data, error } = await supabaseAdmin.from('beta_invites').update(updates).eq('id', req.params.id).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.delete('/api/admin/invites/:id', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  await supabaseAdmin.from('beta_invites').delete().eq('id', req.params.id);
+  res.json({ ok: true });
 });
 
 // ── Scheduled Email Digest ────────────────────────────────────────────────────

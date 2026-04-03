@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkCrew Admin</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+
+  /* ── Auth screen ── */
+  #auth-screen { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 100; justify-content: center; align-items: center; }
+  #auth-screen.visible { display: flex; }
+  .auth-box { background: #111; border: 1px solid #222; border-radius: 16px; padding: 40px; width: 360px; }
+  .auth-logo { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .auth-sub { color: #555; font-size: 13px; margin-bottom: 28px; }
+  .auth-input { width: 100%; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 13px 14px; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none; }
+  .auth-input:focus { border-color: #0265dc; }
+  .auth-btn { width: 100%; background: #0265dc; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .auth-err { color: #f87171; font-size: 13px; margin-top: 10px; text-align: center; }
+
+  /* ── Layout ── */
+  #shell { display: none; flex-direction: column; min-height: 100vh; }
+  #shell.visible { display: flex; }
+  header { background: #111; border-bottom: 1px solid #1e1e1e; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .hdr-left { display: flex; align-items: center; gap: 12px; }
+  .hdr-logo { font-size: 16px; font-weight: 800; color: #fff; }
+  .hdr-badge { background: #dc2626; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px; }
+  .hdr-btn { background: none; border: 1px solid #2a2a2a; color: #888; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .hdr-btn:hover { border-color: #444; color: #fff; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; padding: 20px 24px 0; border-bottom: 1px solid #1e1e1e; }
+  .tab { background: none; border: none; color: #555; font-size: 14px; font-weight: 600; padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #fff; border-bottom-color: #0265dc; }
+
+  /* ── Main ── */
+  main { padding: 24px; flex: 1; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Stats row ── */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 120px; }
+  .stat-card .num { font-size: 28px; font-weight: 800; color: #fff; }
+  .stat-card .lbl { font-size: 12px; color: #555; margin-top: 2px; }
+
+  /* ── Table ── */
+  .table-wrap { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px 16px; color: #555; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #1e1e1e; }
+  td { padding: 13px 16px; border-bottom: 1px solid #1a1a1a; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #141414; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .badge-active { background: #14532d22; color: #4ade80; border: 1px solid #4ade8044; }
+  .badge-trialing { background: #1e3a5f22; color: #60a5fa; border: 1px solid #60a5fa44; }
+  .badge-canceled { background: #7f1d1d22; color: #f87171; border: 1px solid #f8717144; }
+  .badge-past_due { background: #78350f22; color: #fb923c; border: 1px solid #fb923c44; }
+  .badge-free { background: #1a1a1a; color: #555; border: 1px solid #2a2a2a; }
+  .metric { color: #888; font-variant-numeric: tabular-nums; }
+  .login-btn { background: #0265dc; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .login-btn:hover { background: #0256c0; }
+  .last-seen { color: #555; font-size: 12px; }
+  .company { font-weight: 600; color: #fff; }
+  .email { color: #555; font-size: 12px; margin-top: 2px; }
+  .trial-ok { color: #4ade80; }
+  .trial-warn { color: #fb923c; }
+  .trial-exp { color: #f87171; }
+
+  /* ── Invite panel ── */
+  .invite-form { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 24px; margin-bottom: 24px; }
+  .invite-form h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 11px; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 13px; outline: none; }
+  .form-group input:focus { border-color: #0265dc; }
+  .create-btn { background: #0265dc; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+  .invite-link-row { display: flex; align-items: center; gap: 8px; }
+  .invite-code { font-family: monospace; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #60a5fa; letter-spacing: 1px; }
+  .copy-btn { background: none; border: 1px solid #2a2a2a; color: #888; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .copy-btn:hover { border-color: #444; color: #fff; }
+  .revoke-btn { background: none; border: 1px solid #2a2a2a; color: #f87171; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .revoke-btn:hover { background: #7f1d1d22; }
+  .empty { color: #555; text-align: center; padding: 32px; font-size: 13px; }
+  .search-bar { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; width: 260px; margin-bottom: 16px; }
+  .search-bar:focus { border-color: #0265dc; }
+</style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div id="auth-screen" class="visible">
+  <div class="auth-box">
+    <div class="auth-logo">LinkCrew</div>
+    <div class="auth-sub">Admin Panel — authorized access only</div>
+    <input class="auth-input" id="a-email" type="email" placeholder="Email" />
+    <input class="auth-input" id="a-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()" />
+    <button class="auth-btn" onclick="login()">Sign In</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- Main shell -->
+<div id="shell">
+  <header>
+    <div class="hdr-left">
+      <span class="hdr-logo">LinkCrew</span>
+      <span class="hdr-badge">ADMIN</span>
+    </div>
+    <button class="hdr-btn" onclick="logout()">Sign Out</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('customers')">Customers</button>
+    <button class="tab" onclick="switchTab('invites')">Invite Links</button>
+  </div>
+
+  <main>
+    <!-- Customers panel -->
+    <div class="panel active" id="panel-customers">
+      <div class="stats-row" id="stats-row"></div>
+      <input class="search-bar" id="search" placeholder="Search by company or email…" oninput="renderTable()" />
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Plan</th>
+              <th>Trial</th>
+              <th>Crew</th>
+              <th>Jobs</th>
+              <th>Clients</th>
+              <th>Last Seen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tenant-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Invites panel -->
+    <div class="panel" id="panel-invites">
+      <div class="invite-form">
+        <h3>Create Invite Link</h3>
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Label (who it's for)</label>
+            <input id="inv-label" placeholder="e.g. John @ ABC Roofing" />
+          </div>
+          <div class="form-group">
+            <label>Trial Days</label>
+            <input id="inv-days" type="number" value="30" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Max Uses</label>
+            <input id="inv-uses" type="number" placeholder="unlimited" />
+          </div>
+          <div class="form-group">
+            <label>Expires</label>
+            <input id="inv-expires" type="date" />
+          </div>
+        </div>
+        <button class="create-btn" onclick="createInvite()">Generate Link</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Code</th>
+              <th>Trial</th>
+              <th>Uses</th>
+              <th>Expires</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="invite-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let token = null;
+let tenants = [];
+let API = '';
+
+async function login() {
+  const email = document.getElementById('a-email').value.trim();
+  const pass = document.getElementById('a-pass').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+
+  const configRes = await fetch('/api/config');
+  const { supabaseUrl, supabaseKey } = await configRes.json();
+
+  const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: supabaseKey },
+    body: JSON.stringify({ email, password: pass }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.access_token) { errEl.textContent = data.error_description || 'Login failed'; return; }
+
+  // Verify admin access
+  const checkRes = await fetch('/api/admin/tenants', {
+    headers: { Authorization: `Bearer ${data.access_token}` }
+  });
+  if (!checkRes.ok) { errEl.textContent = 'Access denied — admin only'; return; }
+
+  token = data.access_token;
+  document.getElementById('auth-screen').classList.remove('visible');
+  document.getElementById('shell').classList.add('visible');
+  loadTenants();
+  loadInvites();
+}
+
+function logout() {
+  token = null;
+  document.getElementById('shell').classList.remove('visible');
+  document.getElementById('auth-screen').classList.add('visible');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['customers','invites'][i] === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+}
+
+async function loadTenants() {
+  const res = await fetch('/api/admin/tenants', { headers: { Authorization: `Bearer ${token}` } });
+  tenants = await res.json();
+  renderStats();
+  renderTable();
+}
+
+function renderStats() {
+  const active = tenants.filter(t => t.subscription_status === 'active').length;
+  const trialing = tenants.filter(t => t.subscription_status === 'trialing').length;
+  const sevenDays = new Date(Date.now() - 7 * 86400000);
+  const recentlyActive = tenants.filter(t => t.last_seen_at && new Date(t.last_seen_at) > sevenDays).length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="num">${tenants.length}</div><div class="lbl">Total Accounts</div></div>
+    <div class="stat-card"><div class="num" style="color:#4ade80">${active}</div><div class="lbl">Paying</div></div>
+    <div class="stat-card"><div class="num" style="color:#60a5fa">${trialing}</div><div class="lbl">On Trial</div></div>
+    <div class="stat-card"><div class="num" style="color:#a78bfa">${recentlyActive}</div><div class="lbl">Active (7d)</div></div>
+  `;
+}
+
+function timeSince(dateStr) {
+  if (!dateStr) return '—';
+  const diff = Date.now() - new Date(dateStr);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function trialLabel(t) {
+  if (t.subscription_status === 'active') return '<span style="color:#555">—</span>';
+  if (!t.trial_days_left && t.trial_days_left !== 0) return '<span style="color:#555">—</span>';
+  if (t.trial_days_left === 0) return '<span class="trial-exp">Expired</span>';
+  if (t.trial_days_left <= 3) return `<span class="trial-warn">${t.trial_days_left}d left</span>`;
+  return `<span class="trial-ok">${t.trial_days_left}d left</span>`;
+}
+
+function renderTable() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const filtered = tenants.filter(t =>
+    (t.company_name || '').toLowerCase().includes(q) ||
+    (t.owner_email || '').toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('tenant-tbody');
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty">No customers found</td></tr>`; return; }
+  tbody.innerHTML = filtered.map(t => `
+    <tr>
+      <td>
+        <div class="company">${t.company_name || '—'}</div>
+        <div class="email">${t.owner_email || ''}</div>
+      </td>
+      <td>
+        <span class="badge badge-${t.subscription_status || 'free'}">${t.plan || 'free'}</span>
+      </td>
+      <td>${trialLabel(t)}</td>
+      <td class="metric">${t.employee_count ?? 0} / ${t.max_users ?? 1}</td>
+      <td class="metric">${t.job_count ?? 0}</td>
+      <td class="metric">${t.client_count ?? 0}</td>
+      <td class="last-seen">${timeSince(t.last_seen_at)}</td>
+      <td>
+        <button class="login-btn" onclick="loginAs('${t.id}', '${(t.company_name||'').replace(/'/g,'')}')" >Login as</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function loginAs(tenantId, name) {
+  const res = await fetch(`/api/admin/impersonate/${tenantId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || 'Failed'); return; }
+  window.open(`/app?admin_token=${data.token}`, '_blank');
+}
+
+// ── Invites ───────────────────────────────────────────────────────────────────
+
+async function loadInvites() {
+  const res = await fetch('/api/admin/invites', { headers: { Authorization: `Bearer ${token}` } });
+  const invites = await res.json();
+  renderInvites(invites);
+}
+
+function renderInvites(invites) {
+  const tbody = document.getElementById('invite-tbody');
+  if (!invites.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty">No invite links yet</td></tr>`; return; }
+  tbody.innerHTML = invites.map(inv => {
+    const link = `${location.origin}/app?invite=${inv.code}`;
+    const uses = inv.max_uses ? `${inv.use_count}/${inv.max_uses}` : `${inv.use_count} used`;
+    const expires = inv.expires_at ? new Date(inv.expires_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Never';
+    const created = new Date(inv.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return `
+      <tr>
+        <td>${inv.label || '<span style="color:#555">—</span>'}</td>
+        <td><span class="invite-code">${inv.code}</span></td>
+        <td class="metric">${inv.trial_days}d</td>
+        <td class="metric">${uses}</td>
+        <td class="last-seen">${expires}</td>
+        <td class="last-seen">${created}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="copy-btn" onclick="copyLink('${link}', this)">Copy Link</button>
+            <button class="revoke-btn" onclick="revokeInvite('${inv.id}')">Revoke</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function copyLink(link, btn) {
+  navigator.clipboard.writeText(link);
+  const orig = btn.textContent;
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+async function createInvite() {
+  const label = document.getElementById('inv-label').value.trim();
+  const trial_days = parseInt(document.getElementById('inv-days').value) || 30;
+  const max_uses_raw = document.getElementById('inv-uses').value;
+  const max_uses = max_uses_raw ? parseInt(max_uses_raw) : null;
+  const expires_raw = document.getElementById('inv-expires').value;
+  const expires_at = expires_raw ? new Date(expires_raw).toISOString() : null;
+
+  const res = await fetch('/api/admin/invites', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ label, trial_days, max_uses, expires_at }),
+  });
+  if (!res.ok) { alert('Failed to create invite'); return; }
+  document.getElementById('inv-label').value = '';
+  document.getElementById('inv-uses').value = '';
+  document.getElementById('inv-expires').value = '';
+  loadInvites();
+}
+
+async function revokeInvite(id) {
+  if (!confirm('Revoke this invite link?')) return;
+  await fetch(`/api/admin/invites/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  loadInvites();
+}
+</script>
+</body>
+</html>
