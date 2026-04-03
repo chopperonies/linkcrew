@@ -186,8 +186,8 @@
   async function choosePlan(plan) {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
-      // Not logged in — send to sign up
-      location.href = '/app';
+      // Not logged in — send to sign up, carry plan so checkout fires after login
+      location.href = '/app?plan=' + plan;
       return;
     }
 

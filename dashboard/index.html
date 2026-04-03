@@ -1024,6 +1024,20 @@ async function bootApp() {
   document.getElementById('auth-screen').classList.remove('visible');
   document.getElementById('app-shell').style.display = 'block';
 
+  // If user came from pricing page, auto-redirect to Stripe checkout
+  const pendingPlan = new URLSearchParams(location.search).get('plan');
+  if (pendingPlan) {
+    try {
+      const res = await authFetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: pendingPlan }),
+      });
+      const json = await res.json();
+      if (json.url) { location.href = json.url; return; }
+    } catch (_) {}
+  }
+
   // Check if admin
   const testRes = await authFetch('/api/admin/tenants');
   isAdmin = testRes.ok;
