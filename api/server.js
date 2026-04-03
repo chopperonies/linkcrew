@@ -671,6 +671,11 @@ app.get('/api/employees', auth, async (req, res) => {
 app.post('/api/employees', auth, async (req, res) => {
   const { name, phone, role } = req.body;
   if (!name || !phone || !role) return res.status(400).json({ error: 'name, phone and role are required' });
+  // Enforce plan crew limit
+  const { data: tenant } = await supabaseAdmin.from('tenants').select('max_users').eq('id', req.tenantId).single();
+  const maxUsers = tenant?.max_users ?? 1;
+  const { count } = await supabaseAdmin.from('employees').select('*', { count: 'exact', head: true }).eq('tenant_id', req.tenantId);
+  if (count >= maxUsers) return res.status(403).json({ error: `Plan limit reached. Your plan allows up to ${maxUsers} crew member${maxUsers === 1 ? '' : 's'}. Upgrade at linkcrew.io/pricing.` });
   const { data, error } = await supabaseAdmin.from('employees')
     .insert({ name: name.trim(), phone: phone.trim(), role, tenant_id: req.tenantId }).select().single();
   if (error) return res.status(400).json({ error: error.message });
@@ -1108,7 +1113,7 @@ app.get('/api/billing/status', auth, async (req, res) => {
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
   const { data } = await supabaseAdmin.from('tenants')
-    .select('plan, subscription_status, trial_ends_at, stripe_customer_id')
+    .select('plan, subscription_status, trial_ends_at, stripe_customer_id, max_users')
     .eq('id', tenantId).single();
   res.json(data || {});
 });

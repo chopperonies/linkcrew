@@ -713,6 +713,12 @@
       </div>
     </div>
 
+    <div id="priority-support-section" style="display:none;margin-top:24px;padding:20px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:12px">
+      <div style="font-size:14px;font-weight:700;color:#17191c;margin-bottom:4px">Priority Support</div>
+      <div style="font-size:13px;color:#737475;margin-bottom:14px">As a Team+ member you have access to priority support from our team.</div>
+      <a href="mailto:hello@linkcrew.io?subject=Priority Support Request" style="display:inline-block;background:#0265dc;color:#fff;text-decoration:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700">Contact Priority Support</a>
+    </div>
+
   </div>
 </div>
 
@@ -850,6 +856,8 @@ let supabaseClient = null;
 let currentToken = null;
 let isAdmin = false;
 let currentTenantId = null;
+let currentPlan = null;
+let currentMaxUsers = 1;
 
 const TOKEN_KEY = 'fs_token';
 
@@ -876,6 +884,8 @@ async function loadBillingStatus() {
     if (!res.ok) return;
     const data = await res.json();
     const now = new Date();
+    currentPlan = data.plan ?? null;
+    currentMaxUsers = data.max_users ?? 1;
 
     if (data.subscription_status === 'trialing' && data.trial_ends_at) {
       const ends = new Date(data.trial_ends_at);
@@ -1469,11 +1479,13 @@ function closeTeam() {
   document.getElementById('emp-phone').value = '';
   document.getElementById('emp-role').value = 'crew';
 }
+let currentEmployeeCount = 0;
 async function loadTeam() {
   const el = document.getElementById('team-list');
   try {
     const res = await authFetch('/api/employees');
     const employees = await res.json();
+    currentEmployeeCount = employees.length;
     if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>'; return; }
     el.innerHTML = employees.map(e => `
       <div class="team-row" id="emp-row-${e.id}">
@@ -1495,6 +1507,9 @@ async function saveEmployee() {
   const phone = document.getElementById('emp-phone').value.trim();
   const role = document.getElementById('emp-role').value;
   if (!name || !phone) return alert('Name and phone are required');
+  if (currentEmployeeCount >= currentMaxUsers) {
+    return alert(`Plan limit reached. Your ${currentPlan ?? 'current'} plan allows up to ${currentMaxUsers} crew member${currentMaxUsers === 1 ? '' : 's'}. Upgrade at linkcrew.io/pricing.`);
+  }
   const res = await authFetch('/api/employees', { method: 'POST', body: JSON.stringify({ name, phone, role }) });
   if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to add employee'); }
   document.getElementById('emp-name').value = '';
@@ -1630,6 +1645,9 @@ async function loadSettings() {
     document.getElementById('vb-phone').value = data.twilio_phone || '';
     document.getElementById('vb-sid').value = data.twilio_account_sid || '';
   }
+  const priorityPlans = ['team', 'pro', 'business'];
+  document.getElementById('priority-support-section').style.display =
+    priorityPlans.includes(currentPlan) ? 'block' : 'none';
   settingsLoaded = true;
 }
 
