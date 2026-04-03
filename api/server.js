@@ -204,7 +204,7 @@ app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboar
 app.get('/kdg', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg.html')));
 app.get('/kdg-logos', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg-logos.html')));
 app.get('/mission-control', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/mission-control.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/admin.html')));
+app.get('/lc-ops', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/admin.html')));
 
 // ── Mission Control API ───────────────────────────────────────────────────────
 
