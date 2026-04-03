@@ -253,6 +253,26 @@ app.delete('/api/mc/notes/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Choppy can read notes using CHOPPY_SECRET
+app.get('/api/mc/choppy-notes', async (req, res) => {
+  const secret = req.query.secret;
+  if (!secret || secret !== process.env.CHOPPY_SECRET) return res.status(401).json({ error: 'Unauthorized' });
+  const { data, error } = await supabaseAdmin.from('mc_notes')
+    .select('*').order('updated_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// Choppy can read calendar events using CHOPPY_SECRET
+app.get('/api/mc/choppy-events', async (req, res) => {
+  const secret = req.query.secret;
+  if (!secret || secret !== process.env.CHOPPY_SECRET) return res.status(401).json({ error: 'Unauthorized' });
+  const { data, error } = await supabaseAdmin.from('mc_events')
+    .select('*').order('event_date', { ascending: true }).order('event_time', { ascending: true, nullsFirst: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // Choppy can post notes directly using CHOPPY_SECRET
 app.post('/api/mc/choppy-note', async (req, res) => {
   const { secret, title, content, category } = req.body;
