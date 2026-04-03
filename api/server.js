@@ -204,6 +204,11 @@ app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboar
 app.get('/kdg', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg.html')));
 app.get('/kdg-logos', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/kdg-logos.html')));
 app.get('/mission-control', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/mission-control.html')));
+app.get('/lc-ops-check', (req, res) => {
+  const secret = process.env.ADMIN_URL_SECRET;
+  res.json({ secret_set: !!secret, secret_length: (secret||'').length, key_received: req.query.k, match: req.query.k === secret });
+});
+
 app.get('/lc-ops', (req, res) => {
   const secret = process.env.ADMIN_URL_SECRET;
   if (secret && req.query.k !== secret) return res.status(404).send('Not found');
