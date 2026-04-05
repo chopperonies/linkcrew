@@ -786,7 +786,21 @@ app.get('/api/clients/:id', auth, async (req, res) => {
     supabaseAdmin.from('client_follow_ups').select('*').eq('client_id', id).order('due_date').order('created_at'),
     supabaseAdmin.from('jobs').select('id, name, address, status, created_at, invoice_amount, payment_status').eq('client_id', id).order('created_at', { ascending: false }),
   ]);
-  res.json({ client, followUps: followUps || [], jobs: jobs || [] });
+
+  let photos = [];
+  if (jobs?.length) {
+    const { data: photoData } = await supabaseAdmin
+      .from('job_updates')
+      .select('id, photo_url, message, created_at, jobs(name)')
+      .in('job_id', jobs.map(j => j.id))
+      .eq('type', 'photo')
+      .not('photo_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(60);
+    photos = photoData || [];
+  }
+
+  res.json({ client, followUps: followUps || [], jobs: jobs || [], photos });
 });
 
 app.patch('/api/clients/:id', auth, async (req, res) => {

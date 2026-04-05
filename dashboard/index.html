@@ -1827,7 +1827,7 @@ async function openClientDetail(clientId) {
   panel.innerHTML = '<div class="empty" style="margin-top:60px"><div class="e-icon">⏳</div>Loading...</div>';
 
   const res = await authFetch(`/api/clients/${clientId}`);
-  const { client, followUps, jobs } = await res.json();
+  const { client, followUps, jobs, photos } = await res.json();
   if (!client) return;
 
   const today = new Date().toISOString().split('T')[0];
@@ -1836,6 +1836,7 @@ async function openClientDetail(clientId) {
     <div class="cd-header">
       <div>
         <div class="cd-name">${client.name}</div>
+        ${client.company ? `<div style="font-size:13px;font-weight:600;color:#17191c;margin-top:2px">${client.company}</div>` : ''}
         <div class="cd-contact">${[client.phone, client.email, client.address].filter(Boolean).join(' · ') || 'No contact info'}</div>
       </div>
       <div style="display:flex;gap:8px">
@@ -1878,6 +1879,41 @@ async function openClientDetail(clientId) {
       </div>
     </div>
 
+    <!-- Invoices -->
+    ${jobs.some(j => j.invoice_amount > 0) ? `
+    <div class="cd-section">
+      <div class="cd-section-title">Invoices</div>
+      ${jobs.filter(j => j.invoice_amount > 0).map(j => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#17191c">${j.name}</div>
+            <div style="font-size:12px;color:#737475">${new Date(j.created_at).toLocaleDateString()}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;font-weight:700;color:#17191c">$${parseFloat(j.invoice_amount).toFixed(2)}</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${j.payment_status==='paid'?'#f0fdf4':'#fefce8'};color:${j.payment_status==='paid'?'#166534':'#92400e'}">${j.payment_status==='paid'?'Paid':'Unpaid'}</span>
+            <a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none">View →</a>
+          </div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Photos -->
+    <div class="cd-section">
+      <div class="cd-section-title">Photos (${photos.length})</div>
+      ${photos.length ? `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">
+          ${photos.map(p => `
+            <div style="position:relative">
+              <img src="${p.photo_url}" onclick="window.open('${p.photo_url}','_blank')"
+                style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #e8e8e8"
+                title="${p.jobs?.name||''} · ${new Date(p.created_at).toLocaleDateString()}">
+            </div>
+          `).join('')}
+        </div>
+      ` : '<div style="font-size:13px;color:#949596;font-style:italic">No photos uploaded yet.</div>'}
+    </div>
+
     <!-- Job History -->
     <div class="cd-section">
       <div class="cd-section-title">Job History (${jobs.length})</div>
@@ -1886,7 +1922,6 @@ async function openClientDetail(clientId) {
           <div style="flex:1">
             <div class="jh-name">${j.name}</div>
             <div class="jh-address">${j.address || 'No address'}</div>
-            ${j.invoice_amount > 0 ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>` : ''}
           </div>
           <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
         </div>
