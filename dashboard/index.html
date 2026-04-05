@@ -828,13 +828,15 @@
     <!-- Appointment Reminders -->
     <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
       <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:6px">Appointment Reminders</div>
-      <div style="font-size:13px;color:#737475;margin-bottom:20px">Choose when you want to be notified about your upcoming appointments.</div>
+      <div style="font-size:13px;color:#737475;margin-bottom:20px">Get notified by email before each upcoming appointment.</div>
       <div style="display:flex;align-items:center;gap:12px">
         <select id="set-appt-reminder" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:9px 14px;font-size:13px;color:#17191c">
-          <option value="day_before">Night before (7pm)</option>
-          <option value="morning_of">Morning of (7am)</option>
-          <option value="both">Both</option>
-          <option value="off">Off</option>
+          <option value="0">Off</option>
+          <option value="15">15 minutes before</option>
+          <option value="30">30 minutes before</option>
+          <option value="60" selected>1 hour before</option>
+          <option value="120">2 hours before</option>
+          <option value="1440">1 day before</option>
         </select>
         <button onclick="saveApptReminder()"
           style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
@@ -2097,7 +2099,7 @@ async function loadSettings() {
     document.getElementById('vb-sid').value = data.twilio_account_sid || '';
   }
   if (data.photo_expiry_days) document.getElementById('set-photo-expiry').value = String(data.photo_expiry_days);
-  if (data.appt_reminder) document.getElementById('set-appt-reminder').value = data.appt_reminder;
+  if (data.appt_reminder_minutes !== undefined && data.appt_reminder_minutes !== null) document.getElementById('set-appt-reminder').value = String(data.appt_reminder_minutes);
   const priorityPlans = ['team', 'pro', 'business'];
   document.getElementById('priority-support-section').style.display =
     priorityPlans.includes(currentPlan) ? 'block' : 'none';
@@ -2105,10 +2107,10 @@ async function loadSettings() {
 }
 
 async function saveApptReminder() {
-  const appt_reminder = document.getElementById('set-appt-reminder').value;
+  const appt_reminder_minutes = parseInt(document.getElementById('set-appt-reminder').value);
   const statusEl = document.getElementById('appt-reminder-status');
   statusEl.style.color = '#737475'; statusEl.textContent = 'Saving…';
-  const res = await authFetch('/api/settings', { method: 'PATCH', body: JSON.stringify({ appt_reminder }) });
+  const res = await authFetch('/api/settings', { method: 'PATCH', body: JSON.stringify({ appt_reminder_minutes }) });
   if (res.ok) {
     statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Saved';
     setTimeout(() => statusEl.textContent = '', 3000);
