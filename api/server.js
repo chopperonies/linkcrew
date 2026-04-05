@@ -770,10 +770,10 @@ app.get('/api/clients', auth, async (req, res) => {
 });
 
 app.post('/api/clients', auth, async (req, res) => {
-  const { name, phone, email, address, notes } = req.body;
+  const { name, company, phone, email, address, notes } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
   const { data, error } = await supabaseAdmin.from('clients')
-    .insert({ name: name.trim(), phone, email, address, notes, tenant_id: req.tenantId })
+    .insert({ name: name.trim(), company, phone, email, address, notes, tenant_id: req.tenantId })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -791,9 +791,10 @@ app.get('/api/clients/:id', auth, async (req, res) => {
 
 app.patch('/api/clients/:id', auth, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, email, address, notes } = req.body;
+  const { name, company, phone, email, address, notes } = req.body;
   const updates = {};
   if (name !== undefined) updates.name = name.trim();
+  if (company !== undefined) updates.company = company;
   if (phone !== undefined) updates.phone = phone;
   if (email !== undefined) updates.email = email;
   if (address !== undefined) updates.address = address;
@@ -1200,6 +1201,7 @@ app.post('/api/billing/checkout', auth, async (req, res) => {
         ? { customer: tenant.stripe_customer_id }
         : { customer_email: tenant.owner_email }),
       line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
       success_url: `${req.protocol}://${req.get('host')}/app?billing=success`,
       cancel_url: `${req.protocol}://${req.get('host')}/pricing`,
       metadata: { tenant_id: tenantId, plan },
@@ -2245,6 +2247,7 @@ app.post('/api/admin/tenants/:id/payment-link', auth, async (req, res) => {
         ? { customer: tenant.stripe_customer_id }
         : { customer_email: tenant.owner_email }),
       line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
       success_url: 'https://linkcrew.io/app?billing=success',
       cancel_url: 'https://linkcrew.io/pricing',
       metadata: { tenant_id: req.params.id, plan },
