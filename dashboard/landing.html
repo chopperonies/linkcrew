@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #fff; color: #17191c; }
@@ -79,7 +80,12 @@
       background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 12px;
       padding: 32px 28px;
     }
-    .feature-icon { font-size: 32px; margin-bottom: 16px; }
+    .feature-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; flex-shrink: 0;
+    }
+    .feature-icon i { font-size: 30px; }
     .feature-card h3 { font-size: 18px; font-weight: 700; color: #17191c; margin-bottom: 10px; }
     .feature-card p { font-size: 14px; color: #737475; line-height: 1.6; }
 
@@ -187,47 +193,47 @@
     <p class="section-sub">From the job site to the office — LinkCrew connects your crew, your clients, and your pipeline in one place.</p>
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="feature-icon">📍</div>
+        <div class="feature-icon" style="background:#e8f3ff"><i class="ph-duotone ph-map-pin" style="color:#0265dc"></i></div>
         <h3>Live Job Tracking</h3>
         <p>See exactly which crew member is on which site, when they checked in, and how long they've been there — in real time.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📋</div>
+        <div class="feature-icon" style="background:#fff4e8"><i class="ph-duotone ph-kanban" style="color:#f97316"></i></div>
         <h3>Job Pipeline</h3>
         <p>Track every job from Quoted through to Invoiced. Move jobs through stages with a single tap from your dashboard or phone.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">👤</div>
+        <div class="feature-icon" style="background:#f3e8ff"><i class="ph-duotone ph-address-book" style="color:#7c3aed"></i></div>
         <h3>Client CRM</h3>
         <p>Keep all your client info, job history, notes, and follow-ups in one place. Never lose track of a lead or a callback.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon" style="background:#e8f9f0"><i class="ph-duotone ph-chart-bar" style="color:#16a34a"></i></div>
         <h3>Reporting</h3>
         <p>See completed jobs, crew hours, supply spend, and bottlenecks over any time period — all in one clear dashboard.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📄</div>
+        <div class="feature-icon" style="background:#e8f9f9"><i class="ph-duotone ph-file-text" style="color:#0891b2"></i></div>
         <h3>Service Agreements</h3>
         <p>Track recurring contracts with due dates and schedules. Stay on top of renewals before they slip through the cracks.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
+        <div class="feature-icon" style="background:#eef2ff"><i class="ph-duotone ph-monitor" style="color:#4f46e5"></i></div>
         <h3>Client Portal</h3>
         <p>Give clients their own login to view job status, see site photos, and request new services — no calls required.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📦</div>
+        <div class="feature-icon" style="background:#fffae8"><i class="ph-duotone ph-package" style="color:#d97706"></i></div>
         <h3>Supply Requests</h3>
         <p>Crew submits supply requests from the field. You see them instantly on the dashboard and mark them ordered or delivered.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📸</div>
+        <div class="feature-icon" style="background:#fff0f9"><i class="ph-duotone ph-camera" style="color:#db2777"></i></div>
         <h3>Site Photos</h3>
         <p>Before, during, and after photos from your crew land straight in your dashboard the moment they're taken.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">👷</div>
+        <div class="feature-icon" style="background:#fff0f0"><i class="ph-duotone ph-users-three" style="color:#e53e3e"></i></div>
         <h3>Crew Management</h3>
         <p>Add crew members, assign roles, and put them on jobs. Know who's available and who's already on site.</p>
       </div>
