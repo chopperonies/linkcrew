@@ -451,6 +451,7 @@
   <div class="main-tab" id="mtab-clients" onclick="switchMainTab('clients')">👤 Clients</div>
   <div class="main-tab" id="mtab-reports" onclick="switchMainTab('reports')">📊 Reports</div>
   <div class="main-tab" id="mtab-agreements" onclick="switchMainTab('agreements')">📄 Agreements</div>
+  <div class="main-tab" id="mtab-calendar" onclick="switchMainTab('calendar')">📅 Calendar</div>
   <div class="main-tab" id="mtab-settings" onclick="switchMainTab('settings')">⚙️ Settings</div>
 </div>
 
@@ -604,6 +605,94 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeAgreementModal()">Cancel</button>
       <button class="btn-save" id="ag-modal-save" onclick="saveAgreement()">Add Agreement</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar view -->
+<div id="calendar-view" style="display:none">
+  <div style="max-width:1100px;margin:0 auto;padding:24px">
+
+    <!-- Week nav -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="calWeekOffset(-1)" style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">‹</button>
+        <div id="cal-week-label" style="font-size:16px;font-weight:700;color:#17191c;min-width:220px;text-align:center"></div>
+        <button onclick="calWeekOffset(1)" style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">›</button>
+        <button onclick="calGoToday()" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#17191c">Today</button>
+      </div>
+      <button onclick="openApptModal()" style="background:#0265dc;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">+ Add Appointment</button>
+    </div>
+
+    <!-- Week grid -->
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px"></div>
+
+    <!-- Services section -->
+    <div style="margin-top:32px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:700;color:#17191c">Pre-defined Services</div>
+        <button onclick="openServiceModal()" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#17191c">+ Add Service</button>
+      </div>
+      <div id="services-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Appointment Modal -->
+<div class="modal-overlay" id="appt-modal">
+  <div class="modal" style="width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0" id="appt-modal-title">Add Appointment</h3>
+      <button class="btn-cancel" onclick="closeApptModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <div class="form-group"><label>Title *</label><input type="text" id="appt-title" placeholder="e.g. Roof Inspection"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Date *</label><input type="date" id="appt-date"></div>
+      <div class="form-group"><label>Start Time</label><input type="time" id="appt-start-time" value="09:00"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>End Time</label><input type="time" id="appt-end-time" value="10:00"></div>
+      <div class="form-group"><label>Client</label>
+        <select id="appt-client" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 11px;font-size:13px;color:#17191c">
+          <option value="">No client</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Services</label>
+      <div id="appt-services-checks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="appt-notes" rows="3" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 11px;font-size:13px;color:#17191c;resize:vertical"></textarea></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button id="appt-delete-btn" onclick="deleteAppt()" style="display:none;background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-cancel" onclick="closeApptModal()">Cancel</button>
+        <button class="btn-save" id="appt-save-btn" onclick="saveAppt()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Service Modal -->
+<div class="modal-overlay" id="service-modal">
+  <div class="modal" style="width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0" id="service-modal-title">Add Service</h3>
+      <button class="btn-cancel" onclick="closeServiceModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <div class="form-group"><label>Name *</label><input type="text" id="svc-name" placeholder="e.g. Roof Inspection"></div>
+    <div class="form-group"><label>Description</label><input type="text" id="svc-desc" placeholder="Brief description"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Price ($)</label><input type="number" id="svc-price" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Duration (min)</label><input type="number" id="svc-duration" placeholder="60" min="15" step="15"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button id="svc-delete-btn" onclick="deleteService()" style="display:none;background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-cancel" onclick="closeServiceModal()">Cancel</button>
+        <button class="btn-save" id="svc-save-btn" onclick="saveService()">Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1693,14 +1782,270 @@ function closeOverlay(e) {
 
 // ── Main Tab Navigation ───────────────────────────────────────────────────────
 function switchMainTab(tab) {
-  ['jobs','clients','reports','agreements','settings'].forEach(t => {
+  ['jobs','clients','reports','agreements','calendar','settings'].forEach(t => {
     document.getElementById(`${t}-view`).style.display = t === tab ? 'block' : 'none';
     document.getElementById(`mtab-${t}`).classList.toggle('active', t === tab);
   });
   if (tab === 'clients' && !allClientsData.length) loadClients();
   if (tab === 'reports') loadReports(30);
   if (tab === 'agreements') loadAgreements();
+  if (tab === 'calendar') initCalendar();
   if (tab === 'settings') loadSettings();
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+let calWeekStart = null;
+let calAppointments = [];
+let calServices = [];
+let editingApptId = null;
+let editingServiceId = null;
+let calInitialized = false;
+
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Mon start
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+async function initCalendar() {
+  if (!calWeekStart) calWeekStart = getWeekStart(new Date());
+  await Promise.all([loadCalendarWeek(), loadServices()]);
+  calInitialized = true;
+}
+
+function calGoToday() {
+  calWeekStart = getWeekStart(new Date());
+  loadCalendarWeek();
+}
+
+function calWeekOffset(dir) {
+  calWeekStart = new Date(calWeekStart);
+  calWeekStart.setDate(calWeekStart.getDate() + dir * 7);
+  loadCalendarWeek();
+}
+
+async function loadCalendarWeek() {
+  const start = new Date(calWeekStart);
+  const end = new Date(calWeekStart);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  const label = `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('cal-week-label').textContent = label;
+
+  const res = await authFetch(`/api/appointments?start=${start.toISOString()}&end=${end.toISOString()}`);
+  calAppointments = await res.json();
+  renderCalendarGrid();
+}
+
+function renderCalendarGrid() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const grid = document.getElementById('cal-grid');
+
+  grid.innerHTML = days.map((dayName, i) => {
+    const date = new Date(calWeekStart);
+    date.setDate(date.getDate() + i);
+    const isToday = date.getTime() === today.getTime();
+    const dateStr = date.toISOString().split('T')[0];
+
+    const dayAppts = calAppointments.filter(a => a.start_time.startsWith(dateStr));
+    dayAppts.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+    return `
+      <div style="background:#fff;border:1px solid ${isToday ? '#0265dc' : '#e8e8e8'};border-radius:10px;min-height:140px;overflow:hidden">
+        <div style="padding:10px 12px;border-bottom:1px solid #f0f0f0;background:${isToday ? '#e8f0fd' : '#fafafa'};display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:${isToday ? '#0265dc' : '#737475'};text-transform:uppercase">${dayName}</div>
+            <div style="font-size:18px;font-weight:700;color:${isToday ? '#0265dc' : '#17191c'}">${date.getDate()}</div>
+          </div>
+          <button onclick="openApptModal('${dateStr}')" style="background:none;border:1px solid #e8e8e8;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:16px;line-height:1;color:#737475;display:flex;align-items:center;justify-content:center">+</button>
+        </div>
+        <div style="padding:8px">
+          ${dayAppts.length ? dayAppts.map(a => {
+            const t = new Date(a.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+            return `
+              <div onclick="openApptModal(null,'${a.id}')"
+                style="background:#e8f0fd;border-radius:6px;padding:6px 9px;margin-bottom:6px;cursor:pointer;border-left:3px solid #0265dc">
+                <div style="font-size:12px;font-weight:700;color:#17191c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.title}</div>
+                <div style="font-size:11px;color:#0265dc;margin-top:2px">${t}${a.clients ? ' · ' + a.clients.name : ''}</div>
+              </div>`;
+          }).join('') : '<div style="font-size:12px;color:#c0c0c0;padding:4px 2px;text-align:center">—</div>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadServices() {
+  const res = await authFetch('/api/services');
+  calServices = await res.json();
+  renderServicesList();
+}
+
+function renderServicesList() {
+  const el = document.getElementById('services-list');
+  if (!calServices.length) {
+    el.innerHTML = '<div style="font-size:13px;color:#949596;font-style:italic">No services yet. Add one to use as quick-pick when scheduling.</div>';
+    return;
+  }
+  el.innerHTML = calServices.map(s => `
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:14px 16px;cursor:pointer" onclick="openServiceModal('${s.id}')">
+      <div style="font-size:13px;font-weight:700;color:#17191c">${s.name}</div>
+      ${s.description ? `<div style="font-size:12px;color:#737475;margin-top:2px">${s.description}</div>` : ''}
+      <div style="display:flex;gap:12px;margin-top:8px">
+        ${s.price ? `<span style="font-size:12px;color:#17191c;font-weight:600">$${parseFloat(s.price).toFixed(2)}</span>` : ''}
+        <span style="font-size:12px;color:#737475">${s.duration_minutes} min</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openApptModal(dateStr, apptId) {
+  editingApptId = apptId || null;
+  const modal = document.getElementById('appt-modal');
+  document.getElementById('appt-modal-title').textContent = apptId ? 'Edit Appointment' : 'Add Appointment';
+  document.getElementById('appt-delete-btn').style.display = apptId ? 'inline-block' : 'none';
+
+  // Populate client dropdown
+  const sel = document.getElementById('appt-client');
+  sel.innerHTML = '<option value="">No client</option>' +
+    (allClientsData || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  // Populate services checkboxes
+  const checksEl = document.getElementById('appt-services-checks');
+  checksEl.innerHTML = calServices.map(s => `
+    <label style="display:flex;align-items:center;gap:6px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600;color:#17191c">
+      <input type="checkbox" value="${s.id}" style="cursor:pointer"> ${s.name}${s.price ? ' — $' + parseFloat(s.price).toFixed(2) : ''}
+    </label>
+  `).join('') || '<div style="font-size:12px;color:#949596;font-style:italic">No services defined yet.</div>';
+
+  if (apptId) {
+    const a = calAppointments.find(x => x.id === apptId);
+    if (a) {
+      const localDate = new Date(a.start_time);
+      document.getElementById('appt-title').value = a.title;
+      document.getElementById('appt-date').value = localDate.toISOString().split('T')[0];
+      document.getElementById('appt-start-time').value = localDate.toTimeString().slice(0,5);
+      document.getElementById('appt-end-time').value = a.end_time ? new Date(a.end_time).toTimeString().slice(0,5) : '';
+      document.getElementById('appt-client').value = a.client_id || '';
+      document.getElementById('appt-notes').value = a.notes || '';
+      (a.service_ids || []).forEach(sid => {
+        const cb = checksEl.querySelector(`input[value="${sid}"]`);
+        if (cb) cb.checked = true;
+      });
+    }
+  } else {
+    document.getElementById('appt-title').value = '';
+    document.getElementById('appt-date').value = dateStr || new Date().toISOString().split('T')[0];
+    document.getElementById('appt-start-time').value = '09:00';
+    document.getElementById('appt-end-time').value = '10:00';
+    document.getElementById('appt-client').value = '';
+    document.getElementById('appt-notes').value = '';
+  }
+
+  modal.classList.add('visible');
+  document.getElementById('appt-title').focus();
+}
+
+function closeApptModal() {
+  document.getElementById('appt-modal').classList.remove('visible');
+  editingApptId = null;
+}
+
+async function saveAppt() {
+  const title = document.getElementById('appt-title').value.trim();
+  const date = document.getElementById('appt-date').value;
+  const startTime = document.getElementById('appt-start-time').value;
+  const endTime = document.getElementById('appt-end-time').value;
+  const clientId = document.getElementById('appt-client').value;
+  const notes = document.getElementById('appt-notes').value.trim();
+  const serviceIds = [...document.querySelectorAll('#appt-services-checks input:checked')].map(cb => cb.value);
+
+  if (!title || !date) return alert('Title and date are required');
+
+  const start_time = new Date(`${date}T${startTime || '00:00'}`).toISOString();
+  const end_time = endTime ? new Date(`${date}T${endTime}`).toISOString() : null;
+
+  const payload = { title, start_time, end_time, client_id: clientId || null, notes, service_ids: serviceIds };
+  const btn = document.getElementById('appt-save-btn');
+  btn.disabled = true;
+
+  if (editingApptId) {
+    await authFetch(`/api/appointments/${editingApptId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  } else {
+    await authFetch('/api/appointments', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  closeApptModal();
+  await loadCalendarWeek();
+  btn.disabled = false;
+}
+
+async function deleteAppt() {
+  if (!editingApptId || !confirm('Delete this appointment?')) return;
+  await authFetch(`/api/appointments/${editingApptId}`, { method: 'DELETE' });
+  closeApptModal();
+  await loadCalendarWeek();
+}
+
+function openServiceModal(serviceId) {
+  editingServiceId = serviceId || null;
+  document.getElementById('service-modal-title').textContent = serviceId ? 'Edit Service' : 'Add Service';
+  document.getElementById('svc-delete-btn').style.display = serviceId ? 'inline-block' : 'none';
+
+  if (serviceId) {
+    const s = calServices.find(x => x.id === serviceId);
+    if (s) {
+      document.getElementById('svc-name').value = s.name;
+      document.getElementById('svc-desc').value = s.description || '';
+      document.getElementById('svc-price').value = s.price || '';
+      document.getElementById('svc-duration').value = s.duration_minutes || 60;
+    }
+  } else {
+    ['svc-name','svc-desc','svc-price'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('svc-duration').value = '60';
+  }
+
+  document.getElementById('service-modal').classList.add('visible');
+  document.getElementById('svc-name').focus();
+}
+
+function closeServiceModal() {
+  document.getElementById('service-modal').classList.remove('visible');
+  editingServiceId = null;
+}
+
+async function saveService() {
+  const name = document.getElementById('svc-name').value.trim();
+  if (!name) return alert('Name is required');
+  const payload = {
+    name,
+    description: document.getElementById('svc-desc').value.trim(),
+    price: parseFloat(document.getElementById('svc-price').value) || null,
+    duration_minutes: parseInt(document.getElementById('svc-duration').value) || 60,
+  };
+  const btn = document.getElementById('svc-save-btn');
+  btn.disabled = true;
+
+  if (editingServiceId) {
+    await authFetch(`/api/services/${editingServiceId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  } else {
+    await authFetch('/api/services', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  closeServiceModal();
+  await loadServices();
+  btn.disabled = false;
+}
+
+async function deleteService() {
+  if (!editingServiceId || !confirm('Delete this service?')) return;
+  await authFetch(`/api/services/${editingServiceId}`, { method: 'DELETE' });
+  closeServiceModal();
+  await loadServices();
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────

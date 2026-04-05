@@ -909,6 +909,87 @@ app.delete('/api/agreements/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Services (pre-defined) ────────────────────────────────────────────────────
+
+app.get('/api/services', auth, async (req, res) => {
+  const { data } = await scoped(
+    supabaseAdmin.from('services').select('*').order('name'),
+    req.tenantId
+  );
+  res.json(data || []);
+});
+
+app.post('/api/services', auth, async (req, res) => {
+  const { name, description, price, duration_minutes } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  const { data, error } = await supabaseAdmin.from('services')
+    .insert({ name, description, price: price || null, duration_minutes: duration_minutes || 60, tenant_id: req.tenantId })
+    .select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.patch('/api/services/:id', auth, async (req, res) => {
+  const { name, description, price, duration_minutes } = req.body;
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (description !== undefined) updates.description = description;
+  if (price !== undefined) updates.price = price || null;
+  if (duration_minutes !== undefined) updates.duration_minutes = duration_minutes;
+  const { data, error } = await supabaseAdmin.from('services').update(updates).eq('id', req.params.id).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.delete('/api/services/:id', auth, async (req, res) => {
+  await supabaseAdmin.from('services').delete().eq('id', req.params.id);
+  res.json({ ok: true });
+});
+
+// ── Appointments ──────────────────────────────────────────────────────────────
+
+app.get('/api/appointments', auth, async (req, res) => {
+  const { start, end } = req.query;
+  let query = supabaseAdmin
+    .from('appointments')
+    .select('*, clients(id, name, phone)')
+    .order('start_time');
+  if (req.tenantId) query = query.eq('tenant_id', req.tenantId);
+  if (start) query = query.gte('start_time', start);
+  if (end) query = query.lte('start_time', end);
+  const { data } = await query;
+  res.json(data || []);
+});
+
+app.post('/api/appointments', auth, async (req, res) => {
+  const { title, start_time, end_time, client_id, notes, service_ids } = req.body;
+  if (!title || !start_time) return res.status(400).json({ error: 'Title and start time are required' });
+  const { data, error } = await supabaseAdmin.from('appointments')
+    .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], tenant_id: req.tenantId })
+    .select('*, clients(id, name, phone)').single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.patch('/api/appointments/:id', auth, async (req, res) => {
+  const { title, start_time, end_time, client_id, notes, service_ids } = req.body;
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (start_time !== undefined) updates.start_time = start_time;
+  if (end_time !== undefined) updates.end_time = end_time || null;
+  if (client_id !== undefined) updates.client_id = client_id || null;
+  if (notes !== undefined) updates.notes = notes;
+  if (service_ids !== undefined) updates.service_ids = service_ids;
+  const { data, error } = await supabaseAdmin.from('appointments').update(updates).eq('id', req.params.id).select('*, clients(id, name, phone)').single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.delete('/api/appointments/:id', auth, async (req, res) => {
+  await supabaseAdmin.from('appointments').delete().eq('id', req.params.id);
+  res.json({ ok: true });
+});
+
 // ── Reports ───────────────────────────────────────────────────────────────────
 
 app.get('/api/reports', auth, async (req, res) => {
