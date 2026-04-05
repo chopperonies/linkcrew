@@ -837,6 +837,31 @@ app.patch('/api/clients/:id', auth, async (req, res) => {
   res.json(data);
 });
 
+// Bulk import clients from CSV
+app.post('/api/clients/import', auth, async (req, res) => {
+  const { clients } = req.body; // array of { name, company, phone, email, address, notes }
+  if (!Array.isArray(clients) || !clients.length)
+    return res.status(400).json({ error: 'No clients provided' });
+
+  const rows = clients
+    .filter(c => c.name?.trim())
+    .map(c => ({
+      name: c.name.trim(),
+      company: c.company || null,
+      phone: c.phone || null,
+      email: c.email || null,
+      address: c.address || null,
+      notes: c.notes || null,
+      tenant_id: req.tenantId,
+    }));
+
+  if (!rows.length) return res.status(400).json({ error: 'No valid rows (name is required)' });
+
+  const { data, error } = await supabaseAdmin.from('clients').insert(rows).select();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ imported: data.length });
+});
+
 app.post('/api/clients/:id/followups', auth, async (req, res) => {
   const { id } = req.params;
   const { note, due_date } = req.body;

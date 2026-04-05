@@ -502,6 +502,7 @@
       <div class="crm-search-bar">
         <input class="crm-search" type="text" placeholder="Search clients..." oninput="filterClients(this.value)">
         <button class="btn-add-client" onclick="openAddClient()">+ Add</button>
+        <button class="btn-add-client" onclick="openImportModal()" style="background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8">↑ Import</button>
       </div>
       <div id="clients-list"><div class="empty"><div class="e-icon">👤</div>Loading...</div></div>
     </div>
@@ -939,6 +940,45 @@
       <button id="copy-btn" onclick="copyInviteLink()" style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Copy</button>
     </div>
     <p style="font-size:11px;color:#b0b0b0;margin-top:10px">⚠ Clicking "Invite" again generates a new link, invalidating the old one.</p>
+  </div>
+</div>
+
+<!-- ── CSV Import Modal ── -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="width:560px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">Import Clients from CSV</h3>
+      <button class="btn-cancel" onclick="closeImportModal()" style="padding:4px 10px">✕</button>
+    </div>
+
+    <div id="import-step-1">
+      <div style="font-size:13px;color:#737475;margin-bottom:14px;line-height:1.6">
+        Upload a CSV file. Columns can be in any order — we'll detect them automatically.<br>
+        Supported columns: <strong>name, company, phone, email, address, notes</strong>
+      </div>
+      <a href="#" onclick="downloadSampleCsv();return false;"
+        style="font-size:12px;color:#0265dc;text-decoration:none;display:inline-block;margin-bottom:16px">
+        ↓ Download sample CSV
+      </a>
+      <div style="border:2px dashed #e8e8e8;border-radius:8px;padding:32px;text-align:center;cursor:pointer;background:#fafafa"
+        onclick="document.getElementById('csv-file-input').click()"
+        ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px">📂</div>
+        <div style="font-size:13px;font-weight:600;color:#17191c">Click to upload or drag & drop</div>
+        <div style="font-size:12px;color:#737475;margin-top:4px">CSV files only</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display:none" onchange="handleCsvFile(this.files[0])">
+    </div>
+
+    <div id="import-step-2" style="display:none">
+      <div style="font-size:13px;color:#737475;margin-bottom:12px">Preview — <span id="import-count"></span> clients found. Review before importing.</div>
+      <div id="import-preview" style="max-height:280px;overflow-y:auto;border:1px solid #e8e8e8;border-radius:8px;font-size:12px"></div>
+      <div id="import-error" style="font-size:12px;color:#dc2626;margin-top:8px"></div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-cancel" onclick="resetImport()">← Back</button>
+        <button class="btn-save" id="import-confirm-btn" onclick="confirmImport()">Import All</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2355,6 +2395,131 @@ async function saveTsEdit() {
   });
   closeTsEditModal();
   await loadTimesheets();
+}
+
+// ── CSV Client Import ─────────────────────────────────────────────────────────
+let importClients = [];
+
+function openImportModal() {
+  resetImport();
+  document.getElementById('import-modal').classList.add('visible');
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('visible');
+  importClients = [];
+}
+
+function resetImport() {
+  document.getElementById('import-step-1').style.display = 'block';
+  document.getElementById('import-step-2').style.display = 'none';
+  document.getElementById('csv-file-input').value = '';
+  document.getElementById('import-error').textContent = '';
+  importClients = [];
+}
+
+function handleCsvDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) handleCsvFile(file);
+}
+
+function handleCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseCsv(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { alert('CSV needs at least a header row and one data row'); return; }
+
+  // Parse header, normalize to lowercase
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z]/g,''));
+  const fieldMap = { name:'name', company:'company', phone:'phone', email:'email', address:'address', notes:'notes' };
+
+  // Also map common variants
+  const aliases = { firstname:'name', lastname:'name', fullname:'name', contactname:'name',
+    businessname:'company', companyname:'company', organization:'company', org:'company',
+    mobile:'phone', cell:'phone', telephone:'phone', tel:'phone',
+    emailaddress:'email', mail:'email',
+    streetaddress:'address', location:'address',
+    comment:'notes', description:'notes' };
+
+  const colMap = headers.map(h => fieldMap[h] || aliases[h] || null);
+
+  const parsed = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g,''));
+    const row = {};
+    colMap.forEach((field, idx) => {
+      if (field && vals[idx]) {
+        // For name, concatenate if multiple columns map to it
+        if (field === 'name' && row.name) row.name += ' ' + vals[idx];
+        else if (vals[idx]) row[field] = vals[idx];
+      }
+    });
+    if (row.name) parsed.push(row);
+  }
+
+  if (!parsed.length) { alert('No valid rows found. Make sure your CSV has a "name" column.'); return; }
+
+  importClients = parsed;
+  showImportPreview();
+}
+
+function showImportPreview() {
+  document.getElementById('import-step-1').style.display = 'none';
+  document.getElementById('import-step-2').style.display = 'block';
+  document.getElementById('import-count').textContent = `${importClients.length}`;
+
+  const fields = ['name','company','phone','email','address'];
+  const preview = document.getElementById('import-preview');
+  preview.innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:#f5f5f5;border-bottom:1px solid #e8e8e8">
+          ${fields.map(f => `<th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">${f}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${importClients.slice(0, 50).map(c => `
+          <tr style="border-bottom:1px solid #f0f0f0">
+            ${fields.map(f => `<td style="padding:7px 10px;color:#17191c">${c[f] || '<span style="color:#c0c0c0">—</span>'}</td>`).join('')}
+          </tr>
+        `).join('')}
+        ${importClients.length > 50 ? `<tr><td colspan="5" style="padding:8px 10px;color:#737475;font-style:italic">...and ${importClients.length - 50} more</td></tr>` : ''}
+      </tbody>
+    </table>`;
+}
+
+async function confirmImport() {
+  const btn = document.getElementById('import-confirm-btn');
+  const errEl = document.getElementById('import-error');
+  btn.disabled = true; btn.textContent = 'Importing…';
+
+  const res = await authFetch('/api/clients/import', { method: 'POST', body: JSON.stringify({ clients: importClients }) });
+  const json = await res.json();
+
+  if (!res.ok) {
+    errEl.textContent = json.error || 'Import failed';
+    btn.disabled = false; btn.textContent = 'Import All';
+    return;
+  }
+
+  closeImportModal();
+  await loadClients();
+  alert(`✓ ${json.imported} clients imported successfully`);
+}
+
+function downloadSampleCsv() {
+  const csv = `name,company,phone,email,address,notes\nJohn Smith,Smith Roofing LLC,555-123-4567,john@smithroofing.com,"123 Main St, Miami FL",Existing customer\nSarah Johnson,,555-987-6543,sarah@email.com,,Referred by John`;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'linkcrew-import-sample.csv';
+  a.click();
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
