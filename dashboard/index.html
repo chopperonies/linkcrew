@@ -416,6 +416,7 @@
   </div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <button id="invite-crew-btn" class="hdr-btn accent" onclick="copyCrewInvite()" style="display:flex;align-items:center;gap:5px"><i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew</button>
     <button class="hdr-btn danger" onclick="doLogout()" style="display:flex;align-items:center;gap:5px"><i data-lucide="log-out" style="width:13px;height:13px"></i> Sign Out</button>
   </div>
 </div>
@@ -1485,6 +1486,30 @@ async function doSignup() {
     errEl.textContent = e.message || 'Something went wrong.';
   } finally {
     btn.disabled = false; btn.textContent = 'Create Account';
+  }
+}
+
+async function copyCrewInvite() {
+  const btn = document.getElementById('invite-crew-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader" style="width:13px;height:13px"></i> Getting link...';
+  lucide.createIcons();
+  try {
+    const res = await authFetch('/api/crew-invite', { method: 'POST' });
+    const { url } = await res.json();
+    await navigator.clipboard.writeText(url);
+    btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px"></i> Link Copied!';
+    lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = '<i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew';
+      btn.disabled = false;
+      lucide.createIcons();
+    }, 2500);
+  } catch {
+    btn.innerHTML = '<i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew';
+    btn.disabled = false;
+    lucide.createIcons();
+    alert('Could not generate invite link. Please try again.');
   }
 }
 

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Your Crew — LinkCrew</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 420px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); }
+    .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+    .brand img { width: 32px; height: 32px; }
+    .brand span { font-size: 20px; font-weight: 800; color: #17191c; }
+    .brand span b { color: #0265dc; font-weight: 800; }
+    .invite-tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #0265dc; background: #e8f3ff; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; display: inline-block; }
+    h1 { font-size: 22px; font-weight: 800; color: #17191c; margin-bottom: 6px; }
+    .company-name { font-size: 15px; color: #737475; margin-bottom: 28px; }
+    .company-name strong { color: #17191c; }
+    .form-group { margin-bottom: 16px; }
+    label { font-size: 12px; font-weight: 600; color: #737475; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 8px; padding: 11px 14px; font-size: 14px; color: #17191c; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    input:focus, select:focus { border-color: #0265dc; background: #fff; }
+    .btn { width: 100%; background: #0265dc; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s, transform 0.1s; margin-top: 8px; }
+    .btn:hover { background: #1b5abe; transform: translateY(-1px); }
+    .btn:disabled { background: #b0c4de; cursor: not-allowed; transform: none; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: 8px; padding: 11px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .success { text-align: center; display: none; }
+    .success .check { font-size: 48px; margin-bottom: 16px; }
+    .success h2 { font-size: 20px; font-weight: 800; color: #17191c; margin-bottom: 8px; }
+    .success p { font-size: 14px; color: #737475; line-height: 1.6; }
+    .invalid { text-align: center; padding: 20px 0; }
+    .invalid .icon { font-size: 40px; margin-bottom: 14px; }
+    .invalid p { font-size: 14px; color: #737475; }
+    .footer { margin-top: 20px; font-size: 12px; color: #b0b0b0; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <img src="/logo.svg" alt="LinkCrew">
+    <span>Link<b>Crew</b></span>
+  </div>
+
+  <!-- Invalid state -->
+  <div class="invalid" id="state-invalid" style="display:none">
+    <div class="icon">⚠️</div>
+    <h1 style="margin-bottom:8px">Invalid Invite Link</h1>
+    <p>This invite link is not valid or has expired. Ask your manager for a new one.</p>
+  </div>
+
+  <!-- Form state -->
+  <div id="state-form">
+    <div class="invite-tag">You&apos;ve been invited</div>
+    <h1>Join Your Crew</h1>
+    <div class="company-name" id="company-line">Loading...</div>
+
+    <div class="error" id="error-msg"></div>
+
+    <div class="form-group">
+      <label>Your Full Name</label>
+      <input type="text" id="inp-name" placeholder="John Smith" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="tel" id="inp-phone" placeholder="(555) 555-5555" autocomplete="tel">
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="inp-role">
+        <option value="Crew">Crew</option>
+        <option value="Lead">Lead</option>
+        <option value="Supervisor">Supervisor</option>
+        <option value="Driver">Driver</option>
+        <option value="Technician">Technician</option>
+        <option value="Apprentice">Apprentice</option>
+      </select>
+    </div>
+
+    <button class="btn" id="submit-btn" onclick="submitForm()">Join Team</button>
+  </div>
+
+  <!-- Success state -->
+  <div class="success" id="state-success">
+    <div class="check">✅</div>
+    <h2>You&apos;re on the team!</h2>
+    <p>Your manager can now assign you to jobs. You&apos;ll receive app download instructions soon.</p>
+  </div>
+</div>
+
+<div class="footer">Powered by <strong>LinkCrew</strong> · Field crew management</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+
+  async function init() {
+    if (!code) return showInvalid();
+    const res = await fetch(`/api/join-info?code=${encodeURIComponent(code)}`);
+    if (!res.ok) return showInvalid();
+    const { companyName } = await res.json();
+    document.getElementById('company-line').innerHTML = `You&apos;ve been invited to join <strong>${companyName}</strong> on LinkCrew.`;
+  }
+
+  function showInvalid() {
+    document.getElementById('state-form').style.display = 'none';
+    document.getElementById('state-invalid').style.display = 'block';
+  }
+
+  async function submitForm() {
+    const name = document.getElementById('inp-name').value.trim();
+    const phone = document.getElementById('inp-phone').value.trim();
+    const role = document.getElementById('inp-role').value;
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+
+    if (!name || !phone) {
+      errEl.textContent = 'Please enter your name and phone number.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Joining...';
+
+    const res = await fetch('/api/crew-register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, phone, role })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Something went wrong. Please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Join Team';
+      return;
+    }
+
+    document.getElementById('state-form').style.display = 'none';
+    document.getElementById('state-success').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
