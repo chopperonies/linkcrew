@@ -998,18 +998,18 @@ app.get('/api/appointments', auth, async (req, res) => {
 });
 
 app.post('/api/appointments', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids, notify_client } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, notify_client, send_confirmation } = req.body;
   if (!title || !start_time) return res.status(400).json({ error: 'Title and start time are required' });
   const { data, error } = await supabaseAdmin.from('appointments')
-    .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], tenant_id: req.tenantId })
+    .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], notify_client: !!notify_client, tenant_id: req.tenantId })
     .select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
-  if (notify_client && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
+  if (send_confirmation && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
   res.json(data);
 });
 
 app.patch('/api/appointments/:id', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids, notify_client } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, notify_client, send_confirmation } = req.body;
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (start_time !== undefined) updates.start_time = start_time;
@@ -1017,9 +1017,10 @@ app.patch('/api/appointments/:id', auth, async (req, res) => {
   if (client_id !== undefined) updates.client_id = client_id || null;
   if (notes !== undefined) updates.notes = notes;
   if (service_ids !== undefined) updates.service_ids = service_ids;
+  if (notify_client !== undefined) updates.notify_client = !!notify_client;
   const { data, error } = await supabaseAdmin.from('appointments').update(updates).eq('id', req.params.id).select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
-  if (notify_client && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
+  if (send_confirmation && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
   res.json(data);
 });
 
@@ -1464,7 +1465,7 @@ app.get('/api/settings', auth, async (req, res) => {
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
   const { data } = await supabaseAdmin.from('tenants')
-    .select('company_name, owner_email, logo_url, phone, address, voicebot_enabled, twilio_phone, twilio_account_sid, voicebot_knowledge, photo_expiry_days')
+    .select('company_name, owner_email, logo_url, phone, address, voicebot_enabled, twilio_phone, twilio_account_sid, voicebot_knowledge, photo_expiry_days, appt_reminder')
     .eq('id', tenantId).single();
   res.json(data || {});
 });
@@ -1472,13 +1473,14 @@ app.get('/api/settings', auth, async (req, res) => {
 app.patch('/api/settings', auth, async (req, res) => {
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
-  const { company_name, phone, address, voicebot_knowledge, photo_expiry_days } = req.body;
+  const { company_name, phone, address, voicebot_knowledge, photo_expiry_days, appt_reminder } = req.body;
   const updates = {};
   if (company_name !== undefined) updates.company_name = company_name;
   if (phone !== undefined) updates.phone = phone;
   if (address !== undefined) updates.address = address;
   if (voicebot_knowledge !== undefined) updates.voicebot_knowledge = voicebot_knowledge;
   if (photo_expiry_days !== undefined) updates.photo_expiry_days = photo_expiry_days || null;
+  if (appt_reminder !== undefined) updates.appt_reminder = appt_reminder;
   const { data, error } = await supabaseAdmin.from('tenants')
     .update(updates).eq('id', tenantId).select().single();
   if (error) return res.status(400).json({ error: error.message });
@@ -2498,7 +2500,7 @@ async function snapshotMRR() {
 }
 cron.schedule('0 0 1 * *', snapshotMRR);
 
-// ── Nightly appointment reminders ─────────────────────────────────────────────
+// ── Nightly appointment reminders (7pm — for tomorrow's appointments) ──────────
 cron.schedule('0 19 * * *', async () => {
   console.log('📅 Sending appointment reminders...');
   const tomorrow = new Date();
@@ -2509,17 +2511,108 @@ cron.schedule('0 19 * * *', async () => {
 
   const { data: appts } = await supabaseAdmin
     .from('appointments')
-    .select('*, clients(id, name, email, phone), tenants:tenant_id(id, company_name, twilio_phone, twilio_account_sid, twilio_auth_token)')
+    .select('*, clients(id, name, email, phone)')
     .gte('start_time', tomorrow.toISOString())
-    .lte('start_time', tomorrowEnd.toISOString())
-    .not('client_id', 'is', null);
+    .lte('start_time', tomorrowEnd.toISOString());
 
   if (!appts?.length) return;
-  for (const appt of appts) {
-    if (!appt.clients) continue;
-    await notifyApptClient(appt, appt.tenant_id, 'reminder').catch(() => {});
+
+  // Group by tenant to load tenant settings once per tenant
+  const byTenant = {};
+  for (const a of appts) {
+    if (!byTenant[a.tenant_id]) byTenant[a.tenant_id] = [];
+    byTenant[a.tenant_id].push(a);
   }
-  console.log(`📅 Sent reminders for ${appts.length} appointments`);
+
+  for (const [tenantId, tenantAppts] of Object.entries(byTenant)) {
+    const { data: tenant } = await supabaseAdmin.from('tenants')
+      .select('owner_email, company_name, appt_reminder, twilio_phone, twilio_account_sid, twilio_auth_token')
+      .eq('id', tenantId).single();
+    if (!tenant) continue;
+
+    const reminderPref = tenant.appt_reminder || 'day_before'; // day_before | morning_of | both | off
+
+    // Notify owner (day_before or both)
+    if ((reminderPref === 'day_before' || reminderPref === 'both') && tenant.owner_email) {
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const list = tenantAppts.map(a => {
+          const t = new Date(a.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          return `<li style="margin-bottom:6px"><strong>${a.title}</strong> at ${t}${a.clients ? ' — ' + a.clients.name : ''}</li>`;
+        }).join('');
+        await resend.emails.send({
+          from: 'LinkCrew <hello@linkcrew.io>',
+          to: tenant.owner_email,
+          subject: `📅 Tomorrow's Appointments (${tenantAppts.length})`,
+          html: `<div style="font-family:sans-serif;max-width:500px">
+            <h2 style="color:#0265dc">Tomorrow's Schedule</h2>
+            <p>You have ${tenantAppts.length} appointment${tenantAppts.length > 1 ? 's' : ''} tomorrow:</p>
+            <ul style="padding-left:20px;line-height:1.8">${list}</ul>
+            <p style="color:#737475;font-size:12px">${tenant.company_name || 'LinkCrew'}</p>
+          </div>`,
+        });
+      } catch (e) { console.error('[appt reminder] owner email error:', e.message); }
+    }
+
+    // Notify clients where notify_client is enabled
+    for (const appt of tenantAppts) {
+      if (!appt.notify_client || !appt.clients) continue;
+      await notifyApptClient({ ...appt, tenants: tenant }, tenantId, 'reminder').catch(() => {});
+    }
+  }
+  console.log(`📅 Processed reminders for ${appts.length} appointments`);
+});
+
+// ── Morning appointment reminders (7am — for today's appointments) ─────────────
+cron.schedule('0 7 * * *', async () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(today);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const { data: appts } = await supabaseAdmin
+    .from('appointments')
+    .select('*, clients(id, name, email, phone)')
+    .gte('start_time', today.toISOString())
+    .lte('start_time', todayEnd.toISOString());
+
+  if (!appts?.length) return;
+
+  const byTenant = {};
+  for (const a of appts) {
+    if (!byTenant[a.tenant_id]) byTenant[a.tenant_id] = [];
+    byTenant[a.tenant_id].push(a);
+  }
+
+  for (const [tenantId, tenantAppts] of Object.entries(byTenant)) {
+    const { data: tenant } = await supabaseAdmin.from('tenants')
+      .select('owner_email, company_name, appt_reminder')
+      .eq('id', tenantId).single();
+    if (!tenant) continue;
+    const reminderPref = tenant.appt_reminder || 'day_before';
+    if (reminderPref !== 'morning_of' && reminderPref !== 'both') continue;
+
+    try {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const list = tenantAppts.map(a => {
+        const t = new Date(a.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return `<li style="margin-bottom:6px"><strong>${a.title}</strong> at ${t}${a.clients ? ' — ' + a.clients.name : ''}</li>`;
+      }).join('');
+      await resend.emails.send({
+        from: 'LinkCrew <hello@linkcrew.io>',
+        to: tenant.owner_email,
+        subject: `📅 Today's Appointments (${tenantAppts.length})`,
+        html: `<div style="font-family:sans-serif;max-width:500px">
+          <h2 style="color:#0265dc">Today's Schedule</h2>
+          <p>You have ${tenantAppts.length} appointment${tenantAppts.length > 1 ? 's' : ''} today:</p>
+          <ul style="padding-left:20px;line-height:1.8">${list}</ul>
+          <p style="color:#737475;font-size:12px">${tenant.company_name || 'LinkCrew'}</p>
+        </div>`,
+      });
+    } catch (e) { console.error('[appt morning reminder] error:', e.message); }
+  }
 });
 
 // ── Nightly photo expiry cleanup ──────────────────────────────────────────────
