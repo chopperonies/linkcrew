@@ -22,17 +22,18 @@
 
     .hero { text-align: center; padding: 64px 24px 48px; }
     .hero h1 { font-size: 40px; font-weight: 800; color: #17191c; margin-bottom: 12px; }
-    .hero p { font-size: 16px; color: #737475; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+    .hero p { font-size: 16px; color: #737475; max-width: 500px; margin: 0 auto; line-height: 1.6; }
 
-    .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 1040px; margin: 0 auto; padding: 0 24px 32px; }
+    .trial-note { text-align: center; font-size: 13px; color: #737475; margin: -16px 0 36px; }
+    .trial-note strong { color: #17191c; }
+
+    .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; max-width: 1060px; margin: 0 auto; padding: 0 24px 32px; }
 
     .plan-card {
       background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 32px 28px;
       display: flex; flex-direction: column; position: relative;
     }
-    .plan-card.popular {
-      border-color: #0265dc; border-width: 2px;
-    }
+    .plan-card.popular { border-color: #0265dc; border-width: 2px; }
     .popular-badge {
       position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
       background: #0265dc; color: #fff; font-size: 11px; font-weight: 700;
@@ -41,10 +42,15 @@
     .plan-name { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #737475; margin-bottom: 10px; }
     .plan-price { font-size: 40px; font-weight: 800; color: #17191c; line-height: 1; margin-bottom: 4px; }
     .plan-price span { font-size: 16px; font-weight: 500; color: #737475; }
-    .plan-users { font-size: 13px; color: #737475; margin-bottom: 24px; }
-    .plan-features { list-style: none; margin-bottom: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-    .plan-features li { font-size: 13px; color: #17191c; display: flex; align-items: flex-start; gap: 8px; }
-    .plan-features li::before { content: '✓'; color: #0265dc; font-weight: 700; flex-shrink: 0; }
+    .plan-users { font-size: 13px; color: #737475; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
+    .plan-features { list-style: none; margin-bottom: 28px; flex: 1; display: flex; flex-direction: column; gap: 9px; }
+    .plan-features li { font-size: 13px; color: #17191c; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+    .plan-features li::before { content: '✓'; color: #0265dc; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .plan-features li.inherited { color: #737475; }
+    .plan-features li.inherited::before { color: #b0b0b0; }
+    .plan-features .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #b0b0b0; margin-top: 6px; margin-bottom: 0; }
+    .plan-features .section-label::before { content: none; }
+
     .btn-plan {
       width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700;
       cursor: pointer; border: none; transition: background 0.15s;
@@ -54,23 +60,21 @@
     .btn-plan-outline { background: #fff; color: #17191c; border: 1px solid #e8e8e8 !important; }
     .btn-plan-outline:hover { background: #f5f5f5; }
 
-    .addon-section { max-width: 1040px; margin: 0 auto 64px; padding: 0 24px; }
+    .addons-section { max-width: 1060px; margin: 8px auto 64px; padding: 0 24px; display: flex; flex-direction: column; gap: 16px; }
+    .addons-section h2 { font-size: 18px; font-weight: 700; color: #17191c; margin-bottom: 4px; }
     .addon-card {
-      background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 28px 32px;
+      background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 24px 28px;
       display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
     }
-    .addon-info h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-    .addon-info p { font-size: 13px; color: #737475; max-width: 480px; line-height: 1.5; }
+    .addon-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+    .addon-info p { font-size: 13px; color: #737475; max-width: 520px; line-height: 1.5; }
     .addon-price { text-align: right; flex-shrink: 0; }
-    .addon-price .price { font-size: 32px; font-weight: 800; color: #17191c; }
-    .addon-price .sub { font-size: 13px; color: #737475; }
-
-    .trial-note { text-align: center; font-size: 13px; color: #737475; margin: -16px 0 32px; }
-    .trial-note strong { color: #17191c; }
+    .addon-price .price { font-size: 28px; font-weight: 800; color: #17191c; }
+    .addon-price .sub { font-size: 12px; color: #737475; margin-top: 2px; }
 
     #status-msg { text-align: center; padding: 12px; font-size: 13px; color: #737475; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
       nav { padding: 14px 20px; }
       .hero h1 { font-size: 28px; }
       .plans { grid-template-columns: 1fr; }
@@ -94,7 +98,7 @@
 
 <div class="hero">
   <h1>Simple, transparent pricing</h1>
-  <p>Start free for 14 days. No credit card required. Cancel anytime.</p>
+  <p>Everything you need to run your field crew — jobs, clients, invoices, timesheets, and more.</p>
 </div>
 
 <div class="trial-note"><strong>14-day free trial</strong> on all plans — no credit card needed to start.</div>
@@ -103,77 +107,98 @@
 
 <div class="plans">
 
+  <!-- Solo -->
   <div class="plan-card">
     <div class="plan-name">Solo</div>
     <div class="plan-price">$49<span>/mo</span></div>
-    <div class="plan-users">1 user</div>
+    <div class="plan-users">1 crew member</div>
     <ul class="plan-features">
-      <li>Job tracking & pipeline</li>
-      <li>Client CRM & portal</li>
-      <li>Supply requests</li>
-      <li>Site photos</li>
-      <li>Stripe invoicing</li>
-      <li>Service agreements</li>
+      <li>Job tracking &amp; pipeline</li>
+      <li>Client CRM</li>
+      <li>Client portal (view jobs, photos &amp; invoices)</li>
+      <li>Appointments &amp; calendar</li>
+      <li>Site photos with auto-expiry</li>
+      <li>Stripe invoicing — send, mark paid, notify client</li>
+      <li>Work orders &amp; service agreements</li>
+      <li>Manual crew punch-in/out &amp; timesheets</li>
+      <li>Printable timesheets with your logo</li>
+      <li>CSV client import</li>
+      <li>Mobile app (iOS &amp; Android)</li>
+      <li>Email &amp; SMS notifications</li>
     </ul>
     <button class="btn-plan btn-plan-outline" onclick="choosePlan('solo')">Get Started</button>
   </div>
 
+  <!-- Team -->
   <div class="plan-card popular">
     <div class="popular-badge">Most Popular</div>
     <div class="plan-name">Team</div>
     <div class="plan-price">$97<span>/mo</span></div>
-    <div class="plan-users">Up to 5 users</div>
+    <div class="plan-users">Up to 5 crew members</div>
     <ul class="plan-features">
-      <li>Everything in Solo</li>
+      <li class="section-label">Everything in Solo, plus:</li>
       <li>Up to 5 crew members</li>
-      <li>Team check-ins & photos</li>
-      <li>Email notifications</li>
-      <li>Daily digest reports</li>
-      <li>Priority support</li>
+      <li>Team check-ins &amp; site photos per crew member</li>
+      <li>Daily digest email summary</li>
+      <li>Appointment reminders for owner &amp; clients</li>
     </ul>
     <button class="btn-plan btn-plan-primary" onclick="choosePlan('team')">Get Started</button>
   </div>
 
+  <!-- Pro -->
   <div class="plan-card">
     <div class="plan-name">Pro</div>
     <div class="plan-price">$165<span>/mo</span></div>
-    <div class="plan-users">Up to 10 users</div>
+    <div class="plan-users">Up to 10 crew members</div>
     <ul class="plan-features">
-      <li>Everything in Team</li>
+      <li class="section-label">Everything in Team, plus:</li>
       <li>Up to 10 crew members</li>
-      <li>Advanced reporting</li>
-      <li>Multiple job managers</li>
-      <li>Custom branding on invoices</li>
-      <li>Priority support</li>
+      <li>Reports &amp; analytics dashboard</li>
+      <li>Revenue trends &amp; crew hours breakdown</li>
+      <li>Custom branding on invoices &amp; timesheets</li>
     </ul>
     <button class="btn-plan btn-plan-outline" onclick="choosePlan('pro')">Get Started</button>
   </div>
 
+  <!-- Business -->
   <div class="plan-card">
     <div class="plan-name">Business</div>
     <div class="plan-price">$299<span>/mo</span></div>
-    <div class="plan-users">Up to 20 users</div>
+    <div class="plan-users">Up to 20 crew members</div>
     <ul class="plan-features">
-      <li>Everything in Pro</li>
+      <li class="section-label">Everything in Pro, plus:</li>
       <li>Up to 20 crew members</li>
-      <li>Multiple locations</li>
-      <li>Admin dashboard</li>
+      <li>Live GPS crew tracking</li>
+      <li>GPS-verified punch-in/out timesheets</li>
+      <li>Priority support</li>
       <li>Dedicated onboarding</li>
-      <li>Priority phone support</li>
     </ul>
     <button class="btn-plan btn-plan-outline" onclick="choosePlan('business')">Get Started</button>
   </div>
 
 </div>
 
-<div class="addon-section">
+<div class="addons-section">
+  <h2>Add-ons — available on any plan</h2>
+
   <div class="addon-card">
     <div class="addon-info">
-      <h3>🎙️ Voice Bot Add-on</h3>
-      <p>Give your business a 24/7 AI phone assistant. Answers calls with your company name, takes messages, lets callers check job status, and routes requests straight to your dashboard. Available on any plan.</p>
+      <h3>👥 Extra Crew Members</h3>
+      <p>Need more seats than your plan includes? Add individual crew members at a flat rate. Each extra user gets full app access and counts toward your timesheet and check-in tracking.</p>
     </div>
     <div class="addon-price">
-      <div class="price">$30<span style="font-size:16px;font-weight:500;color:#737475">/mo</span></div>
+      <div class="price">$29<span style="font-size:15px;font-weight:500;color:#737475">/user/mo</span></div>
+      <div class="sub">Add from your Settings tab</div>
+    </div>
+  </div>
+
+  <div class="addon-card">
+    <div class="addon-info">
+      <h3>🎙️ AI Voice Bot</h3>
+      <p>Give your business a 24/7 AI phone assistant. Answers calls with your company name, takes messages, lets callers check job status, and routes requests straight to your dashboard.</p>
+    </div>
+    <div class="addon-price">
+      <div class="price">$30<span style="font-size:15px;font-weight:500;color:#737475">/mo</span></div>
       <div class="sub">Add to any plan</div>
       <button class="btn-plan btn-plan-outline" style="margin-top:12px;width:auto;padding:9px 20px" onclick="choosePlan('voicebot')">Add to Plan</button>
     </div>
@@ -186,15 +211,12 @@
   async function choosePlan(plan) {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
-      // Not logged in — send to sign up, carry plan so checkout fires after login
       location.href = '/app?plan=' + plan;
       return;
     }
-
     const btn = event.target;
     btn.disabled = true;
     btn.textContent = 'Loading…';
-
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
@@ -216,7 +238,6 @@
     }
   }
 
-  // Show success message if redirected back after payment
   const params = new URLSearchParams(location.search);
   if (params.get('billing') === 'success') {
     document.getElementById('status-msg').innerHTML =
