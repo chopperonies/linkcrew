@@ -123,6 +123,25 @@
   .export-btn:hover { background: #222; color: #fff; }
   .export-btn.primary { background: #0265dc; border-color: #0265dc; color: #fff; }
   .export-btn.primary:hover { background: #0256c0; }
+
+  /* ── Analytics panel ── */
+  .analytics-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .analytics-toolbar input[type=date] { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; outline: none; }
+  .analytics-toolbar input[type=date]:focus { border-color: #0265dc; }
+  .range-btn { background: #1a1a1a; border: 1px solid #2a2a2a; color: #888; border-radius: 7px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .range-btn:hover, .range-btn.active { background: #0265dc; border-color: #0265dc; color: #fff; }
+  .analytics-stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .a-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 120px; }
+  .a-card .num { font-size: 26px; font-weight: 800; }
+  .a-card .lbl { font-size: 12px; color: #555; margin-top: 2px; }
+  .day-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .day-table th { text-align: left; padding: 10px 12px; color: #555; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #1e1e1e; }
+  .day-table td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; }
+  .day-table tr:last-child td { border-bottom: none; }
+  .day-table tr:hover td { background: #141414; }
+  .bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .bar { height: 8px; border-radius: 4px; background: #0265dc; min-width: 2px; transition: width 0.3s; }
+  .bar-num { font-size: 12px; color: #888; min-width: 28px; }
 </style>
 </head>
 <body>
@@ -164,6 +183,7 @@
     <button class="tab active" onclick="switchTab('customers')">Customers</button>
     <button class="tab" onclick="switchTab('invites')">Invite Links</button>
     <button class="tab" onclick="switchTab('trials')">Unconverted Trials</button>
+    <button class="tab" onclick="switchTab('analytics')">Analytics</button>
   </div>
 
   <main>
@@ -262,6 +282,34 @@
         </table>
       </div>
     </div>
+
+    <!-- Analytics panel -->
+    <div class="panel" id="panel-analytics">
+      <div class="analytics-toolbar">
+        <button class="range-btn active" id="range-7" onclick="setRange(7)">Last 7 days</button>
+        <button class="range-btn" id="range-30" onclick="setRange(30)">Last 30 days</button>
+        <button class="range-btn" id="range-90" onclick="setRange(90)">Last 90 days</button>
+        <span style="color:#555;font-size:13px">or custom:</span>
+        <input type="date" id="a-start">
+        <input type="date" id="a-end">
+        <button class="range-btn" onclick="loadAnalytics()">Apply</button>
+      </div>
+      <div class="analytics-stats" id="a-stats"></div>
+      <div class="table-wrap">
+        <table class="day-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Total Visits</th>
+              <th>Landing Page</th>
+              <th>Dashboard Logins</th>
+              <th>Portal Visits</th>
+            </tr>
+          </thead>
+          <tbody id="a-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -298,6 +346,10 @@ async function login() {
   document.getElementById('shell').classList.add('visible');
   loadTenants();
   loadInvites();
+  // Pre-set analytics date range to last 7 days
+  const aEnd = new Date(); const aStart = new Date(Date.now() - 6 * 86400000);
+  document.getElementById('a-start').value = aStart.toISOString().split('T')[0];
+  document.getElementById('a-end').value = aEnd.toISOString().split('T')[0];
 }
 
 function toggleChangePassword() {
@@ -334,10 +386,12 @@ function logout() {
 }
 
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['customers','invites','trials'][i] === name));
+  const tabs = ['customers','invites','trials','analytics'];
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${name}`).classList.add('active');
   if (name === 'trials') renderTrials();
+  if (name === 'analytics') loadAnalytics();
 }
 
 async function loadTenants() {
@@ -742,6 +796,65 @@ function exportCSV() {
   a.download = `unconverted-trials-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+let currentRange = 7;
+
+function setRange(days) {
+  currentRange = days;
+  document.querySelectorAll('.range-btn[id^="range-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`range-${days}`);
+  if (btn) btn.classList.add('active');
+  const end = new Date();
+  const start = new Date(Date.now() - (days - 1) * 86400000);
+  document.getElementById('a-start').value = start.toISOString().split('T')[0];
+  document.getElementById('a-end').value = end.toISOString().split('T')[0];
+  loadAnalytics();
+}
+
+async function loadAnalytics() {
+  const start = document.getElementById('a-start').value;
+  const end = document.getElementById('a-end').value;
+  let url = '/api/admin/analytics';
+  if (start && end) url += `?start=${start}&end=${end}`;
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return;
+  const d = await res.json();
+
+  const conversionColor = parseFloat(d.conversionRate) >= 5 ? '#4ade80' : parseFloat(d.conversionRate) >= 2 ? '#fb923c' : '#f87171';
+
+  document.getElementById('a-stats').innerHTML = `
+    <div class="a-card"><div class="num">${d.totalViews.toLocaleString()}</div><div class="lbl">Total Visits</div></div>
+    <div class="a-card"><div class="num" style="color:#60a5fa">${d.landingViews.toLocaleString()}</div><div class="lbl">Landing Page</div></div>
+    <div class="a-card"><div class="num" style="color:#a78bfa">${d.appViews.toLocaleString()}</div><div class="lbl">Dashboard Logins</div></div>
+    <div class="a-card"><div class="num" style="color:#34d399">${d.portalViews.toLocaleString()}</div><div class="lbl">Client Portal Visits</div></div>
+    <div class="a-card"><div class="num" style="color:#fbbf24">${d.signups.toLocaleString()}</div><div class="lbl">New Signups</div></div>
+    <div class="a-card"><div class="num" style="color:${conversionColor}">${d.conversionRate}%</div><div class="lbl">Landing → Signup Rate</div></div>
+  `;
+
+  const days = Object.entries(d.byDay).sort((a, b) => b[0].localeCompare(a[0]));
+  const maxTotal = Math.max(...days.map(([, v]) => v.total), 1);
+
+  const fmt = iso => {
+    const dt = new Date(iso + 'T12:00:00Z');
+    return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const bar = (n, max, color = '#0265dc') =>
+    `<div class="bar-wrap"><div class="bar" style="width:${Math.round(n/max*120)}px;background:${color}"></div><span class="bar-num">${n}</span></div>`;
+
+  document.getElementById('a-tbody').innerHTML = days.length
+    ? days.map(([day, v]) => `
+        <tr>
+          <td style="font-weight:600;color:#fff">${fmt(day)}</td>
+          <td>${bar(v.total, maxTotal)}</td>
+          <td>${bar(v.landing, maxTotal, '#60a5fa')}</td>
+          <td>${bar(v.app, maxTotal, '#a78bfa')}</td>
+          <td>${bar(v.portal, maxTotal, '#34d399')}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="5" style="text-align:center;padding:32px;color:#555">No data for this period</td></tr>`;
 }
 </script>
 </body>

@@ -378,6 +378,69 @@ app.delete('/api/mc/events/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Page view tracking ────────────────────────────────────────────────────────
+app.post('/api/track', async (req, res) => {
+  const { path, referrer } = req.body;
+  const allowed = ['/', '/app', '/portal'];
+  if (!path || !allowed.includes(path)) return res.json({ ok: true });
+  await supabaseAdmin.from('page_views').insert({
+    path,
+    referrer: referrer ? String(referrer).slice(0, 300) : null,
+  });
+  // Milestone email (fire and forget)
+  supabaseAdmin.from('page_views').select('id', { count: 'exact', head: true }).then(({ count }) => {
+    if (count && count % 1000 === 0) {
+      const { Resend } = require('resend');
+      new Resend(process.env.RESEND_API_KEY).emails.send({
+        from: 'alerts@linkcrew.io',
+        to: (process.env.ADMIN_EMAILS || '').split(',')[0].trim() || 'eliott@kingstondatagroup.com',
+        subject: `🎉 LinkCrew hit ${count.toLocaleString()} page views!`,
+        html: `<p>LinkCrew just crossed <strong>${count.toLocaleString()} total page views</strong>.</p>
+               <p><a href="https://linkcrew.io/lc-ops?k=241971">View analytics →</a></p>`,
+      }).catch(() => {});
+    }
+  }).catch(() => {});
+  res.json({ ok: true });
+});
+
+// ── Admin analytics ───────────────────────────────────────────────────────────
+app.get('/api/admin/analytics', auth, async (req, res) => {
+  if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  const { start, end } = req.query;
+  const startDate = start ? new Date(start + 'T00:00:00Z') : new Date(Date.now() - 30 * 86400000);
+  const endDate = end ? new Date(end + 'T23:59:59Z') : new Date();
+
+  const [{ data: views }, { count: signups }] = await Promise.all([
+    supabaseAdmin.from('page_views')
+      .select('path, created_at')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .order('created_at', { ascending: true }),
+    supabaseAdmin.from('tenants')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString()),
+  ]);
+
+  const byDay = {};
+  for (const v of views || []) {
+    const day = v.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { total: 0, landing: 0, app: 0, portal: 0 };
+    byDay[day].total++;
+    if (v.path === '/') byDay[day].landing++;
+    else if (v.path === '/app') byDay[day].app++;
+    else if (v.path === '/portal') byDay[day].portal++;
+  }
+
+  const totalViews = views?.length || 0;
+  const landingViews = (views || []).filter(v => v.path === '/').length;
+  const appViews = (views || []).filter(v => v.path === '/app').length;
+  const portalViews = (views || []).filter(v => v.path === '/portal').length;
+  const conversionRate = landingViews > 0 ? ((signups || 0) / landingViews * 100).toFixed(1) : '0.0';
+
+  res.json({ byDay, totalViews, landingViews, appViews, portalViews, signups: signups || 0, conversionRate });
+});
+
 // KDG contact form
 app.post('/api/contact-kdg', async (req, res) => {
   const { name, company, email, phone, service, message } = req.body;

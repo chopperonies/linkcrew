@@ -367,6 +367,10 @@
 
     document.getElementById('chat-messages').scrollTop = 9999;
   }
+
+  // Page view tracking
+  fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: '/', referrer: document.referrer || null }) }).catch(() => {});
 </script>
 
 </body>
