@@ -333,7 +333,8 @@
     await showApp();
   }
 
-  function logout() {
+  async function logout() {
+    // Clear local state
     localStorage.removeItem('portal_token');
     portalToken = null;
     document.getElementById('app').classList.remove('visible');

@@ -644,6 +644,87 @@ app.post('/api/auth/signup', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Request password reset via email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const { error } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email.toLowerCase(),
+      options: {
+        redirectTo: `${req.headers.origin || 'https://linkcrew.io'}/auth/reset-password`,
+      },
+    });
+
+    if (error) {
+      // Return generic message for security (don't reveal if email exists)
+      return res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
+    }
+
+    res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
+  }
+});
+
+// Refresh authentication token
+app.post('/api/auth/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is required' });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error) {
+      return res.status(401).json({ error: 'Failed to refresh session' });
+    }
+
+    res.json({
+      ok: true,
+      access_token: data.session?.access_token,
+      refresh_token: data.session?.refresh_token,
+      expires_in: data.session?.expires_in,
+    });
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    res.status(500).json({ error: 'Token refresh failed' });
+  }
+});
+
+// Logout (revoke session)
+app.post('/api/auth/logout', auth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID not found' });
+    }
+
+    // Sign out user (invalidate all sessions)
+    const { error } = await supabaseAdmin.auth.admin.signOut(userId);
+
+    if (error) {
+      console.error('Logout error:', error);
+      // Still return success to frontend so it can clear localStorage
+      return res.json({ ok: true, message: 'Logged out locally' });
+    }
+
+    res.json({ ok: true, message: 'Successfully logged out' });
+  } catch (err) {
+    console.error('Logout error:', err);
+    // Return success anyway - frontend will clear token
+    res.json({ ok: true, message: 'Logged out locally' });
+  }
+});
+
 // ── WhatsApp Webhook (no auth — Twilio calls this) ────────────────────────────
 app.post('/webhook/whatsapp', async (req, res) => {
   const from = req.body.From;

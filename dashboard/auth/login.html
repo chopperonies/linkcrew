@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - LinkCrew</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #1a1a1a;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .button {
+      width: 100%;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 10px;
+    }
+    .button:hover {
+      background: #5568d3;
+    }
+    .button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .secondary-button {
+      background: transparent;
+      color: #667eea;
+      border: 1px solid #667eea;
+    }
+    .secondary-button:hover {
+      background: #f8f9ff;
+    }
+    .links {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+    .message {
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+    .success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">LinkCrew</div>
+    <h1>Sign In</h1>
+    <p class="subtitle">Access your field crew management dashboard</p>
+
+    <div id="message"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="you@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password">
+      </div>
+
+      <button type="submit" class="button" id="submitBtn">Sign In</button>
+    </form>
+
+    <div class="links">
+      <a href="/auth/forgot-password.html">Forgot password?</a>
+      <a href="/auth/signup.html">Create account</a>
+    </div>
+  </div>
+
+  <script>
+    // Check if already logged in
+    function checkAuth() {
+      const token = localStorage.getItem('fs_token');
+      if (token) {
+        // Try to verify token is still valid
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 > Date.now()) {
+          window.location.href = '/index.html';
+        }
+      }
+    }
+
+    checkAuth();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const messageEl = document.getElementById('message');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (!email || !password) {
+        messageEl.innerHTML = '<div class="message error">Email and password are required</div>';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+
+      try {
+        // Fetch Supabase config
+        const configRes = await fetch('/api/config');
+        const config = await configRes.json();
+
+        // Create Supabase client
+        const { createClient } = window.supabase || await (async () => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+          document.head.appendChild(script);
+          await new Promise(r => script.onload = r);
+          return window.supabase;
+        })();
+
+        const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+
+        // Sign in with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          messageEl.innerHTML = `<div class="message error">${error.message}</div>`;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+          return;
+        }
+
+        if (data?.session?.access_token) {
+          // Store token and redirect
+          localStorage.setItem('fs_token', data.session.access_token);
+          if (data.session.refresh_token) {
+            localStorage.setItem('fs_refresh_token', data.session.refresh_token);
+          }
+          messageEl.innerHTML = '<div class="message success">Sign in successful! Redirecting...</div>';
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 500);
+        } else {
+          messageEl.innerHTML = '<div class="message error">Sign in failed. Please try again.</div>';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+        }
+      } catch (err) {
+        console.error('Sign in error:', err);
+        messageEl.innerHTML = `<div class="message error">Error: ${err.message || 'Sign in failed'}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+
+  <!-- Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

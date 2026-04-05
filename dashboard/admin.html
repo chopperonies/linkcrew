@@ -379,7 +379,24 @@ async function changePassword() {
   }
 }
 
-function logout() {
+async function logout() {
+  // Call logout endpoint to revoke session on server
+  if (token) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (err) {
+      console.error('Logout request failed:', err);
+      // Continue with local logout anyway
+    }
+  }
+
+  // Clear local state
   token = null;
   document.getElementById('shell').classList.remove('visible');
   document.getElementById('auth-screen').classList.add('visible');

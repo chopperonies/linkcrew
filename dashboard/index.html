@@ -1454,7 +1454,26 @@ async function doSignup() {
   }
 }
 
-function doLogout() {
+async function doLogout() {
+  const token = getToken();
+
+  // Call logout endpoint to revoke session on server
+  if (token) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (err) {
+      console.error('Logout request failed:', err);
+      // Continue with local logout anyway
+    }
+  }
+
+  // Clear local state
   clearToken();
   isAdmin = false;
   currentTenantId = null;
