@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
-const { sendDailyDigest, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail } = require('../email/digest');
+const { sendDailyDigest, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder } = require('../email/digest');
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
 const twilio = require('twilio');
@@ -948,6 +948,42 @@ app.delete('/api/services/:id', auth, async (req, res) => {
 
 // ── Appointments ──────────────────────────────────────────────────────────────
 
+async function notifyApptClient(appt, tenantId, type = 'confirmation') {
+  if (!appt.clients?.email && !appt.clients?.phone) return;
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('company_name, twilio_phone, twilio_account_sid, twilio_auth_token')
+    .eq('id', tenantId).single();
+
+  const params = {
+    clientName: appt.clients.name,
+    clientEmail: appt.clients.email,
+    title: appt.title,
+    startTime: appt.start_time,
+    endTime: appt.end_time,
+    notes: appt.notes,
+    tenantName: tenant?.company_name,
+  };
+
+  if (appt.clients.email) {
+    try {
+      if (type === 'confirmation') await sendAppointmentConfirmation(params);
+      else await sendAppointmentReminder(params);
+    } catch (e) { console.error('[appt notify] email error:', e.message); }
+  }
+
+  if (appt.clients.phone && tenant?.twilio_account_sid) {
+    try {
+      const twilio = require('twilio')(tenant.twilio_account_sid, tenant.twilio_auth_token);
+      const date = new Date(appt.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const time = new Date(appt.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const msg = type === 'confirmation'
+        ? `Hi ${appt.clients.name}, your appointment "${appt.title}" is confirmed for ${date} at ${time}. — ${tenant?.company_name || 'Your contractor'}`
+        : `Reminder: "${appt.title}" is tomorrow, ${date} at ${time}. — ${tenant?.company_name || 'Your contractor'}`;
+      await twilio.messages.create({ to: appt.clients.phone, from: tenant.twilio_phone, body: msg });
+    } catch (e) { console.error('[appt notify] sms error:', e.message); }
+  }
+}
+
 app.get('/api/appointments', auth, async (req, res) => {
   const { start, end } = req.query;
   let query = supabaseAdmin
@@ -962,17 +998,18 @@ app.get('/api/appointments', auth, async (req, res) => {
 });
 
 app.post('/api/appointments', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, notify_client } = req.body;
   if (!title || !start_time) return res.status(400).json({ error: 'Title and start time are required' });
   const { data, error } = await supabaseAdmin.from('appointments')
     .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], tenant_id: req.tenantId })
-    .select('*, clients(id, name, phone)').single();
+    .select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
+  if (notify_client && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
   res.json(data);
 });
 
 app.patch('/api/appointments/:id', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, notify_client } = req.body;
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (start_time !== undefined) updates.start_time = start_time;
@@ -980,8 +1017,9 @@ app.patch('/api/appointments/:id', auth, async (req, res) => {
   if (client_id !== undefined) updates.client_id = client_id || null;
   if (notes !== undefined) updates.notes = notes;
   if (service_ids !== undefined) updates.service_ids = service_ids;
-  const { data, error } = await supabaseAdmin.from('appointments').update(updates).eq('id', req.params.id).select('*, clients(id, name, phone)').single();
+  const { data, error } = await supabaseAdmin.from('appointments').update(updates).eq('id', req.params.id).select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
+  if (notify_client && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
   res.json(data);
 });
 
@@ -2459,6 +2497,30 @@ async function snapshotMRR() {
   console.log(`📊 MRR snapshot saved: $${mrr}`);
 }
 cron.schedule('0 0 1 * *', snapshotMRR);
+
+// ── Nightly appointment reminders ─────────────────────────────────────────────
+cron.schedule('0 19 * * *', async () => {
+  console.log('📅 Sending appointment reminders...');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const tomorrowEnd = new Date(tomorrow);
+  tomorrowEnd.setHours(23, 59, 59, 999);
+
+  const { data: appts } = await supabaseAdmin
+    .from('appointments')
+    .select('*, clients(id, name, email, phone), tenants:tenant_id(id, company_name, twilio_phone, twilio_account_sid, twilio_auth_token)')
+    .gte('start_time', tomorrow.toISOString())
+    .lte('start_time', tomorrowEnd.toISOString())
+    .not('client_id', 'is', null);
+
+  if (!appts?.length) return;
+  for (const appt of appts) {
+    if (!appt.clients) continue;
+    await notifyApptClient(appt, appt.tenant_id, 'reminder').catch(() => {});
+  }
+  console.log(`📅 Sent reminders for ${appts.length} appointments`);
+});
 
 // ── Nightly photo expiry cleanup ──────────────────────────────────────────────
 cron.schedule('0 2 * * *', async () => {

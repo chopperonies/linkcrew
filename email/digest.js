@@ -474,4 +474,49 @@ async function sendBusinessOnboardingEmail({ ownerEmail, companyName }) {
   });
 }
 
-module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail };
+async function sendAppointmentConfirmation({ clientName, clientEmail, title, startTime, endTime, notes, tenantName }) {
+  const date = new Date(startTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const time = new Date(startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const endStr = endTime ? ` – ${new Date(endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '';
+  await resend.emails.send({
+    from: 'LinkCrew <hello@linkcrew.io>',
+    to: clientEmail,
+    subject: `Appointment Confirmed: ${title}`,
+    html: `<div style="font-family:sans-serif;max-width:500px;color:#17191c">
+      <h2 style="color:#0265dc">Appointment Confirmed</h2>
+      <p>Hi ${clientName},</p>
+      <p>Your appointment has been scheduled:</p>
+      <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${title}</div>
+        <div style="font-size:14px;color:#737475">📅 ${date}</div>
+        <div style="font-size:14px;color:#737475">🕐 ${time}${endStr}</div>
+        ${notes ? `<div style="font-size:13px;color:#737475;margin-top:8px">${notes}</div>` : ''}
+      </div>
+      <p style="color:#737475;font-size:12px">${tenantName || 'Your contractor'}</p>
+    </div>`,
+  });
+}
+
+async function sendAppointmentReminder({ clientName, clientEmail, title, startTime, endTime, notes, tenantName }) {
+  const date = new Date(startTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const time = new Date(startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const endStr = endTime ? ` – ${new Date(endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '';
+  await resend.emails.send({
+    from: 'LinkCrew <hello@linkcrew.io>',
+    to: clientEmail,
+    subject: `Reminder: ${title} — Tomorrow`,
+    html: `<div style="font-family:sans-serif;max-width:500px;color:#17191c">
+      <h2 style="color:#0265dc">Appointment Reminder</h2>
+      <p>Hi ${clientName}, just a reminder about your appointment tomorrow:</p>
+      <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${title}</div>
+        <div style="font-size:14px;color:#737475">📅 ${date}</div>
+        <div style="font-size:14px;color:#737475">🕐 ${time}${endStr}</div>
+        ${notes ? `<div style="font-size:13px;color:#737475;margin-top:8px">${notes}</div>` : ''}
+      </div>
+      <p style="color:#737475;font-size:12px">${tenantName || 'Your contractor'}</p>
+    </div>`,
+  });
+}
+
+module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder };
