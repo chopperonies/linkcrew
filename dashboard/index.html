@@ -2977,16 +2977,22 @@ async function saveClient() {
   const btn = document.getElementById('client-modal-save');
   btn.disabled = true;
 
+  let res;
   if (editingClientId) {
-    await authFetch(`/api/clients/${editingClientId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    res = await authFetch(`/api/clients/${editingClientId}`, { method: 'PATCH', body: JSON.stringify(payload) });
   } else {
-    await authFetch('/api/clients', { method: 'POST', body: JSON.stringify(payload) });
+    res = await authFetch('/api/clients', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  btn.disabled = false;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    return alert('Error saving client: ' + (err.error || res.status));
   }
 
   closeClientModal();
   await loadClients();
   if (editingClientId) await openClientDetail(editingClientId);
-  btn.disabled = false;
 }
 
 // ── Reports ───────────────────────────────────────────────────────────────────
