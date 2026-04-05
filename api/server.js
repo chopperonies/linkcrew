@@ -2695,27 +2695,40 @@ app.delete('/api/admin/invites/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Crew Invite (stateless — tenant ID encoded in token) ───────────────────────
+// ── Crew Invite (crew_invite_links table) ──────────────────────────────────────
 
-function encodeCrewToken(tenantId) {
-  return Buffer.from(tenantId).toString('base64url');
-}
-function decodeCrewToken(token) {
-  try { return Buffer.from(token, 'base64url').toString('utf8'); } catch { return null; }
-}
-
-app.post('/api/crew-invite', auth, async (req, res) => {
+// GET: return current invite URL if one exists
+app.get('/api/crew-invite', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) return res.json({ url: null });
   const appUrl = process.env.APP_URL || 'https://linkcrew.io';
-  const token = encodeCrewToken(req.tenantId);
+  const { data } = await supabaseAdmin.from('crew_invite_links')
+    .select('token').eq('tenant_id', tenantId).maybeSingle();
+  if (!data) return res.json({ url: null });
+  res.json({ url: `${appUrl}/join?t=${data.token}` });
+});
+
+// POST: generate a new token, invalidates old one via upsert
+app.post('/api/crew-invite', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) return res.status(400).json({ error: 'Cannot generate invite — no organization found' });
+  const appUrl = process.env.APP_URL || 'https://linkcrew.io';
+  const token = require('crypto').randomBytes(16).toString('hex');
+  const { error } = await supabaseAdmin.from('crew_invite_links')
+    .upsert({ tenant_id: tenantId, token, created_at: new Date().toISOString() }, { onConflict: 'tenant_id' });
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ url: `${appUrl}/join?t=${token}` });
 });
 
-// Public: get company info from token
+// Public: look up company name for join page
 app.get('/api/join-info', async (req, res) => {
-  const tenantId = decodeCrewToken(req.query.t);
-  if (!tenantId) return res.status(400).json({ error: 'Invalid invite link' });
+  const { t } = req.query;
+  if (!t) return res.status(400).json({ error: 'Invalid invite link' });
+  const { data: invite } = await supabaseAdmin.from('crew_invite_links')
+    .select('tenant_id').eq('token', t).maybeSingle();
+  if (!invite) return res.status(404).json({ error: 'This invite link is invalid or has been regenerated' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name').eq('id', tenantId).single();
+    .select('company_name').eq('id', invite.tenant_id).single();
   if (!tenant) return res.status(404).json({ error: 'Invalid invite link' });
   res.json({ companyName: tenant.company_name || 'Your Team' });
 });
@@ -2724,19 +2737,15 @@ app.get('/api/join-info', async (req, res) => {
 app.post('/api/crew-register', async (req, res) => {
   const { t, name, phone, role } = req.body;
   if (!t || !name || !phone) return res.status(400).json({ error: 'Name and phone are required' });
-  const tenantId = decodeCrewToken(t);
-  if (!tenantId) return res.status(400).json({ error: 'Invalid invite link' });
-
-  const { data: tenant } = await supabaseAdmin.from('tenants').select('id').eq('id', tenantId).single();
-  if (!tenant) return res.status(400).json({ error: 'Invalid invite link' });
-
+  const { data: invite } = await supabaseAdmin.from('crew_invite_links')
+    .select('tenant_id').eq('token', t).maybeSingle();
+  if (!invite) return res.status(400).json({ error: 'This invite link is invalid or has been regenerated. Ask your manager for a new one.' });
+  const tenantId = invite.tenant_id;
   const { data: dup } = await supabaseAdmin.from('employees')
     .select('id').eq('tenant_id', tenantId).eq('phone', phone.trim()).maybeSingle();
   if (dup) return res.status(409).json({ error: 'A crew member with this phone number already exists.' });
-
   const { data, error } = await supabaseAdmin.from('employees').insert({
-    name: name.trim(), phone: phone.trim(),
-    role: role?.trim() || 'Crew', tenant_id: tenantId
+    name: name.trim(), phone: phone.trim(), role: role?.trim() || 'Crew', tenant_id: tenantId
   }).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json({ success: true, employee: data });

@@ -101,7 +101,14 @@
   async function init() {
     if (!t) return showInvalid();
     const res = await fetch(`/api/join-info?t=${encodeURIComponent(t)}`);
-    if (!res.ok) return showInvalid();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.error === 'This invite link is invalid or has been regenerated') {
+        document.getElementById('state-invalid').querySelector('p').textContent =
+          'This invite link has been regenerated. Ask your manager for the new one.';
+      }
+      return showInvalid();
+    }
     const { companyName } = await res.json();
     document.getElementById('company-line').innerHTML = `You&apos;ve been invited to join <strong>${companyName}</strong> on LinkCrew.`;
   }

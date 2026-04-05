@@ -1055,7 +1055,13 @@
         </button>
       </div>
 
-      <div style="font-size:12px;color:#737475;margin-top:4px">This link is permanent and never expires. Share it with any crew member to let them join your team.</div>
+      <button id="crew-invite-gen-btn" onclick="generateCrewInviteUrl()"
+        style="background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">
+        Generate New Link
+      </button>
+      <div style="margin-top:12px;font-size:12px;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:9px 12px;line-height:1.5">
+        ⚠ Generating a new link immediately invalidates the old one. Any crew member who hasn&apos;t joined yet will need the new link.
+      </div>
     </div>
 
   </div>
@@ -1523,18 +1529,37 @@ function goToCrewInvite() {
 async function loadCrewInviteUrl() {
   const input = document.getElementById('crew-invite-url');
   input.value = '';
-  input.placeholder = 'Generating link...';
+  input.placeholder = 'No link generated yet';
+  try {
+    const res = await authFetch('/api/crew-invite');
+    const data = await res.json();
+    if (data.url) {
+      input.value = data.url;
+      input.placeholder = '';
+    }
+  } catch { /* leave placeholder */ }
+}
+
+async function generateCrewInviteUrl() {
+  const input = document.getElementById('crew-invite-url');
+  const genBtn = document.getElementById('crew-invite-gen-btn');
+  genBtn.disabled = true;
+  genBtn.textContent = 'Generating...';
   try {
     const res = await authFetch('/api/crew-invite', { method: 'POST' });
     const data = await res.json();
     if (data.url) {
       input.value = data.url;
-      input.placeholder = '';
+      genBtn.textContent = '✓ Generated';
+      setTimeout(() => { genBtn.textContent = 'Generate New Link'; genBtn.disabled = false; }, 2000);
     } else {
-      input.placeholder = 'Error — click Generate Link to try again';
+      genBtn.textContent = 'Generate New Link';
+      genBtn.disabled = false;
+      alert(data.error || 'Failed to generate link');
     }
   } catch {
-    input.placeholder = 'Error — click Generate Link to try again';
+    genBtn.textContent = 'Generate New Link';
+    genBtn.disabled = false;
   }
 }
 
