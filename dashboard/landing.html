@@ -22,10 +22,10 @@
     .nav-brand { font-size: 22px; font-weight: 800; color: #17191c; }
     .nav-brand span { color: #0265dc; }
     .nav-right { display: flex; align-items: center; gap: 16px; }
-    .btn-ghost { background: none; border: none; color: #17191c; font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 8px; }
-    .btn-ghost:hover { background: #f5f5f5; }
-    .btn-primary { background: #0265dc; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; padding: 10px 22px; border-radius: 8px; }
-    .btn-primary:hover { background: #1b5abe; }
+    .btn-ghost { background: none; border: 1.5px solid #e8e8e8; color: #17191c; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 8px; letter-spacing: 0.01em; transition: background 0.15s, border-color 0.15s; }
+    .btn-ghost:hover { background: #f5f5f5; border-color: #d0d0d0; }
+    .btn-primary { background: #0265dc; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer; padding: 10px 22px; border-radius: 8px; letter-spacing: 0.01em; transition: background 0.15s, transform 0.15s; }
+    .btn-primary:hover { background: #1b5abe; transform: translateY(-1px); }
 
     /* ── Hero ── */
     .hero {
@@ -52,14 +52,25 @@
     }
     .hero h1 span { color: #0265dc; }
     .hero p {
-      font-size: 18px; color: #c0c1c2; line-height: 1.6;
+      font-size: 18px; color: rgba(255,255,255,0.85); line-height: 1.6;
       max-width: 500px; margin: 0 0 40px;
     }
     .hero-ctas { display: flex; gap: 14px; justify-content: flex-start; align-items: center; }
-    .btn-hero { background: #0265dc; color: #fff; border: none; font-size: 16px; font-weight: 700; cursor: pointer; padding: 16px 32px; border-radius: 8px; }
-    .btn-hero:hover { background: #1b5abe; }
-    .btn-hero-ghost { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 16px; font-weight: 600; cursor: pointer; padding: 14px 32px; border-radius: 8px; }
-    .btn-hero-ghost:hover { border-color: #fff; background: rgba(255,255,255,0.05); }
+    .btn-hero {
+      background: rgba(2,101,220,0.82); color: #fff; border: 1px solid rgba(2,101,220,0.6);
+      font-size: 16px; font-weight: 700; cursor: pointer; padding: 16px 32px; border-radius: 10px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-hero:hover { background: rgba(2,101,220,1); transform: translateY(-1px); }
+    .btn-hero-ghost {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.45); font-size: 16px; font-weight: 600;
+      cursor: pointer; padding: 15px 32px; border-radius: 10px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .btn-hero-ghost:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.8); transform: translateY(-1px); }
 
     /* ── Stats bar ── */
     .stats-bar {
