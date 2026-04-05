@@ -1131,6 +1131,56 @@ app.post('/api/jobs/:id/invoice', auth, async (req, res) => {
   res.json(data);
 });
 
+// Mark invoice as paid (cash / in-person payment)
+app.post('/api/jobs/:id/mark-paid', auth, async (req, res) => {
+  const { notify } = req.body; // 'email' | 'sms' | null
+  const { data: job, error } = await supabaseAdmin.from('jobs')
+    .update({ payment_status: 'paid' })
+    .eq('id', req.params.id)
+    .select('*, clients(name, email, phone)')
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+
+  if (notify && job.clients) {
+    const tenantId = await getEffectiveTenantId(req);
+    const { data: tenant } = await supabaseAdmin.from('tenants')
+      .select('company_name, twilio_phone, twilio_account_sid, twilio_auth_token')
+      .eq('id', tenantId).single();
+
+    if (notify === 'email' && job.clients.email) {
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'LinkCrew <hello@linkcrew.io>',
+          to: job.clients.email,
+          subject: `Payment received — ${job.name}`,
+          html: `<div style="font-family:sans-serif;max-width:500px">
+            <h2 style="color:#166534">Payment Received</h2>
+            <p>Hi ${job.clients.name},</p>
+            <p>This is a confirmation that your payment of <strong>$${parseFloat(job.invoice_amount).toFixed(2)}</strong> for <strong>${job.name}</strong> has been received.</p>
+            <p>Thank you for your business!</p>
+            <p style="color:#737475;font-size:12px">${tenant?.company_name || 'Your contractor'}</p>
+          </div>`,
+        });
+      } catch (e) { console.error('[mark-paid] email error:', e.message); }
+    }
+
+    if (notify === 'sms' && job.clients.phone && tenant?.twilio_account_sid) {
+      try {
+        const twilio = require('twilio')(tenant.twilio_account_sid, tenant.twilio_auth_token);
+        await twilio.messages.create({
+          to: job.clients.phone,
+          from: tenant.twilio_phone,
+          body: `Hi ${job.clients.name}, payment of $${parseFloat(job.invoice_amount).toFixed(2)} for "${job.name}" has been received. Thank you! — ${tenant?.company_name || 'Your contractor'}`,
+        });
+      } catch (e) { console.error('[mark-paid] sms error:', e.message); }
+    }
+  }
+
+  res.json(job);
+});
+
 // Portal: create Stripe Checkout session
 app.post('/portal/api/checkout', portalAuth, async (req, res) => {
   const { job_id } = req.body;
