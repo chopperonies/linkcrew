@@ -5,11 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LinkCrew Dashboard</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
 
     /* ── Auth screens ── */
     .auth-screen { display: none; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center;
@@ -240,7 +244,8 @@
 
     /* ── Main nav tabs ── */
     .main-tabs { display: flex; gap: 0; background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 24px; }
-    .main-tab { padding: 12px 20px; font-size: 13px; font-weight: 600; color: #737475; cursor: pointer; border-bottom: 2px solid transparent; }
+    .main-tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: #737475; cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; }
+    .main-tab i { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
     .main-tab.active { color: #0265dc; border-bottom-color: #0265dc; }
     .main-tab:hover:not(.active) { color: #17191c; }
 
@@ -411,7 +416,7 @@
   </div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
-    <button class="hdr-btn danger" onclick="doLogout()">Sign Out</button>
+    <button class="hdr-btn danger" onclick="doLogout()" style="display:flex;align-items:center;gap:5px"><i data-lucide="log-out" style="width:13px;height:13px"></i> Sign Out</button>
   </div>
 </div>
 
@@ -446,15 +451,15 @@
 
 <!-- Main nav tabs -->
 <div class="main-tabs">
-  <div class="main-tab active" id="mtab-jobs" onclick="switchMainTab('jobs')">📋 Jobs</div>
-  <div class="main-tab" id="mtab-team" onclick="switchMainTab('team')">👥 Team</div>
-  <div class="main-tab" id="mtab-clients" onclick="switchMainTab('clients')">👤 Clients</div>
-  <div class="main-tab" id="mtab-reports" onclick="switchMainTab('reports')">📊 Reports</div>
-  <div class="main-tab" id="mtab-agreements" onclick="switchMainTab('agreements')">📄 Agreements</div>
-  <div class="main-tab" id="mtab-calendar" onclick="switchMainTab('calendar')">📅 Calendar</div>
-  <div class="main-tab" id="mtab-timesheets" onclick="switchMainTab('timesheets')">🕐 Timesheets</div>
-  <div class="main-tab" id="mtab-settings" onclick="switchMainTab('settings')">⚙️ Settings</div>
-  <div class="main-tab" id="mtab-ideas" onclick="switchMainTab('ideas')" style="display:none">💡 Ideas</div>
+  <div class="main-tab active" id="mtab-jobs" onclick="switchMainTab('jobs')"><i data-lucide="briefcase"></i> Jobs</div>
+  <div class="main-tab" id="mtab-team" onclick="switchMainTab('team')"><i data-lucide="users"></i> Team</div>
+  <div class="main-tab" id="mtab-clients" onclick="switchMainTab('clients')"><i data-lucide="building-2"></i> Clients</div>
+  <div class="main-tab" id="mtab-reports" onclick="switchMainTab('reports')"><i data-lucide="bar-chart-2"></i> Reports</div>
+  <div class="main-tab" id="mtab-agreements" onclick="switchMainTab('agreements')"><i data-lucide="file-text"></i> Agreements</div>
+  <div class="main-tab" id="mtab-calendar" onclick="switchMainTab('calendar')"><i data-lucide="calendar"></i> Calendar</div>
+  <div class="main-tab" id="mtab-timesheets" onclick="switchMainTab('timesheets')"><i data-lucide="clock"></i> Timesheets</div>
+  <div class="main-tab" id="mtab-settings" onclick="switchMainTab('settings')"><i data-lucide="settings"></i> Settings</div>
+  <div class="main-tab" id="mtab-ideas" onclick="switchMainTab('ideas')" style="display:none"><i data-lucide="lightbulb"></i> Ideas</div>
 </div>
 
 <!-- Jobs view -->
@@ -1250,6 +1255,9 @@
 </div>
 
 <script>
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+
 // ── Auth state ────────────────────────────────────────────────────────────────
 
 let supabaseClient = null;
@@ -1294,6 +1302,7 @@ async function loadBillingStatus() {
     // Show Ideas tab for active/trialing subscribers
     if (['active', 'trialing'].includes(currentSubscriptionStatus)) {
       document.getElementById('mtab-ideas').style.display = '';
+      lucide.createIcons();
     }
     currentMaxUsers = (data.max_users ?? 1);
 
