@@ -1570,7 +1570,7 @@ const updateIcons = {
 async function init() {
   const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
   if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-  await Promise.all([loadDashboard(), loadSupplies(), loadPhotos(), loadOnboardingBanner(), loadClients()]);
+  await Promise.all([loadDashboard(), loadSupplies(), loadPhotos(), loadOnboardingBanner(), loadClients(), loadAllEmployees()]);
   subscribeRealtime();
 }
 
@@ -1797,18 +1797,39 @@ async function openDetail(jobId, jobName) {
   const todayUpdates = (updates||[]).filter(u => new Date(u.created_at) >= today);
 
   const empEl = document.getElementById('detail-employees');
-  empEl.innerHTML = assignments?.length ? `
-    <div class="panel-title">Crew</div>
-    ${assignments.map(a => `
-      <div class="emp-item">
-        <div class="emp-avatar">${(a.employees?.name||'?')[0].toUpperCase()}</div>
-        <div>
-          <div style="font-size:13px;color:#ccc">${a.employees?.name||'Unknown'}</div>
-          <div style="font-size:11px;color:${a.checked_out_at?'#666':'#4ade80'};margin-top:1px">${a.checked_out_at?'● Off site':'● On site'}</div>
-        </div>
-      </div>
-    `).join('')}
-  ` : '<div class="empty" style="padding:12px 0">No crew checked in</div>';
+  const assignedIds = new Set((assignments||[]).map(a => a.employee_id));
+  const unassigned = (window._allEmployees||[]).filter(e => !assignedIds.has(e.id));
+  empEl.innerHTML = `
+    <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Crew</span>
+      ${unassigned.length ? `
+        <select onchange="assignCrewMember('${job?.id}', this.value); this.value=''"
+          style="font-size:11px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:4px 8px;color:#17191c;cursor:pointer">
+          <option value="">+ Assign</option>
+          ${unassigned.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+        </select>` : ''}
+    </div>
+    ${(assignments||[]).length ? assignments.map(a => {
+      const onSite = a.checked_in_at && !a.checked_out_at;
+      const done = a.checked_in_at && a.checked_out_at;
+      const badge = onSite
+        ? '<span style="font-size:10px;font-weight:700;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:8px">● On site</span>'
+        : done
+        ? '<span style="font-size:10px;font-weight:700;color:#737475;background:#f5f5f5;padding:2px 6px;border-radius:8px">Done</span>'
+        : '<span style="font-size:10px;font-weight:700;color:#0265dc;background:#eff6ff;padding:2px 6px;border-radius:8px">Assigned</span>';
+      return `
+        <div class="emp-item" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="emp-avatar">${(a.employees?.name||'?')[0].toUpperCase()}</div>
+            <div>
+              <div style="font-size:13px;color:#ccc">${a.employees?.name||'Unknown'}</div>
+              <div style="margin-top:3px">${badge}</div>
+            </div>
+          </div>
+          ${!onSite ? `<button onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#555'">✕</button>` : ''}
+        </div>`;
+    }).join('') : '<div style="font-size:12px;color:#666;padding:8px 0">No crew assigned yet.</div>'}
+  `;
 
   // Client selector
   const clientEl = document.getElementById('detail-client');
@@ -1999,6 +2020,25 @@ async function sendWorkOrder(jobId) {
 
 // ── Team Management ───────────────────────────────────────────────────────────
 const roleCls = { owner: 'role-owner', manager: 'role-manager', crew: 'role-crew' };
+
+async function loadAllEmployees() {
+  const res = await authFetch('/api/employees');
+  window._allEmployees = await res.json();
+}
+
+async function assignCrewMember(jobId, employeeId) {
+  if (!employeeId) return;
+  const res = await authFetch(`/api/jobs/${jobId}/assign`, { method: 'POST', body: JSON.stringify({ employee_id: employeeId }) });
+  if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to assign'); }
+  await openDetail(jobId);
+}
+
+async function removeCrewAssignment(jobId, employeeId) {
+  if (!confirm('Remove this crew member from the job?')) return;
+  const res = await authFetch(`/api/jobs/${jobId}/assign/${employeeId}`, { method: 'DELETE' });
+  if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to remove'); }
+  await openDetail(jobId);
+}
 
 async function loadTeamInline() {
   const el = document.getElementById('team-list-inline');

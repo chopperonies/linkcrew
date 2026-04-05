@@ -1550,6 +1550,41 @@ app.post('/portal/api/requests', portalAuth, upload.single('photo'), async (req,
   res.json(job);
 });
 
+// ── Crew Assignment ───────────────────────────────────────────────────────────
+
+// Assign employee to job (pre-assignment, no check-in yet)
+app.post('/api/jobs/:id/assign', auth, async (req, res) => {
+  const { employee_id } = req.body;
+  if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
+
+  const { data: job } = await supabaseAdmin.from('jobs').select('id').eq('id', req.params.id).eq('tenant_id', req.tenantId).single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const { data: employee } = await supabaseAdmin.from('employees').select('id').eq('id', employee_id).eq('tenant_id', req.tenantId).single();
+  if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+  // Check if already assigned
+  const { data: existing } = await supabaseAdmin.from('job_assignments').select('id').eq('job_id', req.params.id).eq('employee_id', employee_id).maybeSingle();
+  if (existing) return res.status(400).json({ error: 'Already assigned' });
+
+  const { data, error } = await supabaseAdmin.from('job_assignments').insert({ job_id: req.params.id, employee_id, tenant_id: req.tenantId }).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Remove assignment (only if not currently checked in)
+app.delete('/api/jobs/:id/assign/:employeeId', auth, async (req, res) => {
+  const { data: job } = await supabaseAdmin.from('jobs').select('id').eq('id', req.params.id).eq('tenant_id', req.tenantId).single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const { data: assignment } = await supabaseAdmin.from('job_assignments').select('id, checked_in_at, checked_out_at').eq('job_id', req.params.id).eq('employee_id', req.params.employeeId).maybeSingle();
+  if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
+  if (assignment.checked_in_at && !assignment.checked_out_at) return res.status(400).json({ error: 'Cannot remove crew member who is currently on site' });
+
+  await supabaseAdmin.from('job_assignments').delete().eq('id', assignment.id);
+  res.json({ ok: true });
+});
+
 // ── Invoicing ─────────────────────────────────────────────────────────────────
 
 app.post('/api/jobs/:id/invoice', auth, async (req, res) => {
