@@ -416,7 +416,7 @@
   </div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
-    <button id="invite-crew-btn" class="hdr-btn accent" onclick="copyCrewInvite()" style="display:flex;align-items:center;gap:5px"><i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew</button>
+    <button id="invite-crew-btn" class="hdr-btn accent" onclick="goToCrewInvite()" style="display:flex;align-items:center;gap:5px"><i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew</button>
     <button class="hdr-btn danger" onclick="doLogout()" style="display:flex;align-items:center;gap:5px"><i data-lucide="log-out" style="width:13px;height:13px"></i> Sign Out</button>
   </div>
 </div>
@@ -1040,6 +1040,30 @@
       <a href="mailto:hello@linkcrew.io?subject=Priority Support Request" style="display:inline-block;background:#0265dc;color:#fff;text-decoration:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700">Contact Priority Support</a>
     </div>
 
+    <!-- Crew Invite Link -->
+    <div id="crew-invite-card" style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
+      <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:6px">Crew Invite Link</div>
+      <div style="font-size:13px;color:#737475;margin-bottom:20px">Share this link with crew members so they can register themselves directly to your team. The link does not expire unless you regenerate it.</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" id="crew-invite-url" readonly
+          style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:9px 12px;font-size:12px;color:#17191c;font-family:monospace;min-width:0"
+          placeholder="Generating link...">
+        <button onclick="copyCrewInviteUrl()" id="crew-invite-copy-btn"
+          style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
+          Copy
+        </button>
+      </div>
+
+      <button onclick="confirmRegenerateCrewInvite()"
+        style="background:#fff;color:#737475;border:1px solid #e8e8e8;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">
+        🔄 Regenerate Link
+      </button>
+      <div style="margin-top:12px;font-size:12px;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:9px 12px;line-height:1.5">
+        ⚠ Regenerating creates a new link and immediately invalidates the old one. Any crew member who hasn&apos;t joined yet using the old link will need the new one.
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1489,28 +1513,46 @@ async function doSignup() {
   }
 }
 
-async function copyCrewInvite() {
-  const btn = document.getElementById('invite-crew-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader" style="width:13px;height:13px"></i> Getting link...';
-  lucide.createIcons();
-  try {
-    const res = await authFetch('/api/crew-invite', { method: 'POST' });
-    const { url } = await res.json();
-    await navigator.clipboard.writeText(url);
-    btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px"></i> Link Copied!';
-    lucide.createIcons();
-    setTimeout(() => {
-      btn.innerHTML = '<i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew';
-      btn.disabled = false;
-      lucide.createIcons();
-    }, 2500);
-  } catch {
-    btn.innerHTML = '<i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew';
-    btn.disabled = false;
-    lucide.createIcons();
-    alert('Could not generate invite link. Please try again.');
-  }
+function goToCrewInvite() {
+  switchMainTab('settings');
+  setTimeout(() => {
+    const card = document.getElementById('crew-invite-card');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.outline = '2px solid #0265dc';
+      card.style.outlineOffset = '3px';
+      setTimeout(() => { card.style.outline = ''; card.style.outlineOffset = ''; }, 1800);
+    }
+  }, 120);
+}
+
+async function loadCrewInviteUrl() {
+  const res = await authFetch('/api/crew-invite', { method: 'POST' });
+  const { url } = await res.json();
+  document.getElementById('crew-invite-url').value = url;
+}
+
+async function copyCrewInviteUrl() {
+  const url = document.getElementById('crew-invite-url').value;
+  if (!url) return;
+  await navigator.clipboard.writeText(url);
+  const btn = document.getElementById('crew-invite-copy-btn');
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+}
+
+async function confirmRegenerateCrewInvite() {
+  const ok = confirm('Regenerate the crew invite link?\n\nThe current link will stop working immediately. Any crew members who haven\'t joined yet will need the new link.');
+  if (!ok) return;
+  const urlInput = document.getElementById('crew-invite-url');
+  urlInput.value = 'Regenerating...';
+  const res = await authFetch('/api/crew-invite/regenerate', { method: 'POST' });
+  const { url } = await res.json();
+  urlInput.value = url;
+  const btn = document.getElementById('crew-invite-copy-btn');
+  btn.textContent = '✓ Copied!';
+  await navigator.clipboard.writeText(url);
+  setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
 }
 
 async function doLogout() {
@@ -2255,7 +2297,7 @@ function switchMainTab(tab) {
   if (tab === 'agreements') { selectedAgreementId = null; loadAgreements(); }
   if (tab === 'calendar') initCalendar();
   if (tab === 'timesheets') initTimesheets();
-  if (tab === 'settings') loadSettings();
+  if (tab === 'settings') { loadSettings(); loadCrewInviteUrl(); }
   if (tab === 'ideas') loadIdeas();
 }
 

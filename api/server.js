@@ -2719,6 +2719,21 @@ app.post('/api/crew-invite', auth, async (req, res) => {
   res.json({ url: `${appUrl}/join?code=${code}` });
 });
 
+// Regenerate crew invite — deletes old, creates new
+app.post('/api/crew-invite/regenerate', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const appUrl = process.env.APP_URL || 'https://linkcrew.io';
+
+  await supabaseAdmin.from('beta_invites')
+    .delete().eq('tenant_id', tenantId).ilike('code', 'CREW-%');
+
+  const code = 'CREW-' + require('crypto').randomBytes(3).toString('hex').toUpperCase();
+  const { error } = await supabaseAdmin.from('beta_invites')
+    .insert({ code, tenant_id: tenantId, label: 'Crew invite', max_uses: null, trial_days: 14 });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ url: `${appUrl}/join?code=${code}` });
+});
+
 // Public: get company info for a crew invite code
 app.get('/api/join-info', async (req, res) => {
   const { code } = req.query;
