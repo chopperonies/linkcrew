@@ -437,6 +437,25 @@
       .footer-links { flex-wrap: wrap; justify-content: center; }
       .browser-wrap { transform: none; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2)); }
     }
+    @media (max-width: 640px) {
+      .hero { padding: 48px 0 0; overflow: hidden; }
+      .hero h1 { font-size: 30px; padding: 0 24px; }
+      .hero-sub { padding: 0 24px; }
+      .hero-ctas { padding: 0 24px; }
+      .hero-callus { padding: 0 24px; }
+      .browser-wrap {
+        margin: 32px -1px 0;
+        width: calc(100% + 2px);
+        border-radius: 12px 12px 0 0;
+        transform: none !important;
+      }
+      .browser-body { border-radius: 0; }
+      .dash-sidebar { display: none; }
+      .dash-mock { min-height: auto; }
+      .dash-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; }
+      .dash-stat { padding: 10px 12px; }
+      .stat-item { width: 100%; border-right: none; }
+    }
   </style>
 </head>
 <body>
