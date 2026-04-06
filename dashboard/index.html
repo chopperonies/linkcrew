@@ -2795,19 +2795,21 @@ function renderTimesheetTable(entries) {
           const outTime = e.checked_out_at ? new Date(e.checked_out_at) : null;
           const hrs = inTime && outTime ? ((outTime - inTime) / 3600000).toFixed(2) : '—';
           const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-          const hasGps = e.punch_in_lat || e.punch_out_lat;
+          const inGps = e.punch_in_lat && e.punch_in_lng;
+          const outGps = e.punch_out_lat && e.punch_out_lng;
+          const mapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
+          const gpsTag = (lat, lng, label) => `<a href="${mapsLink(lat, lng)}" target="_blank" title="${label}: ${lat.toFixed(5)}, ${lng.toFixed(5)}" style="font-size:11px;color:#0ea5e9;text-decoration:none;margin-left:4px">📍 ${label}</a>`;
           return `
           <tr style="border-bottom:1px solid #f0f0f0">
             <td style="padding:12px 16px;font-weight:600;color:#17191c">${e.employees?.name || '—'}</td>
             <td style="padding:12px 16px;color:#737475">${e.jobs?.name || '—'}</td>
-            <td style="padding:12px 16px;color:#17191c">${inTime ? fmt(inTime) : '—'}</td>
-            <td style="padding:12px 16px;color:#17191c">${outTime ? fmt(outTime) : '<span style="color:#dc2626;font-size:12px">Still in</span>'}</td>
+            <td style="padding:12px 16px;color:#17191c">${inTime ? fmt(inTime) : '—'}${inGps ? '<br>' + gpsTag(e.punch_in_lat, e.punch_in_lng, 'In') : ''}</td>
+            <td style="padding:12px 16px;color:#17191c">${outTime ? fmt(outTime) : '<span style="color:#dc2626;font-size:12px">Still in</span>'}${outGps ? '<br>' + gpsTag(e.punch_out_lat, e.punch_out_lng, 'Out') : ''}</td>
             <td style="padding:12px 16px;font-weight:700;color:#17191c">${hrs}</td>
             <td style="padding:12px 16px">
               ${e.manual_punch
                 ? '<span style="font-size:11px;background:#fefce8;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:2px 8px;font-weight:700">Manual</span>'
                 : '<span style="font-size:11px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px;font-weight:700">App</span>'}
-              ${hasGps ? '<span style="font-size:11px;margin-left:4px" title="GPS recorded">📍</span>' : ''}
             </td>
             <td style="padding:12px 4px">
               <button onclick="openTsEditModal('${e.id}','${e.checked_in_at||''}','${e.checked_out_at||''}')"
