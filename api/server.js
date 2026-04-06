@@ -335,6 +335,147 @@ app.get('/api/mc/stats', auth, async (req, res) => {
   });
 });
 
+function cleanMcLine(text = '') {
+  return text
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .replace(/^[-*]\s*/, '')
+    .replace(/^\d+\.\s*/, '')
+    .trim();
+}
+
+function extractSectionItems(content = '', headingRegex) {
+  const lines = content.split('\n');
+  const items = [];
+  let inSection = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!inSection && headingRegex.test(line)) {
+      inSection = true;
+      continue;
+    }
+    if (inSection && /^##\s+/.test(line)) break;
+    if (!inSection || !line) continue;
+    if (/^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+      items.push(cleanMcLine(line));
+    }
+  }
+
+  return items;
+}
+
+function isKdgItem(text = '') {
+  return /(KDG|Kingston Data Group|kingstondatagroup|TAVILY_API_KEY|Tavily|Simli|\/api\/chat-kdg|\/api\/voice\/kdg|\(260\)\s*544-6900)/i.test(text);
+}
+
+function parseSnapshotNote(note) {
+  if (!note?.content) return null;
+
+  const completed = extractSectionItems(note.content, /^##\s*✅?\s*Completed/i);
+  const pending = extractSectionItems(note.content, /^##\s*⏳?\s*Pending/i);
+
+  const linkCrewCompleted = completed.filter(item => !isKdgItem(item));
+  const linkCrewPending = pending.filter(item => !isKdgItem(item));
+  const kdgCompleted = completed.filter(isKdgItem);
+  const kdgPending = pending.filter(isKdgItem);
+
+  return {
+    title: note.title || 'Latest Snapshot',
+    updated_at: note.updated_at,
+    next_action: pending[0] || null,
+    pending_count: pending.length,
+    completed_count: completed.length,
+    projects: [
+      {
+        slug: 'linkcrew',
+        name: 'LinkCrew',
+        accent: 'accent2',
+        status: 'live',
+        url: 'https://linkcrew.io',
+        summary: linkCrewPending[0] || 'No open LinkCrew items captured in latest snapshot.',
+        tasks: [...linkCrewPending.slice(0, 4).map(text => ({ text, done: false })), ...linkCrewCompleted.slice(0, 2).map(text => ({ text, done: true }))],
+      },
+      {
+        slug: 'kdg',
+        name: 'Kingston Data Group',
+        accent: 'accent',
+        status: 'live',
+        url: 'https://kingstondatagroup.com',
+        summary: kdgPending[0] || 'KDG is live; no open KDG-specific items captured in latest snapshot.',
+        tasks: [...kdgPending.slice(0, 4).map(text => ({ text, done: false })), ...kdgCompleted.slice(0, 2).map(text => ({ text, done: true }))],
+      },
+    ],
+  };
+}
+
+app.get('/api/mc/brief', auth, async (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const [snapshotRes, eventsRes, choppyRes] = await Promise.all([
+    supabaseAdmin.from('mc_notes')
+      .select('id, title, content, category, updated_at')
+      .eq('category', 'choppy')
+      .ilike('title', 'Snapshot%')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin.from('mc_events')
+      .select('id, title, event_date, event_time, type, done')
+      .gte('event_date', today)
+      .eq('done', false)
+      .order('event_date', { ascending: true })
+      .order('event_time', { ascending: true, nullsFirst: true })
+      .limit(5),
+    supabaseAdmin.from('mc_notes')
+      .select('id, title, updated_at')
+      .eq('category', 'choppy')
+      .order('updated_at', { ascending: false })
+      .limit(3),
+  ]);
+
+  const snapshot = parseSnapshotNote(snapshotRes.data);
+  const upcoming = (eventsRes.data || []).slice(0, 3).map(e => ({
+    title: e.title,
+    event_date: e.event_date,
+    event_time: e.event_time,
+    type: e.type,
+  }));
+  const recentChoppy = (choppyRes.data || []).map(n => ({
+    title: n.title,
+    updated_at: n.updated_at,
+  }));
+
+  res.json({
+    snapshot_title: snapshot?.title || null,
+    snapshot_updated_at: snapshot?.updated_at || null,
+    next_action: snapshot?.next_action || null,
+    pending_count: snapshot?.pending_count || 0,
+    completed_count: snapshot?.completed_count || 0,
+    upcoming,
+    recent_choppy: recentChoppy,
+  });
+});
+
+app.get('/api/mc/projects', auth, async (req, res) => {
+  const { data: note, error } = await supabaseAdmin.from('mc_notes')
+    .select('id, title, content, category, updated_at')
+    .eq('category', 'choppy')
+    .ilike('title', 'Snapshot%')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const parsed = parseSnapshotNote(note);
+  res.json({
+    source_title: parsed?.title || null,
+    source_updated_at: parsed?.updated_at || null,
+    projects: parsed?.projects || [],
+  });
+});
+
 app.get('/api/mc/leads', auth, async (req, res) => {
   const { data, error } = await supabaseAdmin.from('kdg_leads')
     .select('*').order('created_at', { ascending: false }).limit(100);
