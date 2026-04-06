@@ -124,6 +124,42 @@
       width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px;
       box-shadow: 0 0 0 4px rgba(255,193,7,0.14);
     }
+    .ops-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 28px; }
+    .ops-card {
+      background: linear-gradient(135deg, #fff 0%, #fff9e8 55%, #f5f9ff 100%);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.045);
+    }
+    .ops-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .ops-title { font-size: 20px; font-weight: 900; font-family: var(--font-head); letter-spacing: -0.02em; }
+    .ops-pill {
+      display: inline-flex; align-items: center; gap: 8px; border-radius: 999px;
+      padding: 6px 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1px solid var(--border);
+      color: var(--subtle); background: rgba(255,255,255,0.75);
+    }
+    .ops-pill .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+    }
+    .ops-pill.live { color: var(--green); border-color: rgba(22,163,74,0.2); background: rgba(22,163,74,0.08); }
+    .ops-pill.live .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(22,163,74,0.12); }
+    .ops-pill.down { color: var(--red); border-color: rgba(220,38,38,0.2); background: rgba(220,38,38,0.08); }
+    .ops-pill.down .dot { background: var(--red); box-shadow: 0 0 0 4px rgba(220,38,38,0.12); }
+    .ops-sub { font-size: 13px; color: var(--subtle); line-height: 1.6; margin-bottom: 16px; }
+    .ops-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .ops-metric { background: rgba(255,255,255,0.84); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .ops-metric-value { font-size: 26px; font-weight: 900; font-family: var(--font-head); color: var(--text); line-height: 1; margin-bottom: 6px; }
+    .ops-metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+    .ops-columns { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px; }
+    .ops-panel { background: rgba(255,255,255,0.88); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .ops-panel-label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .ops-panel-main { font-size: 15px; line-height: 1.45; color: var(--text); font-weight: 800; }
+    .ops-panel-sub { font-size: 12px; color: var(--subtle); line-height: 1.6; margin-top: 6px; }
+    .ops-mini-list { display: flex; flex-direction: column; gap: 8px; }
+    .ops-mini-item { font-size: 12px; color: var(--subtle); line-height: 1.45; }
+    .ops-mini-item strong { color: var(--text); }
 
     /* Stats bar */
     .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
@@ -313,6 +349,8 @@
       .mc-layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .brief-grid { grid-template-columns: 1fr; }
+      .ops-metrics { grid-template-columns: repeat(2, 1fr); }
+      .ops-columns { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .projects-grid { grid-template-columns: 1fr; }
       .notes-layout { grid-template-columns: 1fr; }
@@ -382,6 +420,40 @@
           <div class="brief-label">Upcoming</div>
           <div class="brief-list" id="briefUpcoming">
             <div class="brief-list-item"><span class="dot"></span><span>No upcoming events loaded yet.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="ops-grid">
+        <div class="ops-card">
+          <div class="ops-head">
+            <div class="ops-title">Paperclip / SupportIQ</div>
+            <div class="ops-pill" id="paperclipPill"><span class="dot"></span><span id="paperclipPillText">Checking local API…</span></div>
+          </div>
+          <div class="ops-sub" id="paperclipSub">Pulling live FE progress from the local Paperclip instance on this machine.</div>
+          <div class="ops-metrics">
+            <div class="ops-metric"><div class="ops-metric-value" id="paperclipInProgress">—</div><div class="ops-metric-label">In Progress</div></div>
+            <div class="ops-metric"><div class="ops-metric-value" id="paperclipBlocked">—</div><div class="ops-metric-label">Blocked</div></div>
+            <div class="ops-metric"><div class="ops-metric-value" id="paperclipDone">—</div><div class="ops-metric-label">Done</div></div>
+            <div class="ops-metric"><div class="ops-metric-value" id="paperclipTotal">—</div><div class="ops-metric-label">Total KIN</div></div>
+          </div>
+          <div class="ops-columns">
+            <div class="ops-panel">
+              <div class="ops-panel-label">Current Focus</div>
+              <div class="ops-panel-main" id="paperclipActive">No active issue found.</div>
+              <div class="ops-panel-sub" id="paperclipActiveSub">This will show the current SupportIQ build task or the main blocked gate.</div>
+            </div>
+            <div class="ops-panel">
+              <div class="ops-panel-label">Blocked Items</div>
+              <div class="ops-mini-list" id="paperclipBlockedList">
+                <div class="ops-mini-item">No blocked items loaded.</div>
+              </div>
+            </div>
+            <div class="ops-panel">
+              <div class="ops-panel-label">Recent Done</div>
+              <div class="ops-mini-list" id="paperclipDoneList">
+                <div class="ops-mini-item">No completed items loaded.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -666,6 +738,47 @@
       liveProjects = [];
       renderProjects('overviewProjects');
       renderProjects('projectsGrid');
+    }
+  }
+
+  async function loadPaperclip() {
+    try {
+      const res = await fetch('/api/mc/paperclip', { headers });
+      const data = await res.json();
+      const pill = document.getElementById('paperclipPill');
+      const pillText = document.getElementById('paperclipPillText');
+      pill.classList.remove('live', 'down');
+      pill.classList.add(data.service_up ? 'live' : 'down');
+      pillText.textContent = data.service_up ? 'Local API Live' : 'Local API Down';
+
+      document.getElementById('paperclipSub').textContent = data.service_up
+        ? `Connected to ${data.api_base}. Live SupportIQ task state below.`
+        : `Could not reach ${data.api_base}. Start Paperclip to restore live status.`;
+      document.getElementById('paperclipInProgress').textContent = data.in_progress ?? 0;
+      document.getElementById('paperclipBlocked').textContent = data.blocked ?? 0;
+      document.getElementById('paperclipDone').textContent = data.done ?? 0;
+      document.getElementById('paperclipTotal').textContent = data.total ?? 0;
+
+      document.getElementById('paperclipActive').textContent = data.active
+        ? `${data.active.identifier} · ${data.active.title}`
+        : 'No active issue found.';
+      document.getElementById('paperclipActiveSub').textContent = data.active
+        ? `Current status: ${data.active.status}`
+        : (data.error || 'No in-progress or blocked primary issue found.');
+
+      const blockedList = document.getElementById('paperclipBlockedList');
+      blockedList.innerHTML = (data.blocked_items?.length
+        ? data.blocked_items.map(item => `<div class="ops-mini-item"><strong>${item.identifier}</strong> · ${item.title}</div>`).join('')
+        : '<div class="ops-mini-item">No blocked KIN items.</div>');
+
+      const doneList = document.getElementById('paperclipDoneList');
+      doneList.innerHTML = (data.recent_done?.length
+        ? data.recent_done.map(item => `<div class="ops-mini-item"><strong>${item.identifier}</strong> · ${item.title}</div>`).join('')
+        : '<div class="ops-mini-item">No recent completed KIN items.</div>');
+    } catch (e) {
+      console.error('paperclip error', e);
+      document.getElementById('paperclipPillText').textContent = 'Failed to load';
+      document.getElementById('paperclipSub').textContent = 'Mission Control could not load the local Paperclip summary.';
     }
   }
 
@@ -1126,6 +1239,7 @@
     loadStats();
     loadBrief();
     loadProjects();
+    loadPaperclip();
     const todayStr = localDateStr();
     document.getElementById('evDate').value = todayStr;
     restoreSection();

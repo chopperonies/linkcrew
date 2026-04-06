@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const http = require('http');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -474,6 +475,76 @@ app.get('/api/mc/projects', auth, async (req, res) => {
     source_updated_at: parsed?.updated_at || null,
     projects: parsed?.projects || [],
   });
+});
+
+function fetchLocalJson(url) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(url, { timeout: 3500 }, (resp) => {
+      let body = '';
+      resp.on('data', chunk => { body += chunk; });
+      resp.on('end', () => {
+        if (resp.statusCode < 200 || resp.statusCode >= 300) {
+          return reject(new Error(`HTTP ${resp.statusCode}`));
+        }
+        try {
+          resolve(JSON.parse(body));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+  });
+}
+
+app.get('/api/mc/paperclip', auth, async (req, res) => {
+  const apiBase = process.env.PAPERCLIP_API_BASE || 'http://127.0.0.1:3100/api';
+  const companyId = process.env.PAPERCLIP_COMPANY_ID || 'ff33e65e-8877-4e83-898a-81697e93dd36';
+
+  try {
+    const issues = await fetchLocalJson(`${apiBase}/companies/${companyId}/issues?q=KIN-`);
+    const kinIssues = (issues || []).filter(issue => (issue.identifier || '').startsWith('KIN-'));
+    const sortedByUpdated = [...kinIssues].sort((a, b) => new Date(b.updatedAt || b.updated_at || 0) - new Date(a.updatedAt || a.updated_at || 0));
+    const active = kinIssues.find(issue => issue.identifier === 'KIN-4') || kinIssues.find(issue => issue.status === 'in_progress') || null;
+    const blocked = sortedByUpdated.filter(issue => issue.status === 'blocked').slice(0, 3);
+    const recentDone = sortedByUpdated.filter(issue => issue.status === 'done').slice(0, 3);
+
+    res.json({
+      service_up: true,
+      api_base: apiBase,
+      in_progress: kinIssues.filter(issue => issue.status === 'in_progress').length,
+      blocked: kinIssues.filter(issue => issue.status === 'blocked').length,
+      done: kinIssues.filter(issue => issue.status === 'done').length,
+      total: kinIssues.length,
+      active: active ? {
+        identifier: active.identifier,
+        title: active.title,
+        status: active.status,
+      } : null,
+      blocked_items: blocked.map(issue => ({
+        identifier: issue.identifier,
+        title: issue.title,
+      })),
+      recent_done: recentDone.map(issue => ({
+        identifier: issue.identifier,
+        title: issue.title,
+      })),
+    });
+  } catch (error) {
+    res.json({
+      service_up: false,
+      api_base: apiBase,
+      error: error.message,
+      in_progress: 0,
+      blocked: 0,
+      done: 0,
+      total: 0,
+      active: null,
+      blocked_items: [],
+      recent_done: [],
+    });
+  }
 });
 
 app.get('/api/mc/leads', auth, async (req, res) => {
