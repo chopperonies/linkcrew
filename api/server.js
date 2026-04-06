@@ -2357,29 +2357,33 @@ If asked something you don't know, say you'll have someone follow up.
 ${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
 
   } else if (conv.mode === 'demo_collecting') {
-    // Step-based — no marker parsing needed, answers saved directly from speech
-    const DEMO_QUESTIONS = [
-      "What trade or industry are you in? For example, roofing, HVAC, plumbing, or landscaping.",
-      "Got it! What's your company name?",
-      "Almost there — what city or area do you serve?",
-    ];
+    // Derive which step we're on from what's already collected — more robust than a counter
+    if (!conv.demoData) conv.demoData = {};
 
-    if (speech) {
-      if (conv.demoStep === 0) conv.demoData.trade = speech;
-      else if (conv.demoStep === 1) conv.demoData.company = speech;
-      else if (conv.demoStep === 2) conv.demoData.city = speech;
-    }
-
-    conv.demoStep++;
-
-    if (conv.demoStep < 3) {
-      // Still collecting — ask next question directly, no Claude needed
-      spokenReply = DEMO_QUESTIONS[conv.demoStep];
-    } else {
-      // All collected — transition to demo_running
+    if (!conv.demoData.trade) {
+      // Just received the trade answer
+      conv.demoData.trade = speech;
+      spokenReply = "Got it! And what's your company name?";
+    } else if (!conv.demoData.company) {
+      // Just received the company name
+      conv.demoData.company = speech;
+      spokenReply = "Almost there — what city or area do you serve?";
+    } else if (!conv.demoData.city) {
+      // Just received the city — all data collected, start demo
+      conv.demoData.city = speech;
       conv.mode = 'demo_running';
+      conv.demoTurns = 0;
       conv.history = [];
-      const greeting = `Hello, thank you for calling ${conv.demoData.company}! I'm your AI assistant. How can I help you today?`;
+      const { trade, company, city } = conv.demoData;
+      const greeting = `Hello, thanks for calling ${company}! This is your AI assistant. How can I help you today?`;
+      conv.history.push({ role: 'assistant', content: greeting });
+      spokenReply = greeting;
+    } else {
+      // Fallback — all data present, kick off demo anyway
+      conv.mode = 'demo_running';
+      conv.demoTurns = 0;
+      conv.history = [];
+      const greeting = `Hello, thanks for calling ${conv.demoData.company}! How can I help you today?`;
       conv.history.push({ role: 'assistant', content: greeting });
       spokenReply = greeting;
     }
@@ -2392,7 +2396,6 @@ ${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
       action: `/api/voice/contractor/${tenantId}/respond`,
       speechTimeout: '3',
       timeout: 10,
-     
       language: 'en-US',
     });
     gather2.say({ voice: 'Polly.Joanna' }, spokenReply);
@@ -2419,10 +2422,16 @@ ${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
     conv.demoTurns++;
     const maxTurns = 5;
     const isLastTurn = conv.demoTurns >= maxTurns;
-    systemPrompt = `You are an AI phone assistant for ${company}, a ${trade} company in ${city}. Answer calls on their behalf — be helpful, friendly, and realistic.
-Keep every response to 1-2 short sentences. Make up reasonable details (hours, services, pricing ranges) if needed — this is a live demo.
-Do NOT mention LinkCrew, Choppy, or any other software platform. Stay in character as ${company} at all times.
-${isLastTurn ? `After answering this question, wrap up warmly as ${company} — say something like "Thanks for calling ${company}, have a great day!" — then output ##END## on a new line with nothing after it.` : ''}`;
+    systemPrompt = `You are an AI phone assistant for ${company}, a ${trade} business in ${city}. You answer their phones, handle inquiries, and book appointments.
+
+Your job on this call:
+1. Answer the caller's questions helpfully and naturally — make up realistic details (hours, services, pricing ranges) as needed.
+2. After 1-2 exchanges, naturally offer to schedule an appointment or callback: "Would you like me to get you on the schedule?" or "I can book you in — what day works best?"
+3. If they say yes to booking, ask for their name and preferred day/time, confirm it warmly, and wrap up.
+4. Keep every response to 1-3 short sentences. Sound like a real receptionist, not a robot.
+
+Do NOT mention LinkCrew, AI software, or any tech platform. Stay fully in character as ${company}'s assistant.
+${isLastTurn ? `This is your last response. Wrap up the call warmly — thank them for calling ${company} and wish them a great day. Then output ##END## on a new line.` : ''}`;
   }
 
   let rawReply = "I'm sorry, I didn't catch that. Could you say that again?";
