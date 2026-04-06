@@ -282,6 +282,100 @@
     .step p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.65; }
 
     /* ── Pricing teaser ── */
+    .proof-strip {
+      padding: 28px 60px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .proof-strip-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    .proof-chip {
+      background: var(--surface); border: 1px solid var(--border2); border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .proof-chip strong {
+      display: block; font-size: 14px; font-weight: 900; color: var(--text); margin-bottom: 4px;
+    }
+    .proof-chip span { font-size: 12px; color: var(--sub); line-height: 1.5; }
+
+    .who {
+      padding: 96px 60px;
+      background: #fff;
+    }
+    .who-header { text-align: center; margin-bottom: 40px; }
+    .who-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 22px;
+    }
+    .who-card, .impact-card {
+      background: var(--surface); border: 1px solid var(--border2); border-radius: 18px; padding: 28px;
+    }
+    .who-card h3, .impact-card h3 {
+      font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 14px;
+    }
+    .who-card p, .impact-card p {
+      font-size: 14px; color: var(--sub); line-height: 1.7;
+    }
+    .who-list, .impact-list {
+      display: grid; gap: 12px; margin-top: 18px;
+    }
+    .who-item, .impact-item {
+      background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+    }
+    .who-item strong, .impact-item strong {
+      display: block; font-size: 13px; font-weight: 900; color: var(--text); margin-bottom: 4px;
+    }
+    .who-item span, .impact-item span {
+      font-size: 12px; color: var(--sub); line-height: 1.55;
+    }
+
+    .testimonials {
+      padding: 96px 60px;
+      background: linear-gradient(180deg, #f8fcff 0%, #eef7fd 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .testimonials-header { text-align: center; margin-bottom: 42px; }
+    .testimonial-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+    }
+    .testimonial-card {
+      background: #fff; border: 1px solid var(--border2); border-radius: 18px; padding: 24px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+    }
+    .testimonial-quote {
+      font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.65; margin-bottom: 18px;
+    }
+    .testimonial-meta strong {
+      display: block; font-size: 13px; font-weight: 900; color: var(--text);
+    }
+    .testimonial-meta span {
+      font-size: 12px; color: var(--sub);
+    }
+
+    .faq {
+      padding: 96px 60px;
+      background: #fff;
+    }
+    .faq-header { text-align: center; margin-bottom: 40px; }
+    .faq-grid {
+      max-width: 980px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .faq-item {
+      background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 20px 22px;
+    }
+    .faq-item h3 {
+      font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 8px;
+    }
+    .faq-item p {
+      font-size: 13px; color: var(--sub); line-height: 1.65;
+    }
+
     .pricing-teaser { padding: 96px 60px; background: var(--surface); border-top: 1px solid var(--border); }
     .pricing-teaser-header { text-align: center; margin-bottom: 48px; }
     .pricing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; max-width: 1000px; margin: 0 auto 36px; }
@@ -429,9 +523,14 @@
       .stats-bar { padding: 0 16px; flex-wrap: wrap; justify-content: flex-start; }
       .stat-item { padding: 18px 20px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); width: 50%; }
       .stat-item:nth-child(odd):last-child, .stat-item:last-child { border-bottom: none; }
-      .features, .how, .pricing-teaser, .cta-section { padding: 60px 24px; }
+      .features, .how, .who, .testimonials, .faq, .pricing-teaser, .cta-section { padding: 60px 24px; }
+      .proof-strip { padding: 24px; }
+      .proof-strip-inner { grid-template-columns: 1fr 1fr; }
       .feature-grid { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr; }
+      .who-grid { grid-template-columns: 1fr; }
+      .testimonial-grid { grid-template-columns: 1fr; }
+      .faq-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: repeat(2,1fr); }
       footer { flex-direction: column; gap: 16px; text-align: center; padding: 28px 24px; }
       .footer-links { flex-wrap: wrap; justify-content: center; }
@@ -455,6 +554,8 @@
       .dash-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; }
       .dash-stat { padding: 10px 12px; }
       .stat-item { width: 100%; border-right: none; }
+      .proof-strip-inner { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -472,6 +573,7 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#how">How It Works</a>
+      <a href="#faq">FAQ</a>
       <a href="/pricing">Pricing</a>
       <a href="/portal">Client Portal</a>
     </div>
@@ -553,6 +655,27 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof-strip">
+    <div class="proof-strip-inner">
+      <div class="proof-chip reveal">
+        <strong>Built for owners, not just crews</strong>
+        <span>See jobs, crews, supplies, invoices, and client communication in one view.</span>
+      </div>
+      <div class="proof-chip reveal reveal-delay-1">
+        <strong>Fast onboarding</strong>
+        <span>Set up jobs and invite your team in minutes, without a long implementation project.</span>
+      </div>
+      <div class="proof-chip reveal reveal-delay-2">
+        <strong>Mobile-ready day one</strong>
+        <span>Your crew can check in, send photos, and request supplies from iPhone or Android.</span>
+      </div>
+      <div class="proof-chip reveal reveal-delay-3">
+        <strong>Real support</strong>
+        <span>Call or text <a href="tel:+12603005565" style="color:var(--text);font-weight:900;text-decoration:none">(260) 300-5565</a> if you need help getting live.</span>
       </div>
     </div>
   </section>
@@ -695,6 +818,117 @@
     </div>
   </section>
 
+  <section class="who" id="who">
+    <div class="who-header">
+      <div class="section-eyebrow reveal">Best Fit</div>
+      <h2 class="section-title reveal reveal-delay-1">Built for field teams that have outgrown spreadsheets</h2>
+      <p class="section-sub reveal reveal-delay-2">LinkCrew is strongest for owner-operators and growing service businesses that need tighter control without enterprise overhead.</p>
+    </div>
+    <div class="who-grid">
+      <div class="who-card reveal">
+        <h3>Ideal for</h3>
+        <p>If you run crews in the field and still rely on texts, calls, whiteboards, or scattered notes, LinkCrew gives you one operating system for the workday.</p>
+        <div class="who-list">
+          <div class="who-item">
+            <strong>Landscaping and maintenance crews</strong>
+            <span>Recurring service work, route visibility, site photos, and follow-up invoicing.</span>
+          </div>
+          <div class="who-item">
+            <strong>Roofing, exterior, and construction trades</strong>
+            <span>Job stages, crew check-ins, bottlenecks, and supply coordination from the field.</span>
+          </div>
+          <div class="who-item">
+            <strong>Cleaning and property service companies</strong>
+            <span>Client updates, crew accountability, and a clean record of work completed.</span>
+          </div>
+        </div>
+      </div>
+      <div class="impact-card reveal reveal-delay-1">
+        <h3>What changes after you switch</h3>
+        <p>The main payoff is operational clarity. Owners stop chasing updates and start seeing the day as it happens.</p>
+        <div class="impact-list">
+          <div class="impact-item">
+            <strong>Fewer status calls</strong>
+            <span>See who is on-site, who checked out, and which jobs are drifting behind.</span>
+          </div>
+          <div class="impact-item">
+            <strong>Faster billing</strong>
+            <span>Turn completed jobs and field updates into invoices without rebuilding everything by hand.</span>
+          </div>
+          <div class="impact-item">
+            <strong>Better client visibility</strong>
+            <span>Give customers a cleaner experience with portal access, photos, and job history.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="testimonials" id="testimonials">
+    <div class="testimonials-header">
+      <div class="section-eyebrow reveal">Why Teams Stick</div>
+      <h2 class="section-title reveal reveal-delay-1">Built to reduce the daily chaos</h2>
+      <p class="section-sub reveal reveal-delay-2">The strongest signal before launch is whether the product speaks directly to the pain. These are the outcomes LinkCrew is designed to deliver.</p>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial-card reveal">
+        <div class="testimonial-quote">“I don’t need another software project. I need to know where my crews are, what got done, and what I can invoice today.”</div>
+        <div class="testimonial-meta">
+          <strong>Operations-first workflow</strong>
+          <span>Built for owners managing active crews in the field</span>
+        </div>
+      </div>
+      <div class="testimonial-card reveal reveal-delay-1">
+        <div class="testimonial-quote">“The value is not more dashboards. The value is fewer missed updates, fewer callbacks, and cleaner handoff from field to office.”</div>
+        <div class="testimonial-meta">
+          <strong>Less admin drag</strong>
+          <span>Photos, supply requests, and status changes flow back automatically</span>
+        </div>
+      </div>
+      <div class="testimonial-card reveal reveal-delay-2">
+        <div class="testimonial-quote">“If your team lives in text threads and paper notes, this is the step up that gives you structure without slowing the crew down.”</div>
+        <div class="testimonial-meta">
+          <strong>Practical adoption</strong>
+          <span>Simple enough for day-one rollout across small and growing teams</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="faq-header">
+      <div class="section-eyebrow reveal">FAQ</div>
+      <h2 class="section-title reveal reveal-delay-1">Questions owners ask before switching</h2>
+      <p class="section-sub reveal reveal-delay-2">These are the practical questions that tend to matter most before rollout.</p>
+    </div>
+    <div class="faq-grid">
+      <div class="faq-item reveal">
+        <h3>How fast can we get started?</h3>
+        <p>Most teams can set up their account, add jobs, and invite crew members the same day. The product is meant to be lightweight to adopt.</p>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <h3>Do crews need training?</h3>
+        <p>Very little. The crew experience is designed around check-ins, photos, and simple updates from a phone instead of a complex back office workflow.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>Does it work on iPhone and Android?</h3>
+        <p>Yes. The owner dashboard is web-based, and field workflows are designed to work from mobile devices your team already carries.</p>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <h3>Can clients see progress?</h3>
+        <p>Yes. LinkCrew includes a client portal so customers can review job status, photos, and service history without constant phone calls.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>What happens after the free trial?</h3>
+        <p>You can choose a paid plan when you are ready. The goal is to make it easy to prove operational value before you commit.</p>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <h3>What if we need help getting live?</h3>
+        <p>Call or text <a href="tel:+12603005565" style="color:var(--text);font-weight:900;text-decoration:none">(260) 300-5565</a>. You can also use the on-site chat for product questions.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- Pricing teaser -->
   <section class="pricing-teaser" id="pricing">
     <div class="pricing-teaser-header">
@@ -749,7 +983,7 @@
       <a href="/portal">Client Portal</a>
       <a href="tel:+12603005565">(260) 300-5565</a>
     </div>
-    <div class="footer-right">© 2024 LinkCrew. Built for field service contractors.</div>
+    <div class="footer-right">© 2026 LinkCrew. Built for field service contractors.</div>
   </footer>
 
   <!-- Chat Widget -->
@@ -836,7 +1070,7 @@
         chatHistory.push({ role: 'assistant', content: reply });
       } catch {
         removeTyping();
-        appendMsg('bot', 'Connection error. Please try again or email sales@kingstondatagroup.com.');
+        appendMsg('bot', 'Connection error. Please try again or call/text (260) 300-5565.');
       }
     }
 

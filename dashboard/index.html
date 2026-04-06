@@ -3,38 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LinkCrew Dashboard</title>
+  <title>LinkCrew Sign In</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
+    body { font-family: 'Lato', 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; min-height: 100vh; }
 
     /* ── Auth screens ── */
     .auth-screen { display: none; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center;
-      background: url('https://images.unsplash.com/photo-1626885930974-4b69aa21bbf9?q=80&w=1920&auto=format&fit=crop') center center / cover no-repeat; }
-    .auth-screen::before { content: ''; position: absolute; inset: 0; background: rgba(245,245,245,0.50); }
+      padding: 28px;
+      background:
+        radial-gradient(circle at top left, rgba(14,165,233,0.24), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(3,105,161,0.18), transparent 28%),
+        linear-gradient(135deg, #eef8fe 0%, #f8fbff 42%, #ffffff 100%);
+    }
+    .auth-screen::before { content: ''; position: absolute; inset: 0; background:
+      linear-gradient(90deg, rgba(14,165,233,0.04) 1px, transparent 1px),
+      linear-gradient(rgba(14,165,233,0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.6), transparent);
+    }
     .auth-screen > * { position: relative; z-index: 1; }
     .auth-screen.visible { display: flex; }
-    .auth-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 40px; width: 380px; }
-    .auth-logo { font-size: 26px; font-weight: 800; color: #17191c; margin-bottom: 4px; }
-    .auth-logo span { color: #0265dc; }
-    .auth-subtitle { font-size: 13px; color: #17191c; margin-bottom: 28px; }
+    .auth-shell {
+      width: min(1120px, 100%);
+      display: grid; grid-template-columns: 1.08fr 0.92fr;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(15,23,42,0.14);
+      backdrop-filter: blur(18px);
+    }
+    .auth-aside {
+      padding: 48px;
+      background: linear-gradient(160deg, #0369a1 0%, #0ea5e9 55%, #38bdf8 100%);
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-aside::after {
+      content: '';
+      position: absolute; inset: auto -20% -30% auto;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      filter: blur(4px);
+    }
+    .auth-kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .auth-kicker-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #86efac;
+      box-shadow: 0 0 0 5px rgba(134,239,172,0.16);
+    }
+    .auth-aside h1 {
+      font-size: 44px; line-height: 1.02; font-weight: 900; letter-spacing: -0.03em;
+      margin-bottom: 16px; max-width: 420px;
+    }
+    .auth-aside p {
+      font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.84); max-width: 440px;
+    }
+    .auth-proof-list {
+      display: grid; gap: 14px; margin-top: 28px;
+    }
+    .auth-proof-item {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
+    .auth-proof-item strong {
+      display: block; font-size: 14px; font-weight: 900; margin-bottom: 4px;
+    }
+    .auth-proof-item span {
+      display: block; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.8);
+    }
+    .auth-quote {
+      margin-top: 24px; padding: 18px 20px;
+      background: rgba(15,23,42,0.16);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+    }
+    .auth-quote p {
+      font-size: 14px; line-height: 1.7; color: #fff; margin: 0 0 10px;
+    }
+    .auth-quote span {
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.78);
+    }
+    .auth-panel {
+      padding: 40px;
+      background: rgba(255,255,255,0.9);
+    }
+    .auth-panel-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px;
+    }
+    .auth-home-link {
+      background: #fff; border: 1px solid #dbe7f1; color: #475569;
+      font-size: 12px; font-weight: 700; text-decoration: none;
+      padding: 8px 12px; border-radius: 999px;
+    }
+    .auth-card {
+      background: #fff; border: 1px solid #d9e6ef; border-radius: 22px; padding: 32px; width: 100%;
+      box-shadow: 0 16px 40px rgba(14,165,233,0.08);
+    }
+    .auth-logo { font-size: 28px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+    .auth-logo span { color: #0ea5e9; }
+    .auth-subtitle { font-size: 14px; color: #475569; margin-bottom: 22px; line-height: 1.55; }
     .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
-    .auth-tab { flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 600; color: #17191c; cursor: pointer; background: #f5f5f5; }
-    .auth-tab.active { color: #17191c; background: #e8e8e8; }
-    .auth-input { width: 100%; background: #f5f5f5; border: 1px solid #e8e8e8; color: #17191c; padding: 11px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
-    .auth-input:focus { outline: none; border-color: #0265dc; }
-    .auth-btn { width: 100%; background: #0265dc; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-    .auth-btn:hover { background: #1b5abe; }
+    .auth-tab { flex: 1; padding: 11px; text-align: center; font-size: 13px; font-weight: 900; color: #64748b; cursor: pointer; background: #f8fbfd; }
+    .auth-tab.active { color: #0f172a; background: #e8f7ff; }
+    .auth-input { width: 100%; background: #f8fbfd; border: 1px solid #d8e4ec; color: #0f172a; padding: 12px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 10px; }
+    .auth-input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 4px rgba(14,165,233,0.1); }
+    .auth-btn { width: 100%; background: #0ea5e9; color: #fff; border: none; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; margin-top: 6px; box-shadow: 0 10px 24px rgba(14,165,233,0.22); }
+    .auth-btn:hover { background: #0284c7; }
     .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .auth-error { margin-top: 10px; font-size: 12px; color: #f87171; text-align: center; min-height: 18px; }
     .auth-success { margin-top: 10px; font-size: 12px; color: #4ade80; text-align: center; min-height: 18px; }
+    .auth-help-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-top: 16px; padding-top: 16px; border-top: 1px solid #e8eef3;
+      font-size: 12px; color: #64748b;
+    }
+    .auth-help-row a {
+      color: #0f172a; font-weight: 900; text-decoration: none;
+    }
 
     /* ── App layout ── */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
@@ -341,7 +445,12 @@
       .stat .num { font-size: 22px; }
 
       /* Auth card */
-      .auth-card { width: 90vw; padding: 28px 20px; }
+      .auth-screen { padding: 16px; }
+      .auth-shell { grid-template-columns: 1fr; }
+      .auth-aside { padding: 30px 24px; }
+      .auth-aside h1 { font-size: 32px; max-width: none; }
+      .auth-panel { padding: 18px; }
+      .auth-card { width: 100%; padding: 24px 20px; }
 
       /* Main layout — stack vertically */
       .main { grid-template-columns: 1fr; height: auto; }
@@ -390,36 +499,66 @@
 
 <!-- ── Auth Screen ── -->
 <div class="auth-screen" id="auth-screen">
-  <div class="auth-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div class="auth-logo" style="display:flex;align-items:center;gap:8px">
-        <img src="/logo.svg" style="width:30px;height:30px"><span>Link<span>Crew</span></span>
+  <div class="auth-shell">
+    <div class="auth-aside">
+      <div class="auth-kicker"><span class="auth-kicker-dot"></span>Field Crew Management</div>
+      <h1>Run jobs, crews, and billing from one place.</h1>
+      <p>LinkCrew gives owners a clean operating layer for real-time field updates, site photos, supply requests, and invoicing without chasing the crew all day.</p>
+      <div class="auth-proof-list">
+        <div class="auth-proof-item">
+          <strong>Start fast</strong>
+          <span>Create your account, add jobs, and invite your crew without a complicated setup process.</span>
+        </div>
+        <div class="auth-proof-item">
+          <strong>Built for the field</strong>
+          <span>Works best for landscaping, roofing, cleaning, and growing service teams managing active crews.</span>
+        </div>
+        <div class="auth-proof-item">
+          <strong>Owner visibility</strong>
+          <span>See where the day stands, what needs attention, and what can be invoiced next.</span>
+        </div>
       </div>
-      <button onclick="location.href='/'" style="background:none;border:none;font-size:12px;color:#737475;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid #e8e8e8">← Home</button>
-    </div>
-    <div class="auth-subtitle">Owner Dashboard</div>
-    <div class="auth-tabs">
-      <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
-      <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
+      <div class="auth-quote">
+        <p>“The goal is simple: fewer status calls, fewer missed updates, and a cleaner handoff from the field to the office.”</p>
+        <span>LinkCrew owner workflow</span>
+      </div>
     </div>
 
-    <!-- Login form -->
-    <div id="login-form">
-      <input class="auth-input" type="email" id="login-email" placeholder="Email address" onkeydown="if(event.key==='Enter')doLogin()">
-      <input class="auth-input" type="password" id="login-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
-    </div>
+    <div class="auth-panel">
+      <div class="auth-panel-top">
+        <div class="auth-logo" style="display:flex;align-items:center;gap:8px">
+          <img src="/logo.svg" style="width:32px;height:32px" alt="LinkCrew logo"><span>Link<span>Crew</span></span>
+        </div>
+        <a class="auth-home-link" href="/">Back to site</a>
+      </div>
+      <div class="auth-card">
+        <div class="auth-subtitle">Owner dashboard access. Start your 14-day free trial or sign in to continue.</div>
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+          <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
+        </div>
 
-    <!-- Signup form -->
-    <div id="signup-form" style="display:none">
-      <input class="auth-input" type="text" id="signup-company" placeholder="Company / Business name" onkeydown="if(event.key==='Enter')doSignup()">
-      <input class="auth-input" type="email" id="signup-email" placeholder="Your email address" onkeydown="if(event.key==='Enter')doSignup()">
-      <input class="auth-input" type="password" id="signup-password" placeholder="Password (8+ characters)" onkeydown="if(event.key==='Enter')doSignup()">
-      <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create Account</button>
-    </div>
+        <div id="login-form">
+          <input class="auth-input" type="email" id="login-email" placeholder="Email address" onkeydown="if(event.key==='Enter')doLogin()">
+          <input class="auth-input" type="password" id="login-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+        </div>
 
-    <div class="auth-error" id="auth-error"></div>
-    <div class="auth-success" id="auth-success"></div>
+        <div id="signup-form" style="display:none">
+          <input class="auth-input" type="text" id="signup-company" placeholder="Company / Business name" onkeydown="if(event.key==='Enter')doSignup()">
+          <input class="auth-input" type="email" id="signup-email" placeholder="Your email address" onkeydown="if(event.key==='Enter')doSignup()">
+          <input class="auth-input" type="password" id="signup-password" placeholder="Password (8+ characters)" onkeydown="if(event.key==='Enter')doSignup()">
+          <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create Account</button>
+        </div>
+
+        <div class="auth-error" id="auth-error"></div>
+        <div class="auth-success" id="auth-success"></div>
+        <div class="auth-help-row">
+          <span>Crew members use the mobile app after you invite them.</span>
+          <a href="tel:+12603005565">(260) 300-5565</a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
