@@ -2465,14 +2465,14 @@ ${isLastTurn ? `After answering this question, wrap up warmly as ${company} — 
     console.error('[contractor voice] Claude error:', err.message);
   }
 
-  await saveVoiceSession(callSid, conv);
-
   // ── Parse mode-transition markers ────────────────────────────────────────
   spokenReply = rawReply;
   let ending = false;
 
   if (conv.mode === 'support' && rawReply.includes('##DEMO##')) {
     conv.mode = 'demo_collecting';
+    conv.demoStep = 0;
+    conv.demoData = {};
     // Drop Claude's transition text entirely — go straight to the first question
     spokenReply = "Perfect! Let's set up your demo. First — what trade or industry are you in? For example, roofing, HVAC, plumbing, or landscaping.";
 
@@ -2482,6 +2482,8 @@ ${isLastTurn ? `After answering this question, wrap up warmly as ${company} — 
     conv.mode = 'support';
     conv.history = [];
   }
+
+  await saveVoiceSession(callSid, conv);
 
   // Also end on goodbye words
   const endWords = ['goodbye', 'bye', 'hang up', "that's all", 'no thanks'];
