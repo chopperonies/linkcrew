@@ -2792,6 +2792,9 @@ async function openDetail(jobId, jobName) {
           ${unassigned.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
         </select>` : ''}
     </div>
+    <div style="font-size:11px;color:#737475;line-height:1.5;margin:-4px 0 10px">
+      `App` sends a LinkCrew push notification. `Text` uses the company Twilio number in Settings, so SMS only works if Twilio is configured.
+    </div>
     ${(assignments||[]).length ? assignments.map(a => {
       const onSite = a.checked_in_at && !a.checked_out_at;
       const done = a.checked_in_at && a.checked_out_at;
@@ -2809,10 +2812,18 @@ async function openDetail(jobId, jobName) {
               <div style="margin-top:3px">${badge}</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button onclick="notifyCrewAssignment('${job?.id}','${a.employee_id}')"
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button onclick="notifyCrewAssignment('${job?.id}','${a.employee_id}','app')"
               style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;color:#0265dc;border-radius:999px;padding:5px 9px;cursor:pointer;font-weight:700;white-space:nowrap">
-              Notify
+              App
+            </button>
+            <button onclick="notifyCrewAssignment('${job?.id}','${a.employee_id}','sms')"
+              style="font-size:11px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;border-radius:999px;padding:5px 9px;cursor:pointer;font-weight:700;white-space:nowrap">
+              Text
+            </button>
+            <button onclick="notifyCrewAssignment('${job?.id}','${a.employee_id}','both')"
+              style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:999px;padding:5px 9px;cursor:pointer;font-weight:700;white-space:nowrap">
+              Both
             </button>
             ${!onSite ? `<button onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#555'">✕</button>` : ''}
           </div>
@@ -3160,17 +3171,17 @@ async function assignCrewMember(jobId, employeeId) {
   await openDetail(jobId, document.getElementById('detail-title').textContent);
 }
 
-async function notifyCrewAssignment(jobId, employeeId) {
+async function notifyCrewAssignment(jobId, employeeId, method = 'both') {
   const res = await authFetch(`/api/jobs/${jobId}/notify-assignment`, {
     method: 'POST',
-    body: JSON.stringify({ employee_id: employeeId })
+    body: JSON.stringify({ employee_id: employeeId, method })
   });
   const json = await res.json();
   if (!res.ok) return alert(json.error || 'Failed to notify crew member');
   const delivery = [];
   if (json.push_sent) delivery.push('app');
   if (json.sms_sent) delivery.push('text');
-  alert(delivery.length ? `Crew member notified by ${delivery.join(' and ')}.` : 'Assignment recorded, but no app push token or SMS setup was available.');
+  alert(delivery.length ? `Crew member notified by ${delivery.join(' and ')}.` : `No ${method === 'app' ? 'app token' : method === 'sms' ? 'SMS setup' : 'delivery channel'} was available for this crew member.`);
   await openDetail(jobId, document.getElementById('detail-title').textContent);
 }
 
