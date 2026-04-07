@@ -142,26 +142,22 @@
       gap: 18px;
     }
     .hero-stack {
-      position: relative;
-      min-height: 410px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.78fr);
+      gap: 18px;
+      align-items: stretch;
     }
     .hero-product-card {
-      position: absolute;
       border-radius: 22px;
       overflow: hidden;
       border: 1px solid rgba(0,0,0,0.12);
       box-shadow: 0 26px 70px rgba(0,0,0,0.16);
+      position: relative;
     }
     .hero-product-main {
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(760px, 100%);
       background: linear-gradient(180deg, #fbfdff 0%, #f3f7ff 100%);
     }
     .hero-product-side {
-      right: 30px;
-      bottom: 18px;
-      width: min(300px, 42vw);
       background: linear-gradient(180deg, #0f172a 0%, #18263f 100%);
       color: #f8fafc;
       box-shadow: 0 20px 60px rgba(15,23,42,0.28);
@@ -233,6 +229,15 @@
       line-height: 1.7;
       color: var(--sub);
       max-width: 54ch;
+    }
+    .product-cta-row {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: -4px;
+    }
+    .product-cta-row .product-link-btn {
+      padding: 10px 14px;
+      font-size: 12px;
     }
     .product-kpis {
       display: grid;
@@ -782,15 +787,7 @@
       .hero-sub { font-size: 15px; margin: 0 auto 24px; }
       .hero-ctas { justify-content: center; }
       .hero-showcase-wrap { padding: 0 16px; }
-      .hero-stack { min-height: 500px; }
-      .hero-product-main { width: 100%; }
-      .hero-product-side {
-        position: relative;
-        right: auto;
-        bottom: auto;
-        width: min(320px, 88%);
-        margin: -34px 0 0 auto;
-      }
+      .hero-stack { grid-template-columns: 1fr; }
       .trust-strip { padding: 36px 24px; }
       .trust-logos { gap: 28px; }
       .services, .products, .outcomes, .testimonial, .process, .contact { padding: 64px 24px; }
@@ -806,17 +803,6 @@
     }
     @media (max-width: 600px) {
       .hero h1 { font-size: 32px; }
-      .hero-stack { min-height: auto; }
-      .hero-product-card { position: relative; }
-      .hero-product-main,
-      .hero-product-side {
-        left: auto;
-        right: auto;
-        bottom: auto;
-        transform: none;
-        width: 100%;
-        margin: 0;
-      }
       .product-kpis, .capability-strip { grid-template-columns: 1fr; }
       .product-line { grid-template-columns: 1fr; }
       .leverage-grid { grid-template-columns: 1fr; }
@@ -877,11 +863,13 @@
                     <div class="product-name">Link<span>Crew</span></div>
                   </div>
                   <div class="product-actions">
-                    <a class="product-link-btn" href="https://linkcrew.io" target="_blank">View Product</a>
                     <div class="product-pill">In Production</div>
                   </div>
                 </div>
                 <p class="product-summary">Field crew management, scheduling, invoicing, client visibility, and operational dashboards built into one working system for contractors and service businesses.</p>
+                <div class="product-cta-row">
+                  <a class="product-link-btn" href="https://linkcrew.io" target="_blank">View Product</a>
+                </div>
                 <div class="product-kpis">
                   <div class="product-kpi">
                     <strong>Jobs</strong>
