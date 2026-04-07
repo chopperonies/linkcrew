@@ -1289,44 +1289,107 @@
 
 <!-- Calendar view -->
 <div id="calendar-view" style="display:none">
-  <div style="max-width:1100px;margin:0 auto;padding:24px">
-
-    <!-- AI Schedule Query -->
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px 18px;margin-bottom:20px">
-      <div style="display:flex;gap:10px;align-items:center">
-        <span style="font-size:18px">✨</span>
-        <input type="text" id="appt-ask-input" placeholder='Ask about your schedule — "What does my day look like?" or "Any appointments this week?"'
-          style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:9px 13px;font-size:13px;color:#17191c;outline:none"
-          onkeydown="if(event.key==='Enter') askSchedule()">
-        <button onclick="askSchedule()" id="appt-ask-btn"
-          style="background:#0265dc;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Ask</button>
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div class="owner-page-eyebrow">Schedule</div>
+          <div class="owner-page-title">See the week, answer client questions, and schedule the next move.</div>
+          <div class="owner-page-subtitle">This should feel like a scheduling console for the owner: daily visibility, quick appointment creation, and a simple assistant for “what does my week look like?” questions.</div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="calGoToday()">Today</button>
+          <button class="owner-btn primary" onclick="openApptModal()">+ Add Appointment</button>
+        </div>
       </div>
-      <div id="appt-ask-answer" style="display:none;margin-top:12px;padding:12px 14px;background:#f0f7ff;border-radius:8px;font-size:13px;color:#17191c;line-height:1.6"></div>
-    </div>
 
-    <!-- Week nav -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button onclick="calWeekOffset(-1)" style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">‹</button>
-        <div id="cal-week-label" style="font-size:16px;font-weight:700;color:#17191c;min-width:220px;text-align:center"></div>
-        <button onclick="calWeekOffset(1)" style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">›</button>
-        <button onclick="calGoToday()" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#17191c">Today</button>
+      <div class="owner-kpi-grid">
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">This Week</div>
+          <div class="owner-kpi-value" id="cal-week-count">—</div>
+          <div class="owner-kpi-meta">Appointments currently scheduled in the visible week.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Today</div>
+          <div class="owner-kpi-value" id="cal-today-count">—</div>
+          <div class="owner-kpi-meta">Appointments happening today across the business.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">With Clients</div>
+          <div class="owner-kpi-value" id="cal-client-count">—</div>
+          <div class="owner-kpi-meta">Visible appointments already linked to a client record.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Services</div>
+          <div class="owner-kpi-value" id="cal-service-count">—</div>
+          <div class="owner-kpi-meta">Predefined services available while scheduling work.</div>
+        </div>
       </div>
-      <button onclick="openApptModal()" style="background:#0265dc;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">+ Add Appointment</button>
-    </div>
 
-    <!-- Week grid -->
-    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px"></div>
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Schedule Assistant</div>
+                <div class="owner-card-headline">Ask about the calendar in plain language</div>
+                <div class="owner-card-sub">Use the assistant for quick schedule summaries before calling a client or checking the week manually.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <input type="text" id="appt-ask-input" placeholder='Ask about your schedule — "What does my day look like?" or "Any appointments this week?"'
+                style="flex:1;min-width:220px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:9px 13px;font-size:13px;color:#17191c;outline:none"
+                onkeydown="if(event.key==='Enter') askSchedule()">
+              <button onclick="askSchedule()" id="appt-ask-btn"
+                style="background:#0265dc;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Ask</button>
+            </div>
+            <div id="appt-ask-answer" style="display:none;margin-top:12px;padding:12px 14px;background:#f0f7ff;border-radius:8px;font-size:13px;color:#17191c;line-height:1.6"></div>
+          </div>
 
-    <!-- Services section -->
-    <div style="margin-top:32px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:15px;font-weight:700;color:#17191c">Pre-defined Services</div>
-        <button onclick="openServiceModal()" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#17191c">+ Add Service</button>
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Week View</div>
+                <div class="owner-card-headline" id="cal-week-label">—</div>
+                <div class="owner-card-sub">Review the full week and jump into any day without losing context.</div>
+              </div>
+              <div class="owner-card-actions">
+                <button class="owner-mini-btn" onclick="calWeekOffset(-1)">Previous</button>
+                <button class="owner-mini-btn" onclick="calWeekOffset(1)">Next</button>
+              </div>
+            </div>
+            <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px"></div>
+          </div>
+        </div>
+
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Schedule Snapshot</div>
+            <div class="owner-signal-title" id="cal-attention-title">Loading the visible week.</div>
+            <div class="owner-signal-copy" id="cal-attention-copy">Once appointments load, this panel will summarize what the owner should know first.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Visible week</span><strong id="cal-inline-week">—</strong></div>
+              <div class="owner-inline-row"><span>Today</span><strong id="cal-inline-today">—</strong></div>
+              <div class="owner-inline-row"><span>With clients</span><strong id="cal-inline-clients">—</strong></div>
+            </div>
+          </div>
+
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Service Library</div>
+                <div class="owner-card-headline">Pre-defined services</div>
+                <div class="owner-card-sub">Keep reusable services ready so scheduling stays fast and consistent.</div>
+              </div>
+              <div class="owner-card-actions">
+                <button class="owner-mini-btn" onclick="openServiceModal()">+ Add Service</button>
+              </div>
+            </div>
+            <div id="services-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+          </div>
+        </div>
       </div>
-      <div id="services-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
     </div>
-
   </div>
 </div>
 
@@ -3011,6 +3074,32 @@ let editingApptId = null;
 let editingServiceId = null;
 let calInitialized = false;
 
+function updateCalendarMetrics() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayCount = calAppointments.filter(a => a.start_time.startsWith(todayStr)).length;
+  const clientCount = calAppointments.filter(a => a.clients).length;
+  setText('cal-week-count', calAppointments.length);
+  setText('cal-today-count', todayCount);
+  setText('cal-client-count', clientCount);
+  setText('cal-service-count', calServices.length);
+  setText('cal-inline-week', calAppointments.length);
+  setText('cal-inline-today', todayCount);
+  setText('cal-inline-clients', clientCount);
+
+  if (!calAppointments.length) {
+    setText('cal-attention-title', 'No appointments scheduled in the visible week.');
+    setText('cal-attention-copy', 'The calendar is open. Add appointments or use predefined services to start shaping the week.');
+    return;
+  }
+  if (todayCount > 0) {
+    setText('cal-attention-title', `${todayCount} appointment${todayCount === 1 ? '' : 's'} scheduled for today.`);
+    setText('cal-attention-copy', 'The immediate focus is today’s schedule. Use the week view for context and the assistant for quick summaries before outreach.');
+    return;
+  }
+  setText('cal-attention-title', `${calAppointments.length} appointment${calAppointments.length === 1 ? '' : 's'} scheduled this week.`);
+  setText('cal-attention-copy', 'Today is clear, but the visible week already has work lined up. Review service mix and client-linked appointments before adding more.');
+}
+
 function getWeekStart(date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -3072,6 +3161,7 @@ async function loadCalendarWeek() {
 
   const res = await authFetch(`/api/appointments?start=${start.toISOString()}&end=${end.toISOString()}`);
   calAppointments = await res.json();
+  updateCalendarMetrics();
   renderCalendarGrid();
 }
 
@@ -3116,6 +3206,7 @@ function renderCalendarGrid() {
 async function loadServices() {
   const res = await authFetch('/api/services');
   calServices = await res.json();
+  updateCalendarMetrics();
   renderServicesList();
 }
 
