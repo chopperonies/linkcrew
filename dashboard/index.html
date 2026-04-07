@@ -3499,6 +3499,7 @@ let editingApptId = null;
 let editingServiceId = null;
 let calInitialized = false;
 let calSelectedDate = null;
+let calQuickStartTime = '09:00';
 
 function toLocalDateInputValue(date) {
   const year = date.getFullYear();
@@ -3522,16 +3523,37 @@ function getSelectedCalendarAppointments() {
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 }
 
+function setCalendarQuickTime(startTime, endTime = null) {
+  calQuickStartTime = startTime;
+  const startInput = document.getElementById('day-quick-start');
+  const endInput = document.getElementById('day-quick-end');
+  if (startInput) startInput.value = startTime;
+  if (endInput) endInput.value = endTime || shiftTimeByHour(startTime, 1);
+  document.querySelectorAll('[data-cal-hour-slot]').forEach(el => {
+    el.style.background = el.getAttribute('data-cal-hour-slot') === startTime ? 'rgba(2,101,220,0.08)' : 'transparent';
+    el.style.borderColor = el.getAttribute('data-cal-hour-slot') === startTime ? '#bfdbfe' : 'transparent';
+  });
+}
+
+function shiftTimeByHour(timeValue, offsetHours) {
+  const [hourStr, minuteStr] = timeValue.split(':');
+  const date = new Date();
+  date.setHours(parseInt(hourStr, 10), parseInt(minuteStr || '0', 10), 0, 0);
+  date.setHours(date.getHours() + offsetHours);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 function getCalendarTimelineMarkup(dayAppts, { emptyCopy = 'No appointments scheduled for this day yet.' } = {}) {
-  const hours = Array.from({ length: 15 }, (_, index) => index + 6);
+  const hours = Array.from({ length: 17 }, (_, index) => index + 6);
   return hours.map(hour => {
     const hourAppts = dayAppts.filter(a => new Date(a.start_time).getHours() === hour);
     const labelDate = new Date();
     labelDate.setHours(hour, 0, 0, 0);
+    const slotValue = `${String(hour).padStart(2, '0')}:00`;
     return `
       <div style="display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:flex-start">
         <div style="font-size:11px;font-weight:700;color:#737475;padding-top:4px">${labelDate.toLocaleTimeString('en-US',{hour:'numeric'})}</div>
-        <div style="border-top:1px solid #eef2f7;padding-top:8px;min-height:44px">
+        <div data-cal-hour-slot="${slotValue}" onclick="setCalendarQuickTime('${slotValue}')" style="border-top:1px solid #eef2f7;padding-top:8px;min-height:44px;border-radius:10px;border:1px solid transparent;padding-left:8px;padding-right:8px;cursor:pointer;transition:background 0.16s ease,border-color 0.16s ease">
           ${hourAppts.length ? hourAppts.map(a => {
             const start = new Date(a.start_time);
             const end = a.end_time ? new Date(a.end_time) : null;
@@ -3746,12 +3768,17 @@ function openCalendarDayModal() {
   titleEl.textContent = formatCalendarHeaderDate(selectedDate);
   subEl.textContent = `Review the full day and add work directly here. ${dayAppts.length} appointment${dayAppts.length === 1 ? '' : 's'} scheduled.`;
   const clientOptions = (allClientsData || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const serviceOptions = calServices.length ? calServices.map(s => `
+    <label style="display:flex;align-items:center;gap:6px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:#17191c">
+      <input type="checkbox" value="${s.id}" class="day-quick-service" style="cursor:pointer"> ${s.name}${s.price ? ' - $' + parseFloat(s.price).toFixed(2) : ''}
+    </label>
+  `).join('') : '<div style="font-size:12px;color:#949596;font-style:italic">No services created yet.</div>';
   bodyEl.innerHTML = `
     <div style="background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:16px 18px;max-height:72vh;overflow:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
         <div>
           <div style="font-size:12px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Day Timeline</div>
-          <div style="font-size:13px;color:#64748b;margin-top:4px">Morning to night view for this date.</div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">Morning to late evening view. Click any hour to prefill the quick-add form.</div>
         </div>
         <button class="owner-mini-btn" onclick="closeCalendarDayModal();openApptModal('${calSelectedDate}')">Full Form</button>
       </div>
@@ -3766,6 +3793,10 @@ function openCalendarDayModal() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group" style="margin-bottom:0"><label>Start</label><input type="time" id="day-quick-start" value="09:00"></div>
         <div class="form-group" style="margin-bottom:0"><label>End</label><input type="time" id="day-quick-end" value="10:00"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Services</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">${serviceOptions}</div>
       </div>
       <div class="form-group" style="margin-bottom:0">
         <label>Client</label>
@@ -3785,6 +3816,7 @@ function openCalendarDayModal() {
       </div>
     </div>
   `;
+  setCalendarQuickTime(calQuickStartTime || '09:00');
   modal.classList.add('visible');
 }
 
@@ -3910,6 +3942,7 @@ async function saveCalendarQuickAdd() {
   const clientId = document.getElementById('day-quick-client').value;
   const notes = document.getElementById('day-quick-notes').value.trim();
   const send_confirmation = document.getElementById('day-quick-notify').checked;
+  const serviceIds = [...document.querySelectorAll('.day-quick-service:checked')].map(cb => cb.value);
   if (!title) {
     statusEl.style.color = '#dc2626';
     statusEl.textContent = 'Title is required.';
@@ -3921,7 +3954,7 @@ async function saveCalendarQuickAdd() {
     end_time: endTime ? new Date(`${calSelectedDate}T${endTime}`).toISOString() : null,
     client_id: clientId || null,
     notes,
-    service_ids: [],
+    service_ids: serviceIds,
     send_confirmation,
   };
   btn.disabled = true;
@@ -3940,11 +3973,11 @@ async function saveCalendarQuickAdd() {
     statusEl = document.getElementById('day-quick-status');
     btn = document.getElementById('day-quick-save-btn');
     document.getElementById('day-quick-title').value = '';
-    document.getElementById('day-quick-start').value = '09:00';
-    document.getElementById('day-quick-end').value = '10:00';
+    setCalendarQuickTime(calQuickStartTime || '09:00');
     document.getElementById('day-quick-client').value = '';
     document.getElementById('day-quick-notes').value = '';
     document.getElementById('day-quick-notify').checked = false;
+    document.querySelectorAll('.day-quick-service:checked').forEach(cb => { cb.checked = false; });
     statusEl.style.color = '#16a34a';
     statusEl.textContent = 'Saved.';
   } finally {
