@@ -1594,6 +1594,24 @@
   </div>
 </div>
 
+<!-- Calendar Day Modal -->
+<div class="modal-overlay" id="calendar-day-modal">
+  <div class="modal" style="width:760px;max-width:96vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <h3 style="margin:0" id="calendar-day-modal-title">Day Agenda</h3>
+        <div id="calendar-day-modal-sub" style="font-size:12px;color:#737475;margin-top:4px">Select a day from the planner to inspect the agenda.</div>
+      </div>
+      <button class="btn-cancel" onclick="closeCalendarDayModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <div id="calendar-day-modal-body" style="display:grid;gap:10px"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn-cancel" onclick="closeCalendarDayModal()">Close</button>
+      <button class="btn-save" onclick="openApptModal(calSelectedDate)">+ Add Appointment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Service Modal -->
 <div class="modal-overlay" id="service-modal">
   <div class="modal" style="width:420px">
@@ -3498,6 +3516,37 @@ function appointmentMatchesDate(appointment, dateStr) {
   return toLocalDateInputValue(new Date(appointment.start_time)) === dateStr;
 }
 
+function getSelectedCalendarAppointments() {
+  if (!calSelectedDate) return [];
+  return calAppointments
+    .filter(a => appointmentMatchesDate(a, calSelectedDate))
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+}
+
+function getCalendarAgendaMarkup(dayAppts) {
+  return dayAppts.length ? dayAppts.map(a => {
+    const start = new Date(a.start_time);
+    const end = a.end_time ? new Date(a.end_time) : null;
+    const timeLabel = `${start.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${end ? ' - ' + end.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''}`;
+    return `
+      <div onclick="openApptModal(null,'${a.id}')" style="background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:14px 16px;cursor:pointer;box-shadow:0 10px 30px rgba(15,23,42,0.05)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#0265dc;text-transform:uppercase;letter-spacing:0.08em">${timeLabel}</div>
+            <div style="font-size:15px;font-weight:700;color:#17191c;margin-top:4px">${a.title}</div>
+            <div style="font-size:12px;color:#737475;margin-top:4px">${a.clients ? a.clients.name : 'Internal appointment'}${a.clients?.phone ? ' · ' + a.clients.phone : ''}</div>
+          </div>
+          <div style="font-size:11px;color:#737475;font-weight:600">${(a.service_ids || []).length ? `${a.service_ids.length} service${a.service_ids.length === 1 ? '' : 's'}` : 'No services'}</div>
+        </div>
+        ${a.notes ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#f8fafc;font-size:12px;color:#475569;line-height:1.6">${a.notes}</div>` : ''}
+      </div>`;
+  }).join('') : `
+    <div style="padding:18px;border:1px dashed #d7e3f5;border-radius:14px;background:rgba(2,101,220,0.03);font-size:13px;color:#52739c;line-height:1.6">
+      No appointments are scheduled for this day. Use the button above to add one, or leave the space open for incoming jobs and travel flexibility.
+    </div>
+  `;
+}
+
 function updateCalendarMetrics() {
   const todayStr = toLocalDateInputValue(new Date());
   const todayCount = calAppointments.filter(a => appointmentMatchesDate(a, todayStr)).length;
@@ -3621,7 +3670,7 @@ function renderCalendarGrid() {
     dayAppts.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     return `
-      <div role="button" tabindex="0" onclick="selectCalendarDate('${dateStr}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectCalendarDate('${dateStr}')}"
+      <div role="button" tabindex="0" onclick="selectCalendarDate('${dateStr}', true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectCalendarDate('${dateStr}', true)}"
         style="text-align:left;background:${isSelected ? 'rgba(2,101,220,0.08)' : '#fff'};border:1px solid ${isSelected ? '#0265dc' : isToday ? '#7fb2ef' : '#e8e8e8'};border-radius:14px;min-height:160px;overflow:hidden;padding:0;cursor:pointer;display:flex;flex-direction:column;box-shadow:${isSelected ? '0 18px 36px rgba(2,101,220,0.12)' : 'none'}">
         <div style="padding:10px 12px;border-bottom:1px solid #f0f0f0;background:${isSelected ? 'rgba(2,101,220,0.08)' : isToday ? '#eef5ff' : '#fafafa'};display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
           <div>
@@ -3651,11 +3700,30 @@ function renderCalendarGrid() {
   grid.innerHTML = headerCells + dayCells;
 }
 
-function selectCalendarDate(dateStr) {
+function selectCalendarDate(dateStr, openModal = false) {
   calSelectedDate = dateStr;
   updateCalendarMetrics();
   renderCalendarGrid();
   renderCalendarAgenda();
+  if (openModal) openCalendarDayModal();
+}
+
+function openCalendarDayModal() {
+  if (!calSelectedDate) return;
+  const modal = document.getElementById('calendar-day-modal');
+  const titleEl = document.getElementById('calendar-day-modal-title');
+  const subEl = document.getElementById('calendar-day-modal-sub');
+  const bodyEl = document.getElementById('calendar-day-modal-body');
+  const selectedDate = new Date(`${calSelectedDate}T12:00:00`);
+  const dayAppts = getSelectedCalendarAppointments();
+  titleEl.textContent = formatCalendarHeaderDate(selectedDate);
+  subEl.textContent = `${dayAppts.length} appointment${dayAppts.length === 1 ? '' : 's'} scheduled`;
+  bodyEl.innerHTML = getCalendarAgendaMarkup(dayAppts);
+  modal.classList.add('visible');
+}
+
+function closeCalendarDayModal() {
+  document.getElementById('calendar-day-modal').classList.remove('visible');
 }
 
 function renderCalendarAgenda() {
@@ -3675,9 +3743,7 @@ function renderCalendarAgenda() {
   }
 
   const selectedDate = new Date(`${calSelectedDate}T12:00:00`);
-  const dayAppts = calAppointments
-    .filter(a => appointmentMatchesDate(a, calSelectedDate))
-    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const dayAppts = getSelectedCalendarAppointments();
 
   titleEl.textContent = formatCalendarHeaderDate(selectedDate);
   subEl.textContent = dayAppts.length
@@ -3685,28 +3751,7 @@ function renderCalendarAgenda() {
     : 'The day is open. This is a good place to add work, preserve travel gaps, or keep space for inbound jobs.';
   countEl.textContent = `${dayAppts.length} appointment${dayAppts.length === 1 ? '' : 's'}`;
   addBtn.setAttribute('onclick', `openApptModal('${calSelectedDate}')`);
-
-  agendaEl.innerHTML = dayAppts.length ? dayAppts.map(a => {
-    const start = new Date(a.start_time);
-    const end = a.end_time ? new Date(a.end_time) : null;
-    const timeLabel = `${start.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${end ? ' - ' + end.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''}`;
-    return `
-      <div onclick="openApptModal(null,'${a.id}')" style="background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:14px 16px;cursor:pointer;box-shadow:0 10px 30px rgba(15,23,42,0.05)">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#0265dc;text-transform:uppercase;letter-spacing:0.08em">${timeLabel}</div>
-            <div style="font-size:15px;font-weight:700;color:#17191c;margin-top:4px">${a.title}</div>
-            <div style="font-size:12px;color:#737475;margin-top:4px">${a.clients ? a.clients.name : 'Internal appointment'}${a.clients?.phone ? ' · ' + a.clients.phone : ''}</div>
-          </div>
-          <div style="font-size:11px;color:#737475;font-weight:600">${(a.service_ids || []).length ? `${a.service_ids.length} service${a.service_ids.length === 1 ? '' : 's'}` : 'No services'}</div>
-        </div>
-        ${a.notes ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#f8fafc;font-size:12px;color:#475569;line-height:1.6">${a.notes}</div>` : ''}
-      </div>`;
-  }).join('') : `
-    <div style="padding:18px;border:1px dashed #d7e3f5;border-radius:14px;background:rgba(2,101,220,0.03);font-size:13px;color:#52739c;line-height:1.6">
-      No appointments are scheduled for this day. Use the button above to add one, or leave the space open for incoming jobs and travel flexibility.
-    </div>
-  `;
+  agendaEl.innerHTML = getCalendarAgendaMarkup(dayAppts);
 }
 
 async function loadServices() {
@@ -3763,7 +3808,7 @@ function openApptModal(dateStr, apptId) {
       document.getElementById('appt-end-time').value = a.end_time ? new Date(a.end_time).toTimeString().slice(0,5) : '';
       document.getElementById('appt-client').value = a.client_id || '';
       document.getElementById('appt-notes').value = a.notes || '';
-      document.getElementById('appt-notify').checked = !!a.notify_client;
+      document.getElementById('appt-notify').checked = false;
       (a.service_ids || []).forEach(sid => {
         const cb = checksEl.querySelector(`input[value="${sid}"]`);
         if (cb) cb.checked = true;
@@ -3802,8 +3847,8 @@ async function saveAppt() {
   const start_time = new Date(`${date}T${startTime || '00:00'}`).toISOString();
   const end_time = endTime ? new Date(`${date}T${endTime}`).toISOString() : null;
 
-  const notify_client = document.getElementById('appt-notify').checked;
-  const payload = { title, start_time, end_time, client_id: clientId || null, notes, service_ids: serviceIds, notify_client, send_confirmation: notify_client };
+  const send_confirmation = document.getElementById('appt-notify').checked;
+  const payload = { title, start_time, end_time, client_id: clientId || null, notes, service_ids: serviceIds, send_confirmation };
   const btn = document.getElementById('appt-save-btn');
   btn.disabled = true;
 

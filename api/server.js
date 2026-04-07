@@ -1517,10 +1517,10 @@ app.get('/api/appointments', auth, async (req, res) => {
 });
 
 app.post('/api/appointments', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids, notify_client, send_confirmation } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, send_confirmation } = req.body;
   if (!title || !start_time) return res.status(400).json({ error: 'Title and start time are required' });
   const { data, error } = await supabaseAdmin.from('appointments')
-    .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], notify_client: !!notify_client, tenant_id: req.tenantId })
+    .insert({ title, start_time, end_time: end_time || null, client_id: client_id || null, notes, service_ids: service_ids || [], tenant_id: req.tenantId })
     .select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
   if (send_confirmation && data.clients) notifyApptClient(data, req.tenantId, 'confirmation').catch(() => {});
@@ -1528,7 +1528,7 @@ app.post('/api/appointments', auth, async (req, res) => {
 });
 
 app.patch('/api/appointments/:id', auth, async (req, res) => {
-  const { title, start_time, end_time, client_id, notes, service_ids, notify_client, send_confirmation } = req.body;
+  const { title, start_time, end_time, client_id, notes, service_ids, send_confirmation } = req.body;
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (start_time !== undefined) updates.start_time = start_time;
@@ -1536,7 +1536,6 @@ app.patch('/api/appointments/:id', auth, async (req, res) => {
   if (client_id !== undefined) updates.client_id = client_id || null;
   if (notes !== undefined) updates.notes = notes;
   if (service_ids !== undefined) updates.service_ids = service_ids;
-  if (notify_client !== undefined) updates.notify_client = !!notify_client;
   if (start_time !== undefined) updates.owner_reminded = false; // reset if time changed
   const { data, error } = await supabaseAdmin.from('appointments').update(updates).eq('id', req.params.id).select('*, clients(id, name, email, phone)').single();
   if (error) return res.status(400).json({ error: error.message });
@@ -3522,11 +3521,6 @@ cron.schedule('*/15 * * * *', async () => {
       .update({ owner_reminded: true })
       .in('id', eligibleAppts.map(a => a.id));
 
-    // Client reminders for eligible appts with notify_client on
-    for (const appt of eligibleAppts) {
-      if (!appt.notify_client || !appt.clients) continue;
-      await notifyApptClient(appt, tenantId, 'reminder').catch(() => {});
-    }
   }
 });
 
