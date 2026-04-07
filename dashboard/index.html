@@ -1604,10 +1604,9 @@
       </div>
       <button class="btn-cancel" onclick="closeCalendarDayModal()" style="padding:4px 10px">✕</button>
     </div>
-    <div id="calendar-day-modal-body" style="display:grid;gap:10px"></div>
+    <div id="calendar-day-modal-body" style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,0.8fr);gap:16px"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
       <button class="btn-cancel" onclick="closeCalendarDayModal()">Close</button>
-      <button class="btn-save" onclick="openApptModal(calSelectedDate)">+ Add Appointment</button>
     </div>
   </div>
 </div>
@@ -3523,6 +3522,34 @@ function getSelectedCalendarAppointments() {
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 }
 
+function getCalendarTimelineMarkup(dayAppts, { emptyCopy = 'No appointments scheduled for this day yet.' } = {}) {
+  const hours = Array.from({ length: 15 }, (_, index) => index + 6);
+  return hours.map(hour => {
+    const hourAppts = dayAppts.filter(a => new Date(a.start_time).getHours() === hour);
+    const labelDate = new Date();
+    labelDate.setHours(hour, 0, 0, 0);
+    return `
+      <div style="display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:flex-start">
+        <div style="font-size:11px;font-weight:700;color:#737475;padding-top:4px">${labelDate.toLocaleTimeString('en-US',{hour:'numeric'})}</div>
+        <div style="border-top:1px solid #eef2f7;padding-top:8px;min-height:44px">
+          ${hourAppts.length ? hourAppts.map(a => {
+            const start = new Date(a.start_time);
+            const end = a.end_time ? new Date(a.end_time) : null;
+            const timeLabel = `${start.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${end ? ' - ' + end.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''}`;
+            return `
+              <div onclick="closeCalendarDayModal();openApptModal(null,'${a.id}')"
+                style="background:#eef5ff;border:1px solid #dbeafe;border-left:4px solid #0265dc;border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer">
+                <div style="font-size:11px;font-weight:700;color:#0265dc;text-transform:uppercase;letter-spacing:0.08em">${timeLabel}</div>
+                <div style="font-size:14px;font-weight:700;color:#17191c;margin-top:4px">${a.title}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px">${a.clients ? a.clients.name : 'Internal appointment'}${a.clients?.phone ? ' · ' + a.clients.phone : ''}</div>
+                ${a.notes ? `<div style="margin-top:8px;font-size:12px;color:#475569;line-height:1.5">${a.notes}</div>` : ''}
+              </div>`;
+          }).join('') : '<div style="height:12px"></div>'}
+        </div>
+      </div>`;
+  }).join('') + (dayAppts.length ? '' : `<div style="margin-top:8px;padding:16px;border:1px dashed #d7e3f5;border-radius:14px;background:rgba(2,101,220,0.03);font-size:13px;color:#52739c;line-height:1.6">${emptyCopy}</div>`);
+}
+
 function getCalendarAgendaMarkup(dayAppts) {
   return dayAppts.length ? dayAppts.map(a => {
     const start = new Date(a.start_time);
@@ -3717,8 +3744,47 @@ function openCalendarDayModal() {
   const selectedDate = new Date(`${calSelectedDate}T12:00:00`);
   const dayAppts = getSelectedCalendarAppointments();
   titleEl.textContent = formatCalendarHeaderDate(selectedDate);
-  subEl.textContent = `${dayAppts.length} appointment${dayAppts.length === 1 ? '' : 's'} scheduled`;
-  bodyEl.innerHTML = getCalendarAgendaMarkup(dayAppts);
+  subEl.textContent = `Review the full day and add work directly here. ${dayAppts.length} appointment${dayAppts.length === 1 ? '' : 's'} scheduled.`;
+  const clientOptions = (allClientsData || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  bodyEl.innerHTML = `
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:16px 18px;max-height:72vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Day Timeline</div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">Morning to night view for this date.</div>
+        </div>
+        <button class="owner-mini-btn" onclick="closeCalendarDayModal();openApptModal('${calSelectedDate}')">Full Form</button>
+      </div>
+      ${getCalendarTimelineMarkup(dayAppts, { emptyCopy: 'No appointments are scheduled for this day. Add one using the quick form on the right.' })}
+    </div>
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:16px 18px;display:grid;gap:12px;align-content:start">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Quick Add</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Create a day event without leaving this workspace.</div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>Title *</label><input type="text" id="day-quick-title" placeholder="e.g. Roof inspection"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="margin-bottom:0"><label>Start</label><input type="time" id="day-quick-start" value="09:00"></div>
+        <div class="form-group" style="margin-bottom:0"><label>End</label><input type="time" id="day-quick-end" value="10:00"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Client</label>
+        <select id="day-quick-client" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 11px;font-size:13px;color:#17191c">
+          <option value="">No client</option>
+          ${clientOptions}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>Notes</label><textarea id="day-quick-notes" rows="4" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 11px;font-size:13px;color:#17191c;resize:vertical"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#17191c;cursor:pointer">
+        <input type="checkbox" id="day-quick-notify" style="cursor:pointer">
+        Send confirmation to client
+      </label>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <div id="day-quick-status" style="font-size:12px;color:#737475"></div>
+        <button class="btn-save" id="day-quick-save-btn" onclick="saveCalendarQuickAdd()">Save Event</button>
+      </div>
+    </div>
+  `;
   modal.classList.add('visible');
 }
 
@@ -3780,6 +3846,7 @@ function renderServicesList() {
 }
 
 function openApptModal(dateStr, apptId) {
+  closeCalendarDayModal();
   editingApptId = apptId || null;
   const modal = document.getElementById('appt-modal');
   document.getElementById('appt-modal-title').textContent = apptId ? 'Edit Appointment' : 'Add Appointment';
@@ -3831,6 +3898,58 @@ function openApptModal(dateStr, apptId) {
 function closeApptModal() {
   document.getElementById('appt-modal').classList.remove('visible');
   editingApptId = null;
+}
+
+async function saveCalendarQuickAdd() {
+  if (!calSelectedDate) return;
+  let statusEl = document.getElementById('day-quick-status');
+  let btn = document.getElementById('day-quick-save-btn');
+  const title = document.getElementById('day-quick-title').value.trim();
+  const startTime = document.getElementById('day-quick-start').value || '09:00';
+  const endTime = document.getElementById('day-quick-end').value || '';
+  const clientId = document.getElementById('day-quick-client').value;
+  const notes = document.getElementById('day-quick-notes').value.trim();
+  const send_confirmation = document.getElementById('day-quick-notify').checked;
+  if (!title) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = 'Title is required.';
+    return;
+  }
+  const payload = {
+    title,
+    start_time: new Date(`${calSelectedDate}T${startTime}`).toISOString(),
+    end_time: endTime ? new Date(`${calSelectedDate}T${endTime}`).toISOString() : null,
+    client_id: clientId || null,
+    notes,
+    service_ids: [],
+    send_confirmation,
+  };
+  btn.disabled = true;
+  statusEl.style.color = '#737475';
+  statusEl.textContent = 'Saving...';
+  try {
+    const res = await authFetch('/api/appointments', { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = data.error || 'Failed to save.';
+      return;
+    }
+    await loadCalendarWeek();
+    openCalendarDayModal();
+    statusEl = document.getElementById('day-quick-status');
+    btn = document.getElementById('day-quick-save-btn');
+    document.getElementById('day-quick-title').value = '';
+    document.getElementById('day-quick-start').value = '09:00';
+    document.getElementById('day-quick-end').value = '10:00';
+    document.getElementById('day-quick-client').value = '';
+    document.getElementById('day-quick-notes').value = '';
+    document.getElementById('day-quick-notify').checked = false;
+    statusEl.style.color = '#16a34a';
+    statusEl.textContent = 'Saved.';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function saveAppt() {
