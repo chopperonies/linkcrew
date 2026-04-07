@@ -142,11 +142,11 @@
       overflow: hidden;
     }
     .hero-grid {
-      max-width: 1240px;
+      max-width: 980px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.88fr);
-      gap: 28px;
+      grid-template-columns: 1fr;
+      gap: 20px;
       align-items: stretch;
     }
     .hero-copy {
@@ -282,48 +282,46 @@
       margin-top: 8px;
     }
 
-    .proof-strip {
-      padding: 0 48px 44px;
-    }
-    .proof-grid {
-      max-width: 1240px;
-      margin: 0 auto;
+    .hero-support {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 10px;
     }
-    .proof-card {
-      padding: 22px 20px;
-      background: var(--surface-strong);
+    .hero-support-card {
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: grid;
+      gap: 6px;
     }
-    .proof-label {
+    .hero-support-label {
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--accent-3);
     }
-    .proof-value {
-      margin-top: 12px;
-      font-size: 28px;
+    .hero-support-title {
+      font-size: 20px;
       font-weight: 900;
-      letter-spacing: -0.05em;
+      letter-spacing: -0.03em;
     }
-    .proof-note {
-      margin-top: 10px;
-      font-size: 13px;
+    .hero-support-copy {
+      font-size: 14px;
+      line-height: 1.6;
       color: var(--muted);
-      line-height: 1.55;
     }
     .customer-strip {
-      padding: 18px 48px 0;
+      padding: 8px 48px 0;
     }
     .customer-shell {
       max-width: 1240px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(220px, 0.38fr) minmax(0, 1fr);
-      gap: 18px;
+      grid-template-columns: 1fr;
+      gap: 14px;
       align-items: start;
     }
     .customer-intro {
@@ -416,6 +414,27 @@
       color: var(--muted);
       font-size: 16px;
       line-height: 1.7;
+    }
+    .offer-grid.compact {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .offer-row {
+      padding: 18px 20px;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: grid;
+      gap: 6px;
+    }
+    .offer-row strong {
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .offer-row p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
     }
 
     .offer-grid {
@@ -796,9 +815,8 @@
 
     @media (max-width: 1080px) {
       nav { padding: 16px 22px; }
-      .hero, .proof-strip, .customer-strip, section, footer { padding-left: 22px; padding-right: 22px; }
+      .hero, .customer-strip, section, footer { padding-left: 22px; padding-right: 22px; }
       .hero-grid, .cases-grid, .contact-shell, .customer-shell { grid-template-columns: 1fr; }
-      .proof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .offer-grid { grid-template-columns: 1fr; }
       .reason-grid, .process-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -806,7 +824,7 @@
       .nav-links { display: none; }
       .hero { padding-top: 62px; }
       .hero h1 { max-width: none; }
-      .proof-grid, .meta-grid, .case-metrics, .reason-grid, .process-grid, .form-row, .customer-grid { grid-template-columns: 1fr; }
+      .hero-support, .meta-grid, .case-metrics, .reason-grid, .process-grid, .form-row, .customer-grid { grid-template-columns: 1fr; }
       .contact-shell { padding: 18px; }
       .contact-form-wrap { padding: 18px; }
       .footer-inner { flex-direction: column; align-items: flex-start; }
@@ -840,74 +858,34 @@
         <p class="hero-sub">Kingston Data Group designs internal tools, voice agents, workflow automation, and SaaS platforms for operators who need systems that work in production, not just in demos.</p>
         <div class="hero-points">
           <div class="hero-point"><strong>For service businesses and ops teams:</strong> dispatching, scheduling, quoting, reporting, call handling, and internal workflow automation.</div>
-          <div class="hero-point"><strong>From zero to live:</strong> strategy, product design, engineering, deployment, and practical iteration after launch.</div>
-          <div class="hero-point"><strong>Built around business outcomes:</strong> fewer manual handoffs, fewer missed requests, faster execution, and more visibility.</div>
+          <div class="hero-point"><strong>From zero to live:</strong> strategy, engineering, deployment, and iteration after launch.</div>
         </div>
         <div class="hero-ctas">
           <a class="btn-primary" href="#contact">Start a Project</a>
           <a class="btn-secondary" href="#work">See Live Examples</a>
         </div>
-      </div>
-
-      <div class="hero-meta">
-        <div class="meta-card">
-          <h2>What we actually put into production.</h2>
-          <p>We build the operational layer where requests come in, work gets assigned, teams respond, and managers need visibility.</p>
-          <div class="meta-grid">
-            <div class="signal-card">
-              <div class="signal-label">Core Systems</div>
-              <div class="signal-value">AI + Ops</div>
-              <div class="signal-note">Voice agents, workflow automation, internal dashboards, and custom SaaS.</div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-label">Current Product</div>
-              <div class="signal-value">LinkCrew</div>
-              <div class="signal-note">A live field-operations platform built and maintained by the same team.</div>
-            </div>
+        <div class="hero-support">
+          <div class="hero-support-card">
+            <div class="hero-support-label">Current Support</div>
+            <div class="hero-support-title">Cerebras</div>
+            <div class="hero-support-copy">Supporting Cerebras.ai across data center and lab environments.</div>
+          </div>
+          <div class="hero-support-card">
+            <div class="hero-support-label">Owned Product</div>
+            <div class="hero-support-title">LinkCrew</div>
+            <div class="hero-support-copy">A live field-operations platform built and maintained by the same team.</div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <div class="proof-strip">
-    <div class="proof-grid">
-      <div class="proof-card">
-        <div class="proof-label">Build Focus</div>
-        <div class="proof-value">AI + SaaS</div>
-        <div class="proof-note">Automation systems, internal tools, and customer-facing software built for real operations.</div>
-      </div>
-      <div class="proof-card">
-        <div class="proof-label">Primary Buyers</div>
-        <div class="proof-value">Operators</div>
-        <div class="proof-note">Service businesses, contractors, ops-heavy teams, and founders building workflow software.</div>
-      </div>
-      <div class="proof-card">
-        <div class="proof-label">Delivery Style</div>
-        <div class="proof-value">Hands-On</div>
-        <div class="proof-note">Scoped builds, direct engineering involvement, and live deployment support instead of slideware.</div>
-      </div>
-    </div>
-  </div>
-
   <div class="customer-strip">
     <div class="customer-shell">
       <div class="customer-intro">
-        <div class="customer-label">Customers And Environments</div>
-        <h2>Work that lives in real operating environments.</h2>
-        <p>KDG supports systems that have to hold up in production, including high-performance compute environments and field-service workflows.</p>
-      </div>
-      <div class="customer-grid">
-        <div class="customer-card">
-          <div class="customer-role">Current Support</div>
-          <div class="customer-name">Cerebras</div>
-          <div class="customer-note">Supporting Cerebras.ai across data center and lab environments, with direct exposure to the operational realities behind high-performance infrastructure.</div>
-        </div>
-        <div class="customer-card">
-          <div class="customer-role">Owned Product</div>
-          <div class="customer-name">LinkCrew</div>
-          <div class="customer-note">A live field-operations platform used to validate scheduling, workflow, client, and admin systems in production.</div>
-        </div>
+        <div class="customer-label">Build Focus</div>
+        <h2>AI automation, voice systems, and custom software for operators.</h2>
+        <p>The work is strongest when there is real operational complexity: live teams, repeated requests, fragmented tools, and too much manual coordination.</p>
       </div>
     </div>
   </div>
@@ -922,38 +900,18 @@
         <p class="section-sub">We focus on operationally real problems: too many handoffs, too much manual work, or a workflow generic software does not fit cleanly.</p>
       </div>
 
-      <div class="offer-grid">
-        <div class="offer-card">
-          <div class="offer-eyebrow">Automation Systems</div>
-          <h3>AI workflows that reduce repetitive labor.</h3>
-          <p>Automate intake, dispatching, reporting, follow-up, document flow, and the glue work your team keeps doing manually.</p>
-          <div class="offer-list">
-            <div>Lead intake and routing logic</div>
-            <div>Scheduling and follow-up automation</div>
-            <div>Internal notifications and approval flow</div>
-          </div>
+      <div class="offer-grid compact">
+        <div class="offer-row">
+          <strong>Automation Systems</strong>
+          <p>Automate intake, dispatching, reporting, follow-up, and the glue work your team keeps doing manually.</p>
         </div>
-
-        <div class="offer-card">
-          <div class="offer-eyebrow">Voice And Agent Systems</div>
-          <h3>Voice and chat agents that act like usable front doors.</h3>
-          <p>AI agents that answer calls, qualify intent, capture requests, and hand off to the right workflow instead of dumping everything into voicemail.</p>
-          <div class="offer-list">
-            <div>AI phone reception and callback flows</div>
-            <div>Web chat and intake assistants</div>
-            <div>Context-aware routing into your system</div>
-          </div>
+        <div class="offer-row">
+          <strong>Voice And Agent Systems</strong>
+          <p>AI reception, intake, qualification, and routing that move requests into action instead of voicemail or inbox clutter.</p>
         </div>
-
-        <div class="offer-card">
-          <div class="offer-eyebrow">Custom Software</div>
-          <h3>SaaS and internal tools built around your actual process.</h3>
-          <p>When patched tools stop fitting, we build the operating layer: dashboards, mobile workflows, reporting, and customer-facing portals.</p>
-          <div class="offer-list">
-            <div>Owner and field dashboards</div>
-            <div>Mobile-friendly ops workflows</div>
-            <div>Customer portals and admin control surfaces</div>
-          </div>
+        <div class="offer-row">
+          <strong>Custom Software</strong>
+          <p>Dashboards, mobile workflows, reporting, and customer-facing tools built around your actual process.</p>
         </div>
       </div>
     </div>
@@ -969,7 +927,7 @@
         <p class="section-sub">We build and operate our own software, which keeps the work grounded in what survives production, users, support, and iteration.</p>
       </div>
 
-      <div class="cases-grid">
+      <div class="cases-grid" style="grid-template-columns: 1fr;">
         <div class="case-card">
           <div class="case-top">
             <div>
@@ -998,36 +956,6 @@
             <div>Mission Control, owner dashboard, and admin surfaces are maintained as product-grade systems.</div>
           </div>
         </div>
-
-        <div class="mini-cases">
-          <div class="mini-case">
-            <h3>AI Intake and Routing</h3>
-            <p>Voice and chat systems designed to capture structured requests and move them into action instead of leaving them as inbox clutter.</p>
-            <div class="mini-tags">
-              <span>Voice AI</span>
-              <span>Lead Intake</span>
-              <span>Routing</span>
-            </div>
-          </div>
-          <div class="mini-case">
-            <h3>Ops Dashboards and Internal Tools</h3>
-            <p>Custom views for operators, admins, and managers who need faster decisions and fewer tab-switching workflows.</p>
-            <div class="mini-tags">
-              <span>Internal Tools</span>
-              <span>Reporting</span>
-              <span>Workflow Control</span>
-            </div>
-          </div>
-          <div class="mini-case">
-            <h3>Custom SaaS Builds</h3>
-            <p>When the process is too specific for generic software, we design and build the product layer around the business.</p>
-            <div class="mini-tags">
-              <span>SaaS</span>
-              <span>Mobile</span>
-              <span>Role-Based Access</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </section>
@@ -1042,21 +970,18 @@
         <p class="section-sub">The sweet spot is when a business already feels the pain clearly: missed handoffs, manual re-entry, too many disconnected tools, or a process that nobody off the shelf has modeled correctly.</p>
       </div>
 
-      <div class="reason-grid">
-        <div class="section-card reason-card">
-          <div class="reason-stat">Ops</div>
-          <h3>Operational bias</h3>
-          <p>We optimize for day-to-day execution, not just feature lists. The work is strongest when it improves how people actually operate.</p>
+      <div class="offer-grid compact">
+        <div class="offer-row">
+          <strong>Operational Bias</strong>
+          <p>We optimize for day-to-day execution, not just feature lists.</p>
         </div>
-        <div class="section-card reason-card">
-          <div class="reason-stat">0→1</div>
-          <h3>Product-build mindset</h3>
-          <p>We can move from concept and scoping into a working system without needing a separate strategy firm, design shop, and dev team.</p>
+        <div class="offer-row">
+          <strong>Product-Build Mindset</strong>
+          <p>We can move from concept into a working system without needing three separate firms.</p>
         </div>
-        <div class="section-card reason-card">
-          <div class="reason-stat">Live</div>
-          <h3>Production realism</h3>
-          <p>Owning and evolving our own product work keeps us honest about support, iteration, edge cases, and operational stability.</p>
+        <div class="offer-row">
+          <strong>Production Realism</strong>
+          <p>Owning and evolving our own product work keeps the thinking grounded in live usage.</p>
         </div>
       </div>
     </div>
