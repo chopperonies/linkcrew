@@ -2480,6 +2480,7 @@ let allJobsData = [], allAssignmentsData = [], allSuppliesData = [], allUpdatesD
 const updateIcons = {
   checkin: { icon: '✅', cls: 'ui-checkin' },
   checkout: { icon: '👋', cls: 'ui-checkout' },
+  assignment: { icon: '📣', cls: 'ui-update' },
   bottleneck: { icon: '⚠️', cls: 'ui-bottleneck' },
   supply_request: { icon: '📦', cls: 'ui-supply_request' },
   photo: { icon: '📸', cls: 'ui-photo' },
@@ -2770,7 +2771,7 @@ async function updateSupply(id, status) {
 async function openDetail(jobId, jobName) {
   selectedJobId = jobId;
   document.getElementById('job-detail-modal').classList.add('visible');
-  document.getElementById('detail-title').textContent = jobName;
+  document.getElementById('detail-title').textContent = jobName || document.getElementById('detail-title').textContent || 'Job Detail';
 
   const res = await authFetch(`/api/jobs/${jobId}`);
   const { job, assignments, supplies, updates } = await res.json();
@@ -2808,7 +2809,13 @@ async function openDetail(jobId, jobName) {
               <div style="margin-top:3px">${badge}</div>
             </div>
           </div>
-          ${!onSite ? `<button onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#555'">✕</button>` : ''}
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="notifyCrewAssignment('${job?.id}','${a.employee_id}')"
+              style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;color:#0265dc;border-radius:999px;padding:5px 9px;cursor:pointer;font-weight:700;white-space:nowrap">
+              Notify
+            </button>
+            ${!onSite ? `<button onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#555'">✕</button>` : ''}
+          </div>
         </div>`;
     }).join('') : '<div style="font-size:12px;color:#666;padding:8px 0">No crew assigned yet.</div>'}
     </div>
@@ -3150,14 +3157,28 @@ async function assignCrewMember(jobId, employeeId) {
   if (!employeeId) return;
   const res = await authFetch(`/api/jobs/${jobId}/assign`, { method: 'POST', body: JSON.stringify({ employee_id: employeeId }) });
   if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to assign'); }
-  await openDetail(jobId);
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
+}
+
+async function notifyCrewAssignment(jobId, employeeId) {
+  const res = await authFetch(`/api/jobs/${jobId}/notify-assignment`, {
+    method: 'POST',
+    body: JSON.stringify({ employee_id: employeeId })
+  });
+  const json = await res.json();
+  if (!res.ok) return alert(json.error || 'Failed to notify crew member');
+  const delivery = [];
+  if (json.push_sent) delivery.push('app');
+  if (json.sms_sent) delivery.push('text');
+  alert(delivery.length ? `Crew member notified by ${delivery.join(' and ')}.` : 'Assignment recorded, but no app push token or SMS setup was available.');
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
 }
 
 async function removeCrewAssignment(jobId, employeeId) {
   if (!confirm('Remove this crew member from the job?')) return;
   const res = await authFetch(`/api/jobs/${jobId}/assign/${employeeId}`, { method: 'DELETE' });
   if (!res.ok) { const { error } = await res.json(); return alert(error || 'Failed to remove'); }
-  await openDetail(jobId);
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
 }
 
 async function loadTeamInline() {
@@ -3441,11 +3462,15 @@ function formatCalendarHeaderDate(date) {
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+function appointmentMatchesDate(appointment, dateStr) {
+  return toLocalDateInputValue(new Date(appointment.start_time)) === dateStr;
+}
+
 function updateCalendarMetrics() {
   const todayStr = toLocalDateInputValue(new Date());
-  const todayCount = calAppointments.filter(a => a.start_time.startsWith(todayStr)).length;
+  const todayCount = calAppointments.filter(a => appointmentMatchesDate(a, todayStr)).length;
   const selectedDate = calSelectedDate || todayStr;
-  const selectedCount = calAppointments.filter(a => a.start_time.startsWith(selectedDate)).length;
+  const selectedCount = calAppointments.filter(a => appointmentMatchesDate(a, selectedDate)).length;
   setText('cal-week-count', calAppointments.length);
   setText('cal-today-count', todayCount);
   setText('cal-selected-count', selectedCount);
@@ -3560,7 +3585,7 @@ function renderCalendarGrid() {
     const dateStr = toLocalDateInputValue(date);
     const isSelected = dateStr === calSelectedDate;
 
-    const dayAppts = calAppointments.filter(a => a.start_time.startsWith(dateStr));
+    const dayAppts = calAppointments.filter(a => appointmentMatchesDate(a, dateStr));
     dayAppts.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     return `
@@ -3619,7 +3644,7 @@ function renderCalendarAgenda() {
 
   const selectedDate = new Date(`${calSelectedDate}T12:00:00`);
   const dayAppts = calAppointments
-    .filter(a => a.start_time.startsWith(calSelectedDate))
+    .filter(a => appointmentMatchesDate(a, calSelectedDate))
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   titleEl.textContent = formatCalendarHeaderDate(selectedDate);

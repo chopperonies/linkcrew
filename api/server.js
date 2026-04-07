@@ -1905,6 +1905,82 @@ app.post('/api/jobs/:id/assign', auth, async (req, res) => {
   res.json(data);
 });
 
+app.post('/api/jobs/:id/notify-assignment', auth, async (req, res) => {
+  const { employee_id } = req.body;
+  if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('id, name, address, tenant_id')
+    .eq('id', req.params.id)
+    .eq('tenant_id', req.tenantId)
+    .single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const { data: employee } = await supabaseAdmin
+    .from('employees')
+    .select('id, name, phone, push_token')
+    .eq('id', employee_id)
+    .eq('tenant_id', req.tenantId)
+    .single();
+  if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+  const { data: tenant } = await supabaseAdmin
+    .from('tenants')
+    .select('company_name, twilio_phone, twilio_account_sid, twilio_auth_token')
+    .eq('id', req.tenantId)
+    .single();
+
+  let push_sent = false;
+  let sms_sent = false;
+
+  if (employee.push_token) {
+    try {
+      const pushRes = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+        },
+        body: JSON.stringify({
+          to: employee.push_token,
+          sound: 'default',
+          title: 'New job assignment',
+          body: `You were assigned to "${job.name}". ${job.address || 'Open LinkCrew for details.'}`,
+          data: { type: 'job_assignment', job_id: job.id },
+        }),
+      });
+      push_sent = pushRes.ok;
+    } catch (e) {
+      console.error('[job assignment push] error:', e.message);
+    }
+  }
+
+  if (employee.phone && tenant?.twilio_account_sid && tenant?.twilio_phone) {
+    try {
+      const twilioClient = twilio(tenant.twilio_account_sid, tenant.twilio_auth_token);
+      await twilioClient.messages.create({
+        to: employee.phone,
+        from: tenant.twilio_phone,
+        body: `${tenant.company_name || 'LinkCrew'} assigned you to "${job.name}"${job.address ? ` at ${job.address}` : ''}. Open the app for job details.`,
+      });
+      sms_sent = true;
+    } catch (e) {
+      console.error('[job assignment sms] error:', e.message);
+    }
+  }
+
+  await supabaseAdmin.from('job_updates').insert({
+    job_id: job.id,
+    employee_id: employee.id,
+    type: 'assignment',
+    message: `Assignment reminder sent to ${employee.name}.${push_sent || sms_sent ? ` ${push_sent ? 'App alert' : ''}${push_sent && sms_sent ? ' and ' : ''}${sms_sent ? 'text message' : ''} delivered.` : ' No delivery channel was available.'}`,
+  });
+
+  res.json({ ok: true, push_sent, sms_sent });
+});
+
 // Remove assignment (only if not currently checked in)
 app.delete('/api/jobs/:id/assign/:employeeId', auth, async (req, res) => {
   const { data: job } = await supabaseAdmin.from('jobs').select('id').eq('id', req.params.id).eq('tenant_id', req.tenantId).single();
