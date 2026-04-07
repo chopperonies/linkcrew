@@ -505,25 +505,35 @@
       line-height: 1.7;
     }
 
-    /* ── Outcomes ── */
+    /* ── Leverage ── */
     .outcomes { padding: 96px 60px; }
-    .outcomes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
-    .outcome-card {
-      background: #fff; border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 16px; padding: 30px; position: relative; overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    .leverage-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      max-width: 980px;
+      margin: 0 auto;
     }
-    .outcome-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--accent), #ffe066);
+    .leverage-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 16px;
+      padding: 24px;
+      display: grid;
+      gap: 8px;
     }
-    .outcome-number {
-      font-family: var(--font-head); font-size: 48px; font-weight: 900;
-      color: var(--text); letter-spacing: -0.03em; line-height: 1; margin-bottom: 10px;
+    .leverage-card strong {
+      font-size: 16px;
+      font-family: var(--font-head);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
-    .outcome-number .unit { font-size: 22px; color: #b8860b; }
-    .outcome-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-    .outcome-desc { font-size: 13px; color: var(--sub); line-height: 1.68; }
+    .leverage-card p {
+      font-size: 13px;
+      color: var(--sub);
+      line-height: 1.65;
+    }
 
     /* ── Testimonial ── */
     .testimonial {
@@ -728,7 +738,7 @@
       .services-grid { grid-template-columns: 1fr; }
       .products-grid { grid-template-columns: 1fr; }
       .ownership-grid { grid-template-columns: 1fr; }
-      .outcomes-grid { grid-template-columns: 1fr; }
+      .leverage-grid { grid-template-columns: repeat(2, 1fr); }
       .steps { grid-template-columns: 1fr 1fr; gap: 32px; }
       .steps::before { display: none; }
       .form-row { grid-template-columns: 1fr; }
@@ -750,6 +760,7 @@
       }
       .product-kpis, .capability-strip { grid-template-columns: 1fr; }
       .product-line { grid-template-columns: 1fr; }
+      .leverage-grid { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr; }
     }
   </style>
@@ -1027,29 +1038,25 @@
 
   <!-- Outcomes -->
   <section class="outcomes" id="why">
-    <div class="section-eyebrow reveal">Real Results</div>
-    <h2 class="section-title reveal reveal-delay-1">Built by Engineers,<br>Measured in Outcomes</h2>
-    <p class="section-sub reveal reveal-delay-2">We combine deep IT infrastructure experience with modern AI to deliver systems that work in production — not just in demos.</p>
-    <div class="outcomes-grid">
-      <div class="outcome-card reveal">
-        <div class="outcome-number"><span class="unit">4hr </span>→<span class="unit"> 8min</span></div>
-        <div class="outcome-title">Invoicing time cut</div>
-        <div class="outcome-desc">LinkCrew customers replaced manual invoice creation with one-click automation. What used to take hours is now done before the job site clears.</div>
+    <div class="section-eyebrow reveal">Where We Create Leverage</div>
+    <h2 class="section-title reveal reveal-delay-1">The workflows we make lighter, faster, and easier to run.</h2>
+    <p class="section-sub reveal reveal-delay-2">A focused mix of automation, visibility, and operational control where manual work usually stacks up.</p>
+    <div class="leverage-grid">
+      <div class="leverage-card reveal">
+        <strong>Intake</strong>
+        <p>Capture requests, qualify them, and route them into action instead of inbox clutter or voicemail.</p>
       </div>
-      <div class="outcome-card reveal reveal-delay-1">
-        <div class="outcome-number">24<span class="unit">/7</span></div>
-        <div class="outcome-title">Inbound coverage, zero staff</div>
-        <div class="outcome-desc">Our AI voice agents handle inbound calls, answer questions, and route leads around the clock — no after-hours missed calls or missed revenue.</div>
+      <div class="leverage-card reveal reveal-delay-1">
+        <strong>Scheduling</strong>
+        <p>Reduce the back-and-forth around appointments, assignments, and recurring work.</p>
       </div>
-      <div class="outcome-card reveal reveal-delay-2">
-        <div class="outcome-number">6<span class="unit"> wks</span></div>
-        <div class="outcome-title">Concept to live product</div>
-        <div class="outcome-desc">Our focused build process takes you from idea to deployed, real users in weeks — not the months typical agency engagements drag on.</div>
+      <div class="leverage-card reveal reveal-delay-2">
+        <strong>Reporting</strong>
+        <p>Give owners and operators cleaner visibility into what is happening across the workflow.</p>
       </div>
-      <div class="outcome-card reveal reveal-delay-3">
-        <div class="outcome-number">15<span class="unit">+</span></div>
-        <div class="outcome-title">Years of infrastructure depth</div>
-        <div class="outcome-desc">Deep IT and data center experience means the systems we build don't just look good in demos — they're engineered to stay up and scale when it counts.</div>
+      <div class="leverage-card reveal reveal-delay-3">
+        <strong>Support</strong>
+        <p>Help smaller teams respond faster and more consistently without adding headcount too early.</p>
       </div>
     </div>
   </section>
