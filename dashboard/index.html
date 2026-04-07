@@ -222,6 +222,103 @@
     }
     .topbar-title { font-size: 16px; font-weight: 900; color: var(--text); letter-spacing: -0.02em; }
 
+    /* ── Owner pages ── */
+    .owner-page { overflow-y: auto; height: calc(100vh - 136px); }
+    .owner-page-shell { padding: 24px; }
+    .owner-page-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 18px;
+      margin-bottom: 18px;
+    }
+    .owner-page-copy { max-width: 760px; }
+    .owner-page-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #0369a1; margin-bottom: 10px;
+    }
+    .owner-page-eyebrow::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      box-shadow: 0 0 0 5px rgba(56,189,248,0.14);
+    }
+    .owner-page-title {
+      font-size: 30px; line-height: 1.02; font-weight: 900; color: var(--text);
+      letter-spacing: -0.04em;
+    }
+    .owner-page-subtitle {
+      font-size: 14px; line-height: 1.7; color: var(--text-soft); margin-top: 10px;
+    }
+    .owner-page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .owner-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.84); color: var(--text); cursor: pointer;
+      font-size: 12px; font-weight: 800; font-family: inherit; box-shadow: var(--shadow-soft);
+    }
+    .owner-btn:hover { border-color: rgba(14,165,233,0.28); background: #fff; }
+    .owner-btn.primary {
+      background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+      color: #fff; border-color: transparent; box-shadow: 0 12px 28px rgba(14,165,233,0.22);
+    }
+    .owner-btn.primary:hover { background: #0284c7; }
+    .owner-kpi-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;
+      margin-bottom: 18px;
+    }
+    .owner-kpi-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,252,255,0.96) 100%);
+      border: 1px solid var(--border); border-radius: 20px; padding: 18px 18px 16px;
+      box-shadow: var(--shadow-soft);
+    }
+    .owner-kpi-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+    }
+    .owner-kpi-value {
+      font-size: 30px; line-height: 1; font-weight: 900; letter-spacing: -0.04em; color: var(--text);
+      margin-top: 10px;
+    }
+    .owner-kpi-meta { font-size: 12px; color: var(--text-soft); line-height: 1.5; margin-top: 8px; }
+    .owner-ops-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr); gap: 18px; }
+    .owner-section-stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .owner-card {
+      background: rgba(255,255,255,0.88); border: 1px solid var(--border); border-radius: 22px;
+      padding: 20px; box-shadow: var(--shadow-soft); backdrop-filter: blur(10px);
+    }
+    .owner-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+      margin-bottom: 16px;
+    }
+    .owner-card-title {
+      font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em;
+    }
+    .owner-card-headline { font-size: 20px; font-weight: 900; letter-spacing: -0.03em; color: var(--text); margin-top: 6px; }
+    .owner-card-sub { font-size: 13px; color: var(--text-soft); line-height: 1.6; margin-top: 6px; }
+    .owner-card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .owner-mini-btn {
+      background: #f8fbfd; color: #0369a1; border: 1px solid rgba(14,165,233,0.18);
+      padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+      font-family: inherit;
+    }
+    .owner-mini-btn:hover { background: #eefaff; }
+    .owner-signal-card {
+      background: linear-gradient(135deg, #f7fcff 0%, #ffffff 58%, #fff8ec 100%);
+      border: 1px solid var(--border); border-radius: 20px; padding: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+    .owner-signal-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+    }
+    .owner-signal-title {
+      font-size: 19px; line-height: 1.2; font-weight: 900; color: var(--text); letter-spacing: -0.03em; margin-top: 10px;
+    }
+    .owner-signal-copy { font-size: 13px; color: var(--text-soft); line-height: 1.65; margin-top: 8px; }
+    .owner-inline-list { display: grid; gap: 10px; margin-top: 14px; }
+    .owner-inline-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,0.72); border: 1px solid var(--border);
+    }
+    .owner-inline-row span:first-child { font-size: 12px; color: var(--text-soft); font-weight: 700; }
+    .owner-inline-row strong { font-size: 13px; color: var(--text); }
+
     /* legacy compat */
     .hdr-btn {
       background: var(--surface-tint); color: var(--text); border: 1px solid var(--border);
@@ -529,6 +626,16 @@
       .stat { min-width: 100px; padding: 10px 14px; }
       .stat .num { font-size: 22px; }
 
+      .owner-page-shell { padding: 16px; }
+      .owner-page-header { flex-direction: column; }
+      .owner-page-title { font-size: 24px; }
+      .owner-page-actions { width: 100%; }
+      .owner-btn { flex: 1; }
+      .owner-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .owner-ops-layout { grid-template-columns: 1fr; }
+      .owner-card { padding: 16px; }
+      .owner-card-header { flex-direction: column; }
+
       /* Auth card */
       .auth-screen { padding: 16px; }
       .auth-shell { grid-template-columns: 1fr; }
@@ -761,23 +868,90 @@
   </div>
 </div>
 
-<div class="main">
-  <div class="jobs-panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div class="panel-title">Active Jobs</div>
-      <button class="add-job-btn" onclick="openAddJob()">+ Add Job</button>
-    </div>
-    <div id="jobs-list"><div class="empty"><div class="e-icon">📋</div>Loading...</div></div>
-  </div>
-
-  <div class="side-panel">
-    <div id="supplies-view">
-      <div class="side-tabs">
-        <div class="side-tab active" id="stab-supplies" onclick="switchSideTab('supplies')">📦 Supplies</div>
-        <div class="side-tab" id="stab-photos" onclick="switchSideTab('photos')">📸 Photos</div>
+<div class="owner-page">
+  <div class="owner-page-shell">
+    <div class="owner-page-header">
+      <div class="owner-page-copy">
+        <div class="owner-page-eyebrow">Owner Workspace</div>
+        <div class="owner-page-title">Run the day without chasing the field.</div>
+        <div class="owner-page-subtitle">This becomes the owner operating layer for LinkCrew: active work, open requests, fresh site photos, and the jobs that need attention next.</div>
       </div>
-      <div id="supplies-content"><div id="supplies-list"><div class="empty"><div class="e-icon">📦</div>No pending requests</div></div></div>
-      <div id="photos-content" style="display:none"><div id="photos-list"><div class="empty"><div class="e-icon">📸</div>Loading photos...</div></div></div>
+      <div class="owner-page-actions">
+        <button class="owner-btn" onclick="switchMainTab('calendar')">Open Calendar</button>
+        <button class="owner-btn primary" onclick="openAddJob()">+ Add Job</button>
+      </div>
+    </div>
+
+    <div class="owner-kpi-grid">
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Active Jobs</div>
+        <div class="owner-kpi-value" id="jobs-active-count">—</div>
+        <div class="owner-kpi-meta">Live scheduled and in-progress work across your crew.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Crew On Site</div>
+        <div class="owner-kpi-value" id="jobs-crew-count">—</div>
+        <div class="owner-kpi-meta">Field staff currently checked in at a jobsite.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Supply Requests</div>
+        <div class="owner-kpi-value" id="jobs-supplies-count">—</div>
+        <div class="owner-kpi-meta">Pending material requests waiting on office action.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Bottlenecks</div>
+        <div class="owner-kpi-value" id="jobs-bottlenecks-count">—</div>
+        <div class="owner-kpi-meta">Reported blockers from today’s field updates.</div>
+      </div>
+    </div>
+
+    <div class="owner-ops-layout">
+      <div class="owner-section-stack">
+        <div class="owner-card">
+          <div class="owner-card-header">
+            <div>
+              <div class="owner-card-title">Operations Board</div>
+              <div class="owner-card-headline">Active jobs</div>
+              <div class="owner-card-sub">Each card should answer the owner’s next question fast: status, crew presence, and whether materials are holding up the work.</div>
+            </div>
+            <div class="owner-card-actions">
+              <button class="owner-mini-btn" onclick="showOverlay('jobs')">Quick View</button>
+            </div>
+          </div>
+          <div id="jobs-list"><div class="empty"><div class="e-icon">📋</div>Loading...</div></div>
+        </div>
+      </div>
+
+      <div class="owner-section-stack">
+        <div class="owner-signal-card">
+          <div class="owner-signal-label">Needs Attention</div>
+          <div class="owner-signal-title" id="jobs-attention-title">Waiting for live job data.</div>
+          <div class="owner-signal-copy" id="jobs-attention-copy">Once jobs load, this panel summarizes what the owner should handle first.</div>
+          <div class="owner-inline-list">
+            <div class="owner-inline-row"><span>Jobs in motion</span><strong id="jobs-inline-active">—</strong></div>
+            <div class="owner-inline-row"><span>Crew currently on site</span><strong id="jobs-inline-crew">—</strong></div>
+            <div class="owner-inline-row"><span>Open supply issues</span><strong id="jobs-inline-supplies">—</strong></div>
+          </div>
+        </div>
+
+        <div class="owner-card">
+          <div class="owner-card-header">
+            <div>
+              <div class="owner-card-title">Live Feed</div>
+              <div class="owner-card-headline">Supplies and photos</div>
+              <div class="owner-card-sub">Keep urgent office work separate from the job list so the owner can triage without losing context.</div>
+            </div>
+          </div>
+          <div id="supplies-view">
+            <div class="side-tabs">
+              <div class="side-tab active" id="stab-supplies" onclick="switchSideTab('supplies')">📦 Supplies</div>
+              <div class="side-tab" id="stab-photos" onclick="switchSideTab('photos')">📸 Photos</div>
+            </div>
+            <div id="supplies-content"><div id="supplies-list"><div class="empty"><div class="e-icon">📦</div>No pending requests</div></div></div>
+            <div id="photos-content" style="display:none"><div id="photos-list"><div class="empty"><div class="e-icon">📸</div>Loading photos...</div></div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -798,39 +972,78 @@
 
 <!-- Clients view -->
 <div id="clients-view" style="display:none">
-  <!-- Sub-tabs -->
-  <div style="display:flex;gap:0;border-bottom:2px solid #e8e8e8;margin-bottom:0">
-    <div id="ctab-all" onclick="switchClientsTab('all')" style="padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#0265dc;border-bottom:2px solid #0265dc;margin-bottom:-2px">All Clients</div>
-    <div id="ctab-recurring" onclick="switchClientsTab('recurring')" style="padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#737475;border-bottom:2px solid transparent;margin-bottom:-2px">🔁 Recurring Invoices</div>
-  </div>
-
-  <!-- All Clients sub-view -->
-  <div id="clients-sub-all">
-    <div class="crm-layout">
-      <div class="crm-list-panel">
-        <div class="crm-search-bar">
-          <input class="crm-search" type="text" placeholder="Search clients..." oninput="filterClients(this.value)">
-          <button class="btn-add-client" onclick="openAddClient()">+ Add</button>
-          <button class="btn-add-client" onclick="openImportModal()" style="background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8">↑ Import</button>
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div class="owner-page-eyebrow">Client Relationships</div>
+          <div class="owner-page-title">Keep clients, follow-ups, and billing context in one place.</div>
+          <div class="owner-page-subtitle">This page should feel less like a raw CRM and more like an owner workspace: who needs attention, who has active work, and who is waiting on payment.</div>
         </div>
-        <div id="clients-list"><div class="empty"><div class="e-icon">👤</div>Loading...</div></div>
-      </div>
-      <div class="crm-detail-panel" id="crm-detail-panel">
-        <div class="empty" style="margin-top:60px"><div class="e-icon">👈</div>Select a client</div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="openImportModal()">Import Clients</button>
+          <button class="owner-btn primary" onclick="openAddClient()">+ Add Client</button>
+        </div>
       </div>
 
-    </div>
-  </div>
-
-  <!-- Recurring Invoices sub-view -->
-  <div id="clients-sub-recurring" style="display:none;max-width:640px;margin:0 auto;padding:24px">
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-size:15px;font-weight:700;color:#17191c">Recurring Invoices</div>
-        <button onclick="openRecurringModal()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">+ Add</button>
+      <div class="owner-kpi-grid">
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Clients</div>
+          <div class="owner-kpi-value" id="clients-total-count">—</div>
+          <div class="owner-kpi-meta">Total accounts currently tracked in LinkCrew.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Follow-Ups Due</div>
+          <div class="owner-kpi-value" id="clients-followup-count">—</div>
+          <div class="owner-kpi-meta">Open relationship tasks that still need owner action.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Overdue Follow-Ups</div>
+          <div class="owner-kpi-value" id="clients-overdue-count">—</div>
+          <div class="owner-kpi-meta">Items that have already slipped past their due date.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Recurring Invoice Plans</div>
+          <div class="owner-kpi-value" id="clients-recurring-count">—</div>
+          <div class="owner-kpi-meta">Active recurring billing relationships tied to clients.</div>
+        </div>
       </div>
-      <div style="font-size:13px;color:#737475;margin-bottom:18px">Automatically create and send an invoice to a client on a set schedule.</div>
-      <div id="recurring-list"><div style="font-size:13px;color:#b0b0b0">Loading...</div></div>
+
+      <div class="owner-card" style="padding:0;overflow:hidden">
+        <div style="display:flex;gap:0;border-bottom:1px solid #e8eef3;padding:0 18px;background:rgba(255,255,255,0.8)">
+          <div id="ctab-all" onclick="switchClientsTab('all')" style="padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#0265dc;border-bottom:2px solid #0265dc;margin-bottom:-1px">All Clients</div>
+          <div id="ctab-recurring" onclick="switchClientsTab('recurring')" style="padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#737475;border-bottom:2px solid transparent;margin-bottom:-1px">🔁 Recurring Invoices</div>
+        </div>
+
+        <!-- All Clients sub-view -->
+        <div id="clients-sub-all">
+          <div class="crm-layout">
+            <div class="crm-list-panel">
+              <div class="crm-search-bar">
+                <input class="crm-search" type="text" placeholder="Search clients..." oninput="filterClients(this.value)">
+                <button class="btn-add-client" onclick="openAddClient()">+ Add</button>
+                <button class="btn-add-client" onclick="openImportModal()" style="background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8">↑ Import</button>
+              </div>
+              <div id="clients-list"><div class="empty"><div class="e-icon">👤</div>Loading...</div></div>
+            </div>
+            <div class="crm-detail-panel" id="crm-detail-panel">
+              <div class="empty" style="margin-top:60px"><div class="e-icon">👈</div>Select a client</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recurring Invoices sub-view -->
+        <div id="clients-sub-recurring" style="display:none;max-width:760px;margin:0 auto;padding:24px">
+          <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:15px;font-weight:700;color:#17191c">Recurring Invoices</div>
+              <button onclick="openRecurringModal()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">+ Add</button>
+            </div>
+            <div style="font-size:13px;color:#737475;margin-bottom:18px">Automatically create and send an invoice to a client on a set schedule.</div>
+            <div id="recurring-list"><div style="font-size:13px;color:#b0b0b0">Loading...</div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2008,40 +2221,95 @@ function switchSideTab(tab) {
   document.getElementById('stab-photos').classList.toggle('active', tab === 'photos');
 }
 
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function getJobStatusChip(status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'scheduled') return { cls: 'chip-blue', label: 'Scheduled' };
+  if (normalized === 'in_progress') return { cls: 'chip-yellow', label: 'In Progress' };
+  if (normalized === 'active') return { cls: 'chip-green', label: 'Active' };
+  if (normalized === 'invoiced') return { cls: 'chip-blue', label: 'Invoiced' };
+  if (normalized === 'completed') return { cls: 'chip-green', label: 'Completed' };
+  return { cls: 'chip-blue', label: status || 'Open' };
+}
+
+function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount) {
+  setText('jobs-inline-active', `${activeCount}`);
+  setText('jobs-inline-crew', `${crewCount}`);
+  setText('jobs-inline-supplies', `${supplyCount}`);
+
+  if (supplyCount > 0) {
+    setText('jobs-attention-title', `${supplyCount} supply request${supplyCount > 1 ? 's' : ''} need office action.`);
+    setText('jobs-attention-copy', 'Materials are the clearest blocker right now. Clear pending requests first so active jobs keep moving.');
+    return;
+  }
+  if (bottleneckCount > 0) {
+    setText('jobs-attention-title', `${bottleneckCount} bottleneck${bottleneckCount > 1 ? 's are' : ' is'} reported today.`);
+    setText('jobs-attention-copy', 'Field updates are signaling friction. Review today’s blockers and close the jobs that need owner intervention.');
+    return;
+  }
+  if (activeCount === 0) {
+    setText('jobs-attention-title', 'No active jobs in motion right now.');
+    setText('jobs-attention-copy', 'The board is clear. New work can be scheduled, quoted, or moved into the calendar without operational backlog.');
+    return;
+  }
+  setText('jobs-attention-title', `${crewCount} crew member${crewCount === 1 ? '' : 's'} currently on site.`);
+  setText('jobs-attention-copy', 'Operations are moving cleanly. Use this board to monitor fresh photos, crew presence, and the next job that needs office input.');
+}
+
 async function loadDashboard() {
   const res = await authFetch('/api/jobs');
   const jobs = await res.json();
   allJobsData = jobs;
 
   const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
-  document.getElementById('stat-jobs').textContent = active.length;
+  setText('stat-jobs', active.length);
+  setText('jobs-active-count', active.length);
 
   const list = document.getElementById('jobs-list');
   if (!jobs.length) {
     list.innerHTML = '<div class="empty"><div class="e-icon">📋</div>No jobs yet.<br><span style="font-size:13px;color:#0265dc;cursor:pointer;font-weight:600" onclick="openAddJob()">+ Add your first job</span></div>';
-    document.getElementById('stat-crew').textContent = 0;
-    document.getElementById('stat-supplies').textContent = 0;
-    document.getElementById('stat-bottlenecks').textContent = 0;
+    setText('stat-crew', 0);
+    setText('stat-supplies', 0);
+    setText('stat-bottlenecks', 0);
+    setText('jobs-crew-count', 0);
+    setText('jobs-supplies-count', 0);
+    setText('jobs-bottlenecks-count', 0);
+    updateJobsAttention(0, 0, 0, 0);
     return;
   }
 
-  list.innerHTML = jobs.map(job => `
+  if (!active.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No active jobs right now.<br><span style="font-size:13px;color:#0265dc;cursor:pointer;font-weight:600" onclick="openAddJob()">+ Add a new job</span></div>';
+  } else {
+    list.innerHTML = active.map(job => {
+      const status = getJobStatusChip(job.status);
+      return `
     <div class="job-card ${selectedJobId === job.id ? 'selected' : ''}" onclick="openDetail('${job.id}','${job.name.replace(/'/g,"\\'")}')">
-      <div class="job-name">${job.name}</div>
-      <div class="job-address">📍 ${job.address || 'No address'}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+        <div style="min-width:0">
+          <div class="job-name">${job.name}</div>
+          <div class="job-address">📍 ${job.address || 'No address'}</div>
+        </div>
+        <span class="chip ${status.cls}">${status.label}</span>
+      </div>
       <div class="job-meta">
-        <span class="chip chip-green">● ${job.status}</span>
         <span class="chip chip-blue" id="crew-${job.id}">👷 ...</span>
         <span class="chip chip-red" id="supply-${job.id}">📦 ...</span>
+        <span class="chip chip-yellow" id="bottleneck-${job.id}">⚠ ...</span>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+    }).join('');
+  }
 
   allAssignmentsData = []; allSuppliesData = []; allUpdatesData = [];
   let totalCrew = 0, totalSupplies = 0, totalBottlenecks = 0;
   const today = new Date(); today.setHours(0,0,0,0);
 
-  jobs.forEach(async job => {
+  await Promise.all(active.map(async job => {
     const r = await authFetch(`/api/jobs/${job.id}`);
     const d = await r.json();
     const onSite = (d.assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
@@ -2054,17 +2322,23 @@ async function loadDashboard() {
 
     const crewEl = document.getElementById(`crew-${job.id}`);
     const supplyEl = document.getElementById(`supply-${job.id}`);
+    const bottleneckEl = document.getElementById(`bottleneck-${job.id}`);
     if (crewEl) crewEl.textContent = `👷 ${onSite.length} on site`;
     if (supplyEl) supplyEl.textContent = `📦 ${pending.length} pending`;
+    if (bottleneckEl) bottleneckEl.textContent = `⚠ ${bottlenecks.length} blockers`;
 
     totalCrew += onSite.length;
     totalSupplies += pending.length;
     totalBottlenecks += bottlenecks.length;
+  }));
 
-    document.getElementById('stat-crew').textContent = totalCrew;
-    document.getElementById('stat-supplies').textContent = totalSupplies;
-    document.getElementById('stat-bottlenecks').textContent = totalBottlenecks;
-  });
+  setText('stat-crew', totalCrew);
+  setText('stat-supplies', totalSupplies);
+  setText('stat-bottlenecks', totalBottlenecks);
+  setText('jobs-crew-count', totalCrew);
+  setText('jobs-supplies-count', totalSupplies);
+  setText('jobs-bottlenecks-count', totalBottlenecks);
+  updateJobsAttention(active.length, totalCrew, totalSupplies, totalBottlenecks);
 }
 
 async function loadSupplies() {
@@ -3283,6 +3557,7 @@ const FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', monthly: 'Mont
 async function loadRecurring() {
   const res = await authFetch('/api/recurring-invoices');
   recurringData = await res.json();
+  updateClientMetrics();
   renderRecurring();
 }
 
@@ -3305,33 +3580,42 @@ function renderRecurring() {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${activeToggle}
+        <button onclick="openRecurringModal('${r.id}')" style="background:none;border:none;color:#0265dc;cursor:pointer;font-size:12px;font-weight:700;padding:2px 6px" title="Edit">Edit</button>
         <button onclick="deleteRecurring('${r.id}')" style="background:none;border:none;color:#b0b0b0;cursor:pointer;font-size:15px;padding:2px 6px" title="Delete">✕</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function openRecurringModal() {
-  editingRecurringId = null;
-  document.getElementById('recurring-modal-title').textContent = 'New Recurring Invoice';
-  document.getElementById('ri-desc').value = '';
-  document.getElementById('ri-amount').value = '';
-  document.getElementById('ri-frequency').value = 'monthly';
-  document.getElementById('ri-client').value = '';
-  document.getElementById('ri-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('ri-error').style.display = 'none';
-  // Populate clients dropdown
+function populateRecurringClients(selectedClientId = '') {
   const sel = document.getElementById('ri-client');
   sel.innerHTML = '<option value="">No client</option>';
   (allClientsData || []).forEach(c => {
     const opt = document.createElement('option');
-    opt.value = c.id; opt.textContent = c.name;
+    opt.value = c.id;
+    opt.textContent = c.name;
     sel.appendChild(opt);
   });
+  sel.value = selectedClientId || '';
+}
+
+function openRecurringModal(id = null) {
+  const recurring = id ? recurringData.find(item => item.id === id) : null;
+  editingRecurringId = recurring?.id || null;
+  document.getElementById('recurring-modal-title').textContent = recurring ? 'Edit Recurring Invoice' : 'New Recurring Invoice';
+  document.getElementById('ri-desc').value = recurring?.description || '';
+  document.getElementById('ri-amount').value = recurring ? parseFloat(recurring.amount).toFixed(2) : '';
+  document.getElementById('ri-frequency').value = recurring?.frequency || 'monthly';
+  document.getElementById('ri-date').value = recurring?.next_send_date || new Date().toISOString().split('T')[0];
+  document.getElementById('ri-save-btn').textContent = recurring ? 'Save Changes' : 'Save';
+  document.getElementById('ri-error').style.display = 'none';
+  populateRecurringClients(recurring?.client_id || '');
   document.getElementById('recurring-modal').classList.add('visible');
 }
 
 function closeRecurringModal() {
+  editingRecurringId = null;
+  document.getElementById('ri-save-btn').textContent = 'Save';
   document.getElementById('recurring-modal').classList.remove('visible');
 }
 
@@ -3350,8 +3634,9 @@ async function saveRecurring() {
   const btn = document.getElementById('ri-save-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    const res = await authFetch('/api/recurring-invoices', {
-      method: 'POST',
+    const isEditing = !!editingRecurringId;
+    const res = await authFetch(isEditing ? `/api/recurring-invoices/${editingRecurringId}` : '/api/recurring-invoices', {
+      method: isEditing ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ description: desc, amount: parseFloat(amount), frequency, client_id, next_send_date }),
     });
@@ -3359,7 +3644,7 @@ async function saveRecurring() {
     closeRecurringModal();
     await loadRecurring();
   } finally {
-    btn.disabled = false; btn.textContent = 'Save';
+    btn.disabled = false; btn.textContent = editingRecurringId ? 'Save Changes' : 'Save';
   }
 }
 
@@ -3542,8 +3827,20 @@ const statusTextColors = {
 async function loadClients() {
   const res = await authFetch('/api/clients');
   allClientsData = await res.json();
+  updateClientMetrics();
   renderClientList(allClientsData);
   renderCrmEmptyState();
+}
+
+function updateClientMetrics() {
+  const today = new Date().toISOString().split('T')[0];
+  const allFu = allClientsData.flatMap(c => c.client_follow_ups || []);
+  const pending = allFu.filter(f => !f.completed).length;
+  const overdue = allFu.filter(f => !f.completed && f.due_date && f.due_date < today).length;
+  setText('clients-total-count', allClientsData.length);
+  setText('clients-followup-count', pending);
+  setText('clients-overdue-count', overdue);
+  setText('clients-recurring-count', recurringData.filter(r => r.active !== false).length);
 }
 
 function renderCrmEmptyState() {
@@ -3556,22 +3853,18 @@ function renderCrmEmptyState() {
 
   panel.innerHTML = `
     <div style="padding:8px 0">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:18px;text-align:center">
-          <div style="font-size:28px;font-weight:800;color:#0265dc">${allClientsData.length}</div>
-          <div style="font-size:11px;color:#737475;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Clients</div>
-        </div>
-        <div style="background:#fff;border:1px solid ${overdue.length ? '#fecaca' : '#e8e8e8'};border-radius:10px;padding:18px;text-align:center">
-          <div style="font-size:28px;font-weight:800;color:${overdue.length ? '#dc2626' : '#17191c'}">${overdue.length}</div>
-          <div style="font-size:11px;color:#737475;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Overdue</div>
-        </div>
-        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:18px;text-align:center">
-          <div style="font-size:28px;font-weight:800;color:#17191c">${pending}</div>
-          <div style="font-size:11px;color:#737475;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Follow-ups</div>
+      <div class="owner-signal-card" style="margin-bottom:16px">
+        <div class="owner-signal-label">Client Summary</div>
+        <div class="owner-signal-title">${overdue.length ? `${overdue.length} overdue follow-up${overdue.length > 1 ? 's' : ''} need attention.` : 'Client pipeline is organized and ready for the next touch.'}</div>
+        <div class="owner-signal-copy">${overdue.length ? 'Start with overdue follow-ups, then move through upcoming client tasks and billing conversations.' : 'Select a client to view jobs, invoices, notes, portal access, and follow-up history in one place.'}</div>
+        <div class="owner-inline-list">
+          <div class="owner-inline-row"><span>Total clients</span><strong>${allClientsData.length}</strong></div>
+          <div class="owner-inline-row"><span>Open follow-ups</span><strong>${pending}</strong></div>
+          <div class="owner-inline-row"><span>Recurring invoice plans</span><strong>${recurringData.filter(r => r.active !== false).length}</strong></div>
         </div>
       </div>
       ${overdue.length ? `
-      <div style="background:#fff;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="background:#fff;border:1px solid #fecaca;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow-soft)">
         <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em">⚠ Overdue Follow-ups</div>
         ${allClientsData.flatMap(c =>
           (c.client_follow_ups||[])
@@ -3649,16 +3942,16 @@ async function openClientDetail(clientId) {
 
     <!-- Quick stats -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <div style="background:#f5f5f5;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:20px;font-weight:800;color:#17191c">${jobs.length}</div>
+      <div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#17191c">${jobs.length}</div>
         <div style="font-size:10px;color:#737475;margin-top:2px;font-weight:600;text-transform:uppercase">Jobs</div>
       </div>
-      <div style="background:#f5f5f5;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:20px;font-weight:800;color:#0265dc">$${jobs.reduce((s,j) => s + (parseFloat(j.invoice_amount)||0), 0).toFixed(0)}</div>
+      <div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#0265dc">$${jobs.reduce((s,j) => s + (parseFloat(j.invoice_amount)||0), 0).toFixed(0)}</div>
         <div style="font-size:10px;color:#737475;margin-top:2px;font-weight:600;text-transform:uppercase">Invoiced</div>
       </div>
-      <div style="background:#f5f5f5;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:20px;font-weight:800;color:${jobs.some(j=>j.payment_status!=='paid'&&j.invoice_amount>0)?'#dc2626':'#16a34a'}">
+      <div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:${jobs.some(j=>j.payment_status!=='paid'&&j.invoice_amount>0)?'#dc2626':'#16a34a'}">
           $${jobs.filter(j=>j.payment_status!=='paid').reduce((s,j) => s + (parseFloat(j.invoice_amount)||0), 0).toFixed(0)}
         </div>
         <div style="font-size:10px;color:#737475;margin-top:2px;font-weight:600;text-transform:uppercase">Outstanding</div>
