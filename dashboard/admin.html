@@ -225,31 +225,62 @@
   .topbar h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.05; letter-spacing: -0.04em; }
   .topbar p { color: var(--muted); margin-top: 8px; max-width: 760px; line-height: 1.55; }
   .topbar-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .hero-card {
-    padding: 24px;
+  .overview-band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .overview-card {
+    padding: 20px;
     background:
-      radial-gradient(circle at top right, rgba(126, 224, 197, 0.1), transparent 30%),
-      linear-gradient(160deg, rgba(84, 168, 255, 0.14), rgba(9, 21, 38, 0.96));
+      radial-gradient(circle at top right, rgba(126, 224, 197, 0.08), transparent 36%),
+      linear-gradient(160deg, rgba(84, 168, 255, 0.1), rgba(9, 21, 38, 0.98));
   }
-  .hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(260px, 0.9fr);
-    gap: 18px;
-    align-items: stretch;
+  .overview-card h3 {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    margin-bottom: 14px;
   }
-  .hero-title { font-size: 32px; letter-spacing: -0.04em; max-width: 12ch; }
-  .hero-text { color: #d5e4f7; line-height: 1.65; margin-top: 12px; max-width: 60ch; }
-  .hero-note {
-    padding: 18px;
-    border-radius: 18px;
-    background: rgba(7, 18, 31, 0.72);
-    border: 1px solid rgba(126, 224, 197, 0.14);
+  .overview-list {
     display: grid;
+    gap: 10px;
+  }
+  .overview-item {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
     gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--text);
   }
-  .hero-note h3 { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #9be7d4; }
-  .hero-note p { color: var(--muted); line-height: 1.55; font-size: 14px; }
-  .hero-note strong { font-size: 22px; }
+  .overview-item:hover {
+    border-color: rgba(84, 168, 255, 0.24);
+    background: rgba(84, 168, 255, 0.08);
+  }
+  .overview-copy strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .overview-copy span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .overview-value {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+  }
 
   .section-head {
     display: flex;
@@ -441,14 +472,14 @@
   @media (max-width: 1180px) {
     #shell { grid-template-columns: 1fr; }
     .sidebar { position: static; height: auto; }
-    .workspace-grid, .hero-grid { grid-template-columns: 1fr; }
+    .workspace-grid, .overview-band { grid-template-columns: 1fr; }
     .kpi-grid, .analytics-stats, .invites-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 760px) {
     .content { padding: 16px; }
     .sidebar { padding: 16px; }
     .hero-card, .workspace-card, .card, .stats-card, .a-card { padding: 16px; }
-    .kpi-grid, .analytics-stats, .invites-grid, .detail-grid { grid-template-columns: 1fr; }
+    .kpi-grid, .analytics-stats, .invites-grid, .detail-grid, .overview-band { grid-template-columns: 1fr; }
     .invite-form { grid-template-columns: 1fr; }
     .workspace-top { flex-direction: column; }
   }
@@ -544,16 +575,85 @@
       <span id="pw-msg" class="note-line"></span>
     </div>
 
-    <div class="hero-card">
-      <div class="hero-grid">
-        <div>
-          <div class="hero-title">Internal command center for LinkCrew growth and recovery.</div>
-          <div class="hero-text">Keep the existing admin power, but surface it in a cleaner operational flow: spot account risk fast, open a tenant workspace, act, and move on. This is the admin analogue to Mission Control, not a legacy utility page.</div>
+    <div class="overview-band">
+      <div class="overview-card card">
+        <h3>Needs Attention</h3>
+        <div class="overview-list">
+          <button class="overview-item" onclick="applyQuickFilter('expiring_trials')">
+            <div class="overview-copy">
+              <strong>Trials Expiring Soon</strong>
+              <span>Trial accounts with 3 days or less remaining.</span>
+            </div>
+            <span class="overview-value" id="ov-expiring-trials">0</span>
+          </button>
+          <button class="overview-item" onclick="applyQuickFilter('past_due')">
+            <div class="overview-copy">
+              <strong>Past Due Accounts</strong>
+              <span>Accounts that likely need payment recovery.</span>
+            </div>
+            <span class="overview-value" id="ov-past-due">0</span>
+          </button>
+          <button class="overview-item" onclick="applyQuickFilter('paused_blocked')">
+            <div class="overview-copy">
+              <strong>Paused or Blocked</strong>
+              <span>Restricted tenants needing review before reactivation.</span>
+            </div>
+            <span class="overview-value" id="ov-paused-blocked">0</span>
+          </button>
         </div>
-        <div class="hero-note">
-          <h3>Current Focus</h3>
-          <strong id="hero-focus-value">Accounts</strong>
-          <p id="hero-focus-copy">Review tenant health, subscription status, usage, and admin interventions from a single workspace.</p>
+      </div>
+
+      <div class="overview-card card">
+        <h3>Growth Signals</h3>
+        <div class="overview-list">
+          <button class="overview-item" onclick="switchTab('analytics')">
+            <div class="overview-copy">
+              <strong>New Signups</strong>
+              <span>Recent acquisition within the current analytics range.</span>
+            </div>
+            <span class="overview-value" id="ov-signups">0</span>
+          </button>
+          <button class="overview-item" onclick="applyQuickFilter('recent_activity')">
+            <div class="overview-copy">
+              <strong>Active in 7 Days</strong>
+              <span>Accounts recently using the product.</span>
+            </div>
+            <span class="overview-value" id="ov-recent-activity">0</span>
+          </button>
+          <button class="overview-item" onclick="switchTab('trials')">
+            <div class="overview-copy">
+              <strong>Expired Trials</strong>
+              <span>Recovery-ready accounts already out of trial.</span>
+            </div>
+            <span class="overview-value" id="ov-expired-trials">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="overview-card card">
+        <h3>Revenue Watch</h3>
+        <div class="overview-list">
+          <button class="overview-item" onclick="applyQuickFilter('paying')">
+            <div class="overview-copy">
+              <strong>Current MRR</strong>
+              <span>Live monthly recurring revenue across paid plans.</span>
+            </div>
+            <span class="overview-value" id="ov-current-mrr">$0</span>
+          </button>
+          <button class="overview-item" onclick="applyQuickFilter('paying')">
+            <div class="overview-copy">
+              <strong>Projected MRR</strong>
+              <span>Current MRR plus projected trial conversion.</span>
+            </div>
+            <span class="overview-value" id="ov-projected-mrr">$0</span>
+          </button>
+          <button class="overview-item" onclick="switchTab('invites')">
+            <div class="overview-copy">
+              <strong>Invite Link Uses</strong>
+              <span>Total invite redemptions across active campaigns.</span>
+            </div>
+            <span class="overview-value" id="ov-invite-uses">0</span>
+          </button>
         </div>
       </div>
     </div>
@@ -580,6 +680,9 @@
             <option value="past_due">Past due</option>
             <option value="paused">Paused</option>
             <option value="blocked">Blocked</option>
+            <option value="paused_blocked">Paused or blocked</option>
+            <option value="expiring_trials">Trials expiring soon</option>
+            <option value="recent_activity">Active in 7 days</option>
           </select>
           <select class="field-select" id="plan-filter" onchange="renderTable()">
             <option value="all">All plans</option>
@@ -783,25 +886,7 @@ let invitesCache = [];
 let selectedTenantId = null;
 let activeTab = 'customers';
 let currentRange = 7;
-
-const HERO_COPY = {
-  customers: {
-    value: 'Accounts',
-    copy: 'Review tenant health, subscription status, usage, and admin interventions from a single workspace.'
-  },
-  invites: {
-    value: 'Invite Links',
-    copy: 'Create targeted invite campaigns, track redemptions, and manage link lifespan without leaving ops.'
-  },
-  trials: {
-    value: 'Trial Recovery',
-    copy: 'Focus outreach on expired trials with meaningful usage signals before they go cold.'
-  },
-  analytics: {
-    value: 'Analytics',
-    copy: 'Read platform demand, owner engagement, and portal usage in one reporting surface.'
-  }
-};
+let currentAdminAnalytics = null;
 
 document.getElementById('current-date-chip').textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -909,10 +994,6 @@ function switchTab(name) {
   document.querySelectorAll('.panel').forEach(panel => panel.classList.add('hidden'));
   document.getElementById(`panel-${name}`).classList.remove('hidden');
 
-  const hero = HERO_COPY[name];
-  document.getElementById('hero-focus-value').textContent = hero.value;
-  document.getElementById('hero-focus-copy').textContent = hero.copy;
-
   if (name === 'trials') renderTrials();
   if (name === 'analytics') loadAnalytics();
 }
@@ -927,6 +1008,7 @@ async function loadTenants() {
   renderStats(mrrData);
   renderTable();
   renderTrials();
+  renderOverviewBand(mrrData);
 }
 
 function renderStats(mrrData) {
@@ -958,6 +1040,54 @@ function renderStats(mrrData) {
   document.getElementById('sb-paying').textContent = active;
   document.getElementById('sb-trials').textContent = trialing;
   document.getElementById('sb-mrr').textContent = `$${current.toLocaleString()}`;
+}
+
+function renderOverviewBand(mrrData) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+  const expiringTrials = tenants.filter(t => t.subscription_status === 'trialing' && typeof t.trial_days_left === 'number' && t.trial_days_left >= 0 && t.trial_days_left <= 3).length;
+  const pastDue = tenants.filter(t => t.subscription_status === 'past_due').length;
+  const pausedBlocked = tenants.filter(t => t.paused || t.blocked).length;
+  const recentActivity = tenants.filter(t => t.last_seen_at && new Date(t.last_seen_at) > sevenDaysAgo).length;
+  const expiredTrials = getUnconvertedTrials().length;
+  const inviteUses = invitesCache.reduce((sum, inv) => sum + (inv.use_count || 0), 0);
+  const current = mrrData?.current ?? 0;
+  const projected = mrrData?.projected ?? 0;
+
+  document.getElementById('ov-expiring-trials').textContent = expiringTrials;
+  document.getElementById('ov-past-due').textContent = pastDue;
+  document.getElementById('ov-paused-blocked').textContent = pausedBlocked;
+  document.getElementById('ov-signups').textContent = currentAdminAnalytics?.signups?.toLocaleString?.() ?? '0';
+  document.getElementById('ov-recent-activity').textContent = recentActivity;
+  document.getElementById('ov-expired-trials').textContent = expiredTrials;
+  document.getElementById('ov-current-mrr').textContent = `$${current.toLocaleString()}`;
+  document.getElementById('ov-projected-mrr').textContent = `$${projected.toLocaleString()}`;
+  document.getElementById('ov-invite-uses').textContent = inviteUses;
+}
+
+function applyQuickFilter(type) {
+  switchTab('customers');
+  document.getElementById('status-filter').value = 'all';
+  document.getElementById('plan-filter').value = 'all';
+  document.getElementById('search').value = '';
+
+  if (type === 'past_due') {
+    document.getElementById('status-filter').value = 'past_due';
+  } else if (type === 'paused_blocked') {
+    document.getElementById('status-filter').value = 'paused_blocked';
+  } else if (type === 'paying') {
+    document.getElementById('status-filter').value = 'active';
+  } else if (type === 'expiring_trials') {
+    document.getElementById('status-filter').value = 'expiring_trials';
+  } else if (type === 'recent_activity') {
+    document.getElementById('status-filter').value = 'recent_activity';
+  }
+
+  renderTable();
+  const filtered = getFilteredTenants();
+  if (filtered.length) {
+    selectedTenantId = filtered[0].id;
+    renderTable();
+  }
 }
 
 function timeSince(dateStr) {
@@ -996,11 +1126,17 @@ function getFilteredTenants() {
   const q = (document.getElementById('search').value || '').toLowerCase();
   const status = document.getElementById('status-filter').value;
   const plan = document.getElementById('plan-filter').value;
+  const recentCutoff = new Date(Date.now() - 7 * 86400000);
 
   return tenants.filter(t => {
     const matchesText = (t.company_name || '').toLowerCase().includes(q) || (t.owner_email || '').toLowerCase().includes(q);
     const currentStatus = statusLabel(t);
-    const matchesStatus = status === 'all' || currentStatus === status;
+    const matchesStatus =
+      status === 'all' ||
+      currentStatus === status ||
+      (status === 'paused_blocked' && (t.paused || t.blocked)) ||
+      (status === 'expiring_trials' && t.subscription_status === 'trialing' && typeof t.trial_days_left === 'number' && t.trial_days_left >= 0 && t.trial_days_left <= 3) ||
+      (status === 'recent_activity' && t.last_seen_at && new Date(t.last_seen_at) > recentCutoff);
     const matchesPlan = plan === 'all' || (t.plan || 'free') === plan;
     return matchesText && matchesStatus && matchesPlan;
   });
@@ -1300,6 +1436,7 @@ async function loadInvites() {
   const res = await fetch('/api/admin/invites', { headers: { Authorization: `Bearer ${token}` } });
   invitesCache = await res.json();
   renderInvites(invitesCache);
+  renderOverviewBand();
 }
 
 function renderInvites(invites) {
@@ -1486,6 +1623,8 @@ async function loadAnalytics() {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) return;
   const d = await res.json();
+  currentAdminAnalytics = d;
+  renderOverviewBand();
 
   const conversionColor = parseFloat(d.conversionRate) >= 5 ? '#86efac' : parseFloat(d.conversionRate) >= 2 ? '#fde68a' : '#fca5a5';
 
