@@ -433,6 +433,14 @@
     color: var(--muted);
   }
   .analytics-toolbar, .trials-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .trials-toolbar-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
   .range-btn {
     border: 1px solid var(--border);
     background: rgba(255,255,255,0.03);
@@ -801,8 +809,24 @@
           <p id="trials-count">Accounts whose trial expired without converting to paid.</p>
         </div>
         <div class="trials-actions">
-          <button class="btn-ghost" onclick="copyAllEmails()">Copy All Emails</button>
+          <button class="btn-ghost" onclick="copyAllEmails()">Copy Emails</button>
+          <button class="btn-secondary" onclick="draftRecoveryEmail()">Draft Re-Engagement Email</button>
           <button class="btn-primary" onclick="exportCSV()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="trials-toolbar-row">
+        <div class="toolbar-left">
+          <select class="field-select" id="trial-filter" onchange="renderTrials()">
+            <option value="all">All expired trials</option>
+            <option value="recent">Seen in last 7 days</option>
+            <option value="high_usage">High usage: 5+ jobs</option>
+            <option value="larger_crews">Larger crews: 3+ team members</option>
+            <option value="cold">Cold: inactive 14+ days</option>
+          </select>
+        </div>
+        <div class="toolbar-right">
+          <input class="field" id="trial-coupon" placeholder="Coupon code, e.g. WELCOME20" />
         </div>
       </div>
 
@@ -1540,16 +1564,39 @@ function getUnconvertedTrials() {
   ).sort((a, b) => new Date(b.trial_ends_at) - new Date(a.trial_ends_at));
 }
 
-function renderTrials() {
+function getFilteredTrials() {
   const trials = getUnconvertedTrials();
+  const filter = document.getElementById('trial-filter')?.value || 'all';
+  const recentCutoff = new Date(Date.now() - 7 * 86400000);
+  const coldCutoff = new Date(Date.now() - 14 * 86400000);
+
+  if (filter === 'recent') {
+    return trials.filter(t => t.last_seen_at && new Date(t.last_seen_at) > recentCutoff);
+  }
+  if (filter === 'high_usage') {
+    return trials.filter(t => (t.job_count ?? 0) >= 5);
+  }
+  if (filter === 'larger_crews') {
+    return trials.filter(t => (t.employee_count ?? 0) >= 3);
+  }
+  if (filter === 'cold') {
+    return trials.filter(t => !t.last_seen_at || new Date(t.last_seen_at) < coldCutoff);
+  }
+  return trials;
+}
+
+function renderTrials() {
+  const allTrials = getUnconvertedTrials();
+  const trials = getFilteredTrials();
   const tbody = document.getElementById('trials-tbody');
   const countEl = document.getElementById('trials-count');
   const recentCutoff = new Date(Date.now() - 7 * 86400000);
-  const recent = trials.filter(t => t.last_seen_at && new Date(t.last_seen_at) > recentCutoff).length;
-  const maxJobs = trials.reduce((max, t) => Math.max(max, t.job_count ?? 0), 0);
-  const maxCrew = trials.reduce((max, t) => Math.max(max, t.employee_count ?? 0), 0);
-  countEl.textContent = `${trials.length} account${trials.length !== 1 ? 's' : ''} whose trial expired without converting to paid.`;
-  document.getElementById('trials-expired-count').textContent = trials.length;
+  const recent = allTrials.filter(t => t.last_seen_at && new Date(t.last_seen_at) > recentCutoff).length;
+  const maxJobs = allTrials.reduce((max, t) => Math.max(max, t.job_count ?? 0), 0);
+  const maxCrew = allTrials.reduce((max, t) => Math.max(max, t.employee_count ?? 0), 0);
+  const filterLabel = document.getElementById('trial-filter')?.selectedOptions?.[0]?.textContent || 'All expired trials';
+  countEl.textContent = `${trials.length} account${trials.length !== 1 ? 's' : ''} in "${filterLabel}" out of ${allTrials.length} expired trial${allTrials.length === 1 ? '' : 's'}.`;
+  document.getElementById('trials-expired-count').textContent = allTrials.length;
   document.getElementById('trials-recent-count').textContent = recent;
   document.getElementById('trials-jobs-count').textContent = maxJobs;
   document.getElementById('trials-crew-count').textContent = maxCrew;
@@ -1576,9 +1623,9 @@ function renderTrials() {
 }
 
 function copyAllEmails() {
-  const trials = getUnconvertedTrials();
+  const trials = getFilteredTrials();
   if (!trials.length) {
-    alert('No unconverted trials to copy');
+    alert('No expired trial emails in the current filter');
     return;
   }
   const emails = trials.map(t => t.owner_email).filter(Boolean).join(', ');
@@ -1586,9 +1633,9 @@ function copyAllEmails() {
 }
 
 function exportCSV() {
-  const trials = getUnconvertedTrials();
+  const trials = getFilteredTrials();
   if (!trials.length) {
-    alert('No unconverted trials to export');
+    alert('No expired trials in the current filter');
     return;
   }
   const rows = [
@@ -1610,6 +1657,33 @@ function exportCSV() {
   a.download = `unconverted-trials-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function draftRecoveryEmail() {
+  const trials = getFilteredTrials().filter(t => t.owner_email);
+  if (!trials.length) {
+    alert('No expired trial accounts with email addresses in the current filter');
+    return;
+  }
+  const coupon = (document.getElementById('trial-coupon')?.value || '').trim();
+  const subject = coupon
+    ? `A welcome-back offer for LinkCrew: ${coupon}`
+    : 'Come back to LinkCrew with a reactivation offer';
+  const body = [
+    'Hi,',
+    '',
+    'I noticed your LinkCrew trial ended before you had a chance to fully get set up.',
+    'If you want to get back in and finish building out your workflow, I can reopen the door for you.',
+    coupon ? `Use coupon code ${coupon} when you reactivate and I will make sure the offer is applied.` : 'Reply here if you want a reactivation offer and I can get you set back up.',
+    '',
+    'If you want help getting your jobs, crew, calendar, and client workflow dialed in, I can help with that too.',
+    '',
+    'Best,',
+    'LinkCrew'
+  ].join('\n');
+  const bcc = trials.map(t => t.owner_email).join(',');
+  const mailto = `mailto:?bcc=${encodeURIComponent(bcc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
 }
 
 function setRange(days) {
