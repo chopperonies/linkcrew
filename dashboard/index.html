@@ -1609,7 +1609,42 @@
 
 <!-- Settings view -->
 <div id="settings-view" style="display:none">
-  <div style="max-width:640px;margin:0 auto;padding:32px 24px">
+  <div class="owner-page">
+  <div class="owner-page-shell">
+    <div class="owner-page-header">
+      <div class="owner-page-copy">
+        <div class="owner-page-eyebrow">Settings</div>
+        <div class="owner-page-title">Configure the business, not just the account.</div>
+        <div class="owner-page-subtitle">This page should work like an owner admin center: branding, automations, crew onboarding, and account-level controls in one organized place.</div>
+      </div>
+      <div class="owner-page-actions">
+        <button class="owner-btn" onclick="loadCrewInviteUrl()">Refresh Invite</button>
+        <button class="owner-btn primary" onclick="saveSettings()">Save Company Info</button>
+      </div>
+    </div>
+
+    <div class="owner-kpi-grid">
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Current Plan</div>
+        <div class="owner-kpi-value" id="settings-plan-card">—</div>
+        <div class="owner-kpi-meta">Active subscription tier for this owner account.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Voice Bot</div>
+        <div class="owner-kpi-value" id="settings-voice-card">—</div>
+        <div class="owner-kpi-meta">Whether Choppy is currently active on your phone line.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Photo Retention</div>
+        <div class="owner-kpi-value" id="settings-photo-card">—</div>
+        <div class="owner-kpi-meta">How long uploaded site photos are kept before cleanup.</div>
+      </div>
+      <div class="owner-kpi-card">
+        <div class="owner-kpi-label">Crew Invite</div>
+        <div class="owner-kpi-value" id="settings-invite-card">—</div>
+        <div class="owner-kpi-meta">Current state of the self-serve crew registration link.</div>
+      </div>
+    </div>
 
     <!-- Logo -->
     <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
@@ -1805,6 +1840,7 @@
       </div>
     </div>
 
+  </div>
   </div>
 </div>
 
@@ -2266,14 +2302,18 @@ async function loadCrewInviteUrl() {
   const input = document.getElementById('crew-invite-url');
   input.value = '';
   input.placeholder = 'No link generated yet';
+  setText('settings-invite-card', 'Missing');
   try {
     const res = await authFetch('/api/crew-invite');
     const data = await res.json();
     if (data.url) {
       input.value = data.url;
       input.placeholder = '';
+      setText('settings-invite-card', 'Ready');
     }
-  } catch { /* leave placeholder */ }
+  } catch {
+    setText('settings-invite-card', 'Error');
+  }
 }
 
 async function generateCrewInviteUrl() {
@@ -2286,6 +2326,7 @@ async function generateCrewInviteUrl() {
     const data = await res.json();
     if (data.url) {
       input.value = data.url;
+      setText('settings-invite-card', 'Ready');
       genBtn.textContent = '✓ Generated';
       setTimeout(() => { genBtn.textContent = 'Generate New Link'; genBtn.disabled = false; }, 2000);
     } else {
@@ -4017,6 +4058,9 @@ async function loadSettings() {
   if (settingsLoaded) return;
   const res = await authFetch('/api/settings');
   const data = await res.json();
+  setText('settings-plan-card', String(currentPlan || 'beta').toUpperCase());
+  setText('settings-voice-card', data.voicebot_enabled ? 'Active' : 'Off');
+  setText('settings-photo-card', data.photo_expiry_days ? `${data.photo_expiry_days}d` : 'Forever');
   document.getElementById('set-company-name').value = data.company_name || '';
   document.getElementById('set-phone').value = data.phone || '';
   document.getElementById('set-address').value = data.address || '';
@@ -4059,6 +4103,7 @@ async function savePhotoExpiry() {
   statusEl.style.color = '#737475'; statusEl.textContent = 'Saving…';
   const res = await authFetch('/api/settings', { method: 'PATCH', body: JSON.stringify({ photo_expiry_days: photo_expiry_days ? parseInt(photo_expiry_days) : null }) });
   if (res.ok) {
+    setText('settings-photo-card', photo_expiry_days ? `${photo_expiry_days}d` : 'Forever');
     statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Saved';
     setTimeout(() => statusEl.textContent = '', 3000);
     settingsLoaded = false;
@@ -4094,6 +4139,7 @@ async function saveVoicebot() {
   statusEl.style.color='#4ade80'; statusEl.textContent='✓ Voice bot activated';
   document.getElementById('voicebot-status-badge').style.display = 'inline';
   document.getElementById('vb-disable-btn').style.display = 'inline-block';
+  setText('settings-voice-card', 'Active');
   document.getElementById('vb-token').value = '';
   settingsLoaded = false;
 }
@@ -4106,6 +4152,7 @@ async function disableVoicebot() {
     document.getElementById('vb-disable-btn').style.display = 'none';
     document.getElementById('vb-sid').value = '';
     document.getElementById('vb-phone').value = '';
+    setText('settings-voice-card', 'Off');
     document.getElementById('vb-status').style.color = '#737475';
     document.getElementById('vb-status').textContent = 'Voice bot disabled';
     settingsLoaded = false;
