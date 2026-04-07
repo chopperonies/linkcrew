@@ -3543,6 +3543,29 @@ function shiftTimeByHour(timeValue, offsetHours) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+function shiftTimeByMinutes(timeValue, offsetMinutes) {
+  const [hourStr, minuteStr] = timeValue.split(':');
+  const date = new Date();
+  date.setHours(parseInt(hourStr, 10), parseInt(minuteStr || '0', 10), 0, 0);
+  date.setMinutes(date.getMinutes() + offsetMinutes);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function syncQuickAddDurationFromServices() {
+  const startInput = document.getElementById('day-quick-start');
+  const endInput = document.getElementById('day-quick-end');
+  if (!startInput || !endInput) return;
+  const selectedServices = [...document.querySelectorAll('.day-quick-service:checked')];
+  if (!selectedServices.length) return;
+  const totalDuration = selectedServices.reduce((sum, cb) => {
+    const service = calServices.find(s => s.id === cb.value);
+    return sum + (service?.duration_minutes || 0);
+  }, 0);
+  if (totalDuration > 0) {
+    endInput.value = shiftTimeByMinutes(startInput.value || '09:00', totalDuration);
+  }
+}
+
 function getCalendarTimelineMarkup(dayAppts, { emptyCopy = 'No appointments scheduled for this day yet.' } = {}) {
   const hours = Array.from({ length: 17 }, (_, index) => index + 6);
   return hours.map(hour => {
@@ -3770,7 +3793,7 @@ function openCalendarDayModal() {
   const clientOptions = (allClientsData || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   const serviceOptions = calServices.length ? calServices.map(s => `
     <label style="display:flex;align-items:center;gap:6px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:#17191c">
-      <input type="checkbox" value="${s.id}" class="day-quick-service" style="cursor:pointer"> ${s.name}${s.price ? ' - $' + parseFloat(s.price).toFixed(2) : ''}
+      <input type="checkbox" value="${s.id}" class="day-quick-service" onchange="syncQuickAddDurationFromServices()" style="cursor:pointer"> ${s.name}${s.price ? ' - $' + parseFloat(s.price).toFixed(2) : ''}${s.duration_minutes ? ' · ' + s.duration_minutes + ' min' : ''}
     </label>
   `).join('') : '<div style="font-size:12px;color:#949596;font-style:italic">No services created yet.</div>';
   bodyEl.innerHTML = `
@@ -3791,7 +3814,7 @@ function openCalendarDayModal() {
       </div>
       <div class="form-group" style="margin-bottom:0"><label>Title *</label><input type="text" id="day-quick-title" placeholder="e.g. Roof inspection"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group" style="margin-bottom:0"><label>Start</label><input type="time" id="day-quick-start" value="09:00"></div>
+        <div class="form-group" style="margin-bottom:0"><label>Start</label><input type="time" id="day-quick-start" value="09:00" onchange="syncQuickAddDurationFromServices()"></div>
         <div class="form-group" style="margin-bottom:0"><label>End</label><input type="time" id="day-quick-end" value="10:00"></div>
       </div>
       <div class="form-group" style="margin-bottom:0">
