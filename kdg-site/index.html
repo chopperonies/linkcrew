@@ -315,6 +315,71 @@
       color: var(--muted);
       line-height: 1.55;
     }
+    .customer-strip {
+      padding: 18px 48px 0;
+    }
+    .customer-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(220px, 0.38fr) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .customer-intro {
+      display: grid;
+      gap: 10px;
+    }
+    .customer-label {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .customer-intro h2 {
+      font-size: clamp(24px, 3.4vw, 38px);
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+    }
+    .customer-intro p {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+      max-width: 44ch;
+    }
+    .customer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .customer-card {
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 8px;
+    }
+    .customer-name {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+    .customer-role {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-3);
+    }
+    .customer-note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
 
     section {
       padding: 78px 48px;
@@ -731,8 +796,8 @@
 
     @media (max-width: 1080px) {
       nav { padding: 16px 22px; }
-      .hero, .proof-strip, section, footer { padding-left: 22px; padding-right: 22px; }
-      .hero-grid, .cases-grid, .contact-shell { grid-template-columns: 1fr; }
+      .hero, .proof-strip, .customer-strip, section, footer { padding-left: 22px; padding-right: 22px; }
+      .hero-grid, .cases-grid, .contact-shell, .customer-shell { grid-template-columns: 1fr; }
       .proof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .offer-grid { grid-template-columns: 1fr; }
       .reason-grid, .process-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -741,7 +806,7 @@
       .nav-links { display: none; }
       .hero { padding-top: 62px; }
       .hero h1 { max-width: none; }
-      .proof-grid, .meta-grid, .case-metrics, .reason-grid, .process-grid, .form-row { grid-template-columns: 1fr; }
+      .proof-grid, .meta-grid, .case-metrics, .reason-grid, .process-grid, .form-row, .customer-grid { grid-template-columns: 1fr; }
       .contact-shell { padding: 18px; }
       .contact-form-wrap { padding: 18px; }
       .footer-inner { flex-direction: column; align-items: flex-start; }
@@ -787,27 +852,17 @@
       <div class="hero-meta">
         <div class="meta-card">
           <h2>What we actually put into production.</h2>
-          <p>We focus on systems that touch the messy middle of operations: intake, routing, field coordination, reporting, and customer communication.</p>
+          <p>We build the operational layer where requests come in, work gets assigned, teams respond, and managers need visibility.</p>
           <div class="meta-grid">
             <div class="signal-card">
-              <div class="signal-label">Primary Build Types</div>
-              <div class="signal-value">4</div>
-              <div class="signal-note">AI voice agents, workflow automation, internal dashboards, and custom SaaS products.</div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-label">Launch Focus</div>
-              <div class="signal-value">0→1</div>
-              <div class="signal-note">We move from concept through live deployment instead of stopping at architecture decks.</div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-label">Ops Bias</div>
-              <div class="signal-value">High</div>
-              <div class="signal-note">Best fit for businesses with field crews, recurring work, inbound calls, or fragmented workflows.</div>
+              <div class="signal-label">Core Systems</div>
+              <div class="signal-value">AI + Ops</div>
+              <div class="signal-note">Voice agents, workflow automation, internal dashboards, and custom SaaS.</div>
             </div>
             <div class="signal-card">
               <div class="signal-label">Current Product</div>
               <div class="signal-value">LinkCrew</div>
-              <div class="signal-note">Live field-operations software built from the same studio and engineering practice.</div>
+              <div class="signal-note">A live field-operations platform built and maintained by the same team.</div>
             </div>
           </div>
         </div>
@@ -818,9 +873,9 @@
   <div class="proof-strip">
     <div class="proof-grid">
       <div class="proof-card">
-        <div class="proof-label">Build Profile</div>
+        <div class="proof-label">Build Focus</div>
         <div class="proof-value">AI + SaaS</div>
-        <div class="proof-note">Automation systems, internal tools, customer-facing platforms, and operational dashboards.</div>
+        <div class="proof-note">Automation systems, internal tools, and customer-facing software built for real operations.</div>
       </div>
       <div class="proof-card">
         <div class="proof-label">Primary Buyers</div>
@@ -830,12 +885,29 @@
       <div class="proof-card">
         <div class="proof-label">Delivery Style</div>
         <div class="proof-value">Hands-On</div>
-        <div class="proof-note">Scoped builds, fast iteration, direct engineering involvement, and live deployment support.</div>
+        <div class="proof-note">Scoped builds, direct engineering involvement, and live deployment support instead of slideware.</div>
       </div>
-      <div class="proof-card">
-        <div class="proof-label">Positioning</div>
-        <div class="proof-value">Production</div>
-        <div class="proof-note">Less slideware, more software. The goal is systems your team actually uses day to day.</div>
+    </div>
+  </div>
+
+  <div class="customer-strip">
+    <div class="customer-shell">
+      <div class="customer-intro">
+        <div class="customer-label">Customers And Environments</div>
+        <h2>Work that lives in real operating environments.</h2>
+        <p>KDG supports systems that have to hold up in production, including high-performance compute environments and field-service workflows.</p>
+      </div>
+      <div class="customer-grid">
+        <div class="customer-card">
+          <div class="customer-role">Current Support</div>
+          <div class="customer-name">Cerebras</div>
+          <div class="customer-note">Supporting Cerebras.ai across data center and lab environments, with direct exposure to the operational realities behind high-performance infrastructure.</div>
+        </div>
+        <div class="customer-card">
+          <div class="customer-role">Owned Product</div>
+          <div class="customer-name">LinkCrew</div>
+          <div class="customer-note">A live field-operations platform used to validate scheduling, workflow, client, and admin systems in production.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -847,14 +919,14 @@
           <div class="section-kicker">What We Build</div>
           <h2 class="section-title">Three delivery tracks, one operating mindset.</h2>
         </div>
-        <p class="section-sub">KDG is strongest when the problem is operationally real: too many handoffs, too much manual work, or a workflow that off-the-shelf software does not fit cleanly.</p>
+        <p class="section-sub">We focus on operationally real problems: too many handoffs, too much manual work, or a workflow generic software does not fit cleanly.</p>
       </div>
 
       <div class="offer-grid">
         <div class="offer-card">
           <div class="offer-eyebrow">Automation Systems</div>
           <h3>AI workflows that reduce repetitive labor.</h3>
-          <p>Automate inbound requests, dispatching, reporting, quoting, follow-up, document flow, and the glue work your team keeps doing manually.</p>
+          <p>Automate intake, dispatching, reporting, follow-up, document flow, and the glue work your team keeps doing manually.</p>
           <div class="offer-list">
             <div>Lead intake and routing logic</div>
             <div>Scheduling and follow-up automation</div>
@@ -876,7 +948,7 @@
         <div class="offer-card">
           <div class="offer-eyebrow">Custom Software</div>
           <h3>SaaS and internal tools built around your actual process.</h3>
-          <p>When patched tools stop fitting, we build the operating layer: role-based dashboards, mobile workflows, reporting, and customer-facing portals.</p>
+          <p>When patched tools stop fitting, we build the operating layer: dashboards, mobile workflows, reporting, and customer-facing portals.</p>
           <div class="offer-list">
             <div>Owner and field dashboards</div>
             <div>Mobile-friendly ops workflows</div>
@@ -894,7 +966,7 @@
           <div class="section-kicker">Live Work</div>
           <h2 class="section-title">What this looks like when it leaves the whiteboard.</h2>
         </div>
-        <p class="section-sub">KDG is not only selling services. We build and operate our own software, which keeps the work grounded in what survives production, users, support, and iteration.</p>
+        <p class="section-sub">We build and operate our own software, which keeps the work grounded in what survives production, users, support, and iteration.</p>
       </div>
 
       <div class="cases-grid">
@@ -922,9 +994,8 @@
             </div>
           </div>
           <div class="case-list">
-            <div>AI voice receptionist, calendar planning, recurring billing, and field reporting all feed the same business workflow.</div>
-            <div>Mission Control, owner dashboard, and internal admin surfaces are all actively maintained as product-grade systems.</div>
-            <div>Useful example if you need internal ops software, automation-heavy workflows, or a system that blends SaaS + operational execution.</div>
+            <div>AI voice reception, scheduling, recurring billing, and field reporting feed the same business workflow.</div>
+            <div>Mission Control, owner dashboard, and admin surfaces are maintained as product-grade systems.</div>
           </div>
         </div>
 
@@ -981,11 +1052,6 @@
           <div class="reason-stat">0→1</div>
           <h3>Product-build mindset</h3>
           <p>We can move from concept and scoping into a working system without needing a separate strategy firm, design shop, and dev team.</p>
-        </div>
-        <div class="section-card reason-card">
-          <div class="reason-stat">AI</div>
-          <h3>AI where it helps</h3>
-          <p>We use AI where it removes labor or improves response quality, not just because it sounds modern in a deck.</p>
         </div>
         <div class="section-card reason-card">
           <div class="reason-stat">Live</div>
