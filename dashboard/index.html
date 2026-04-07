@@ -959,13 +959,85 @@
 
 <!-- Team view -->
 <div id="team-view" style="display:none">
-  <div style="max-width:640px;margin:0 auto;padding:32px 24px">
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:15px;font-weight:700;color:#17191c">Team Members</div>
-        <button onclick="openTeam()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">+ Add Employee</button>
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div class="owner-page-eyebrow">Crew Management</div>
+          <div class="owner-page-title">Manage the people doing the work, not just the jobs.</div>
+          <div class="owner-page-subtitle">This page should tell the owner who is on the team, who is in the field, and where new invites or assignments are needed.</div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="goToCrewInvite()">Crew Invite</button>
+          <button class="owner-btn primary" onclick="openTeam()">+ Add Employee</button>
+        </div>
       </div>
-      <div id="team-list-inline"><div class="empty" style="padding:12px">Loading...</div></div>
+
+      <div class="owner-kpi-grid">
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Team Members</div>
+          <div class="owner-kpi-value" id="team-total-count">—</div>
+          <div class="owner-kpi-meta">Everyone currently added to this owner account.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Crew Roles</div>
+          <div class="owner-kpi-value" id="team-crew-count">—</div>
+          <div class="owner-kpi-meta">Field crew available for assignments and mobile updates.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Managers</div>
+          <div class="owner-kpi-value" id="team-manager-count">—</div>
+          <div class="owner-kpi-meta">Managers or owners helping run jobs and scheduling.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Capacity Left</div>
+          <div class="owner-kpi-value" id="team-capacity-count">—</div>
+          <div class="owner-kpi-meta">Remaining crew seats before this plan hits its limit.</div>
+        </div>
+      </div>
+
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Roster</div>
+                <div class="owner-card-headline">Team members</div>
+                <div class="owner-card-sub">Keep the roster clean and role-aware so jobs, check-ins, and supply requests always tie back to the right person.</div>
+              </div>
+            </div>
+            <div id="team-list-inline"><div class="empty" style="padding:12px">Loading...</div></div>
+          </div>
+        </div>
+
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Team Snapshot</div>
+            <div class="owner-signal-title" id="team-attention-title">Loading current roster.</div>
+            <div class="owner-signal-copy" id="team-attention-copy">Once crew data loads, this panel will summarize role mix and remaining team capacity.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Owners and managers</span><strong id="team-inline-leads">—</strong></div>
+              <div class="owner-inline-row"><span>Field crew</span><strong id="team-inline-crew">—</strong></div>
+              <div class="owner-inline-row"><span>Seats remaining</span><strong id="team-inline-capacity">—</strong></div>
+            </div>
+          </div>
+
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Workflow</div>
+                <div class="owner-card-headline">Crew onboarding</div>
+                <div class="owner-card-sub">New crew should get invited, installed on the mobile app, and assigned to work without forcing the owner through multiple screens.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Invite link</span><strong>Share from settings</strong></div>
+              <div class="owner-inline-row"><span>App setup</span><strong>Mobile sign-in after invite</strong></div>
+              <div class="owner-inline-row"><span>Next step</span><strong>Assign crew to live jobs</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2676,7 +2748,28 @@ async function loadTeamInline() {
     const res = await authFetch('/api/employees');
     const employees = await res.json();
     currentEmployeeCount = employees.length;
-    if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Click "+ Add Employee" to get started.</div>'; return; }
+    const crewCount = employees.filter(e => e.role === 'crew').length;
+    const managerCount = employees.filter(e => e.role === 'manager' || e.role === 'owner').length;
+    const capacityLeft = Math.max(0, (currentMaxUsers || 0) - employees.length);
+    setText('team-total-count', employees.length);
+    setText('team-crew-count', crewCount);
+    setText('team-manager-count', managerCount);
+    setText('team-capacity-count', currentMaxUsers ? capacityLeft : '—');
+    setText('team-inline-leads', managerCount);
+    setText('team-inline-crew', crewCount);
+    setText('team-inline-capacity', currentMaxUsers ? capacityLeft : '—');
+
+    if (!employees.length) {
+      setText('team-attention-title', 'No employees added yet.');
+      setText('team-attention-copy', 'Start by adding your first crew member or sharing the invite flow so field staff can access the mobile app.');
+      el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Click "+ Add Employee" to get started.</div>';
+      return;
+    }
+
+    setText('team-attention-title', capacityLeft === 0 && currentMaxUsers ? 'Team capacity is currently full.' : `${crewCount} crew member${crewCount === 1 ? '' : 's'} ready for job assignments.`);
+    setText('team-attention-copy', capacityLeft === 0 && currentMaxUsers
+      ? 'This plan is at its user limit. Upgrade before adding more crew to keep onboarding simple.'
+      : 'Use this roster to manage roles, remove inactive workers, and keep the field team cleanly assigned.');
     el.innerHTML = employees.map(e => `
       <div class="team-row" id="emp-row-inline-${e.id}">
         <div class="team-avatar">${(e.name||'?')[0].toUpperCase()}</div>
