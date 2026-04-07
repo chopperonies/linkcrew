@@ -57,11 +57,13 @@
     .nav-links a { color: var(--sub); font-size: 14px; font-weight: 700; text-decoration: none; transition: color 0.2s; }
     .nav-links a:hover { color: var(--text); }
     .nav-cta {
-      background: var(--accent); color: #111; border: none;
-      padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 900;
-      cursor: pointer; text-decoration: none; transition: background 0.2s; font-family: var(--font-body);
+      background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff; border: none;
+      padding: 11px 16px; border-radius: 999px; font-size: 12px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; transition: transform 0.18s, box-shadow 0.18s, filter 0.18s; font-family: var(--font-body);
+      box-shadow: 0 10px 24px rgba(37,99,235,0.18);
     }
-    .nav-cta:hover { background: var(--accent-hover); }
+    .nav-cta:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 14px 30px rgba(37,99,235,0.24); }
 
     /* ── Scroll reveal ── */
     .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.55s ease, transform 0.55s ease; }
@@ -121,11 +123,13 @@
     }
     .hero-ctas { display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 0; }
     .btn-primary {
-      background: var(--accent); color: #111; border: none;
-      padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 900;
-      cursor: pointer; text-decoration: none; transition: background 0.2s, transform 0.15s; font-family: var(--font-body);
+      background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff; border: none;
+      padding: 12px 18px; border-radius: 999px; font-size: 12px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; transition: transform 0.18s, box-shadow 0.18s, filter 0.18s; font-family: var(--font-body);
+      box-shadow: 0 12px 28px rgba(37,99,235,0.2);
     }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 16px 34px rgba(37,99,235,0.24); }
     .btn-secondary {
       background: #fff; color: var(--text); border: 1.5px solid rgba(0,0,0,0.2);
       padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 700;
@@ -847,7 +851,6 @@
         </p>
         <div class="hero-ctas reveal reveal-delay-3">
           <a class="btn-primary" href="#contact">Start a Project</a>
-          <a class="btn-secondary" href="#services">See What We Do</a>
         </div>
       </div>
 
