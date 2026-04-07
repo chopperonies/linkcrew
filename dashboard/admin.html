@@ -789,7 +789,7 @@
         <div class="card-header">
           <div>
             <div class="card-title">Create Invite Link</div>
-            <div class="card-sub">Tune trial duration, expiration date, and max-use limit before generating the share link.</div>
+            <div class="card-sub">Tune trial duration, expiration date, max-use limit, and invited access tier before generating the share link.</div>
           </div>
         </div>
         <div class="invite-form">
@@ -809,6 +809,16 @@
             <label>Expires</label>
             <input class="field" id="inv-expires" type="date" />
           </div>
+          <div class="field-group">
+            <label>Access Tier</label>
+            <select class="field-select" id="inv-plan">
+              <option value="free">Free</option>
+              <option value="solo">Solo</option>
+              <option value="team" selected>Team</option>
+              <option value="pro">Pro</option>
+              <option value="business">Business</option>
+            </select>
+          </div>
           <button class="btn-primary" onclick="createInvite()">Generate Link</button>
         </div>
       </div>
@@ -826,6 +836,7 @@
               <tr>
                 <th>Label</th>
                 <th>Code</th>
+                <th>Tier</th>
                 <th>Trial</th>
                 <th>Uses</th>
                 <th>Expires</th>
@@ -959,6 +970,7 @@ let activeTab = 'customers';
 let currentRange = 7;
 let currentAdminAnalytics = null;
 const COUPON_TEMPLATE_KEY = 'linkcrew_admin_trial_coupon_templates';
+const INVITE_PLAN_MAP_KEY = 'linkcrew_admin_invite_plan_map';
 
 document.getElementById('current-date-chip').textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -1527,12 +1539,13 @@ function renderInvites(invites) {
   document.getElementById('invites-expiring-count').textContent = expiringSoon.length;
 
   if (!invites.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">No invite links yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">No invite links yet.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = invites.map(inv => {
-    const link = `${location.origin}/app?invite=${inv.code}`;
+    const selectedPlan = getInviteAccessPlan(inv.code);
+    const link = buildInviteLink(inv.code, selectedPlan);
     const uses = inv.max_uses ? `${inv.use_count}/${inv.max_uses}` : `${inv.use_count} used`;
     const expires = inv.expires_at ? new Date(inv.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never';
     const created = new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -1540,13 +1553,22 @@ function renderInvites(invites) {
       <tr>
         <td>${inv.label ? escapeHtml(inv.label) : '<span class="note-line">—</span>'}</td>
         <td><span class="metric-chip">${escapeHtml(inv.code)}</span></td>
+        <td>
+          <select class="field-select" style="min-width:120px" onchange="setInviteAccessPlan('${escapeJs(inv.code)}', this.value)">
+            <option value="free" ${selectedPlan === 'free' ? 'selected' : ''}>Free</option>
+            <option value="solo" ${selectedPlan === 'solo' ? 'selected' : ''}>Solo</option>
+            <option value="team" ${selectedPlan === 'team' ? 'selected' : ''}>Team</option>
+            <option value="pro" ${selectedPlan === 'pro' ? 'selected' : ''}>Pro</option>
+            <option value="business" ${selectedPlan === 'business' ? 'selected' : ''}>Business</option>
+          </select>
+        </td>
         <td>${inv.trial_days}d</td>
         <td>${escapeHtml(uses)}</td>
         <td>${escapeHtml(expires)}</td>
         <td>${escapeHtml(created)}</td>
         <td>
           <div class="action-row">
-            <button class="btn-ghost" onclick="copyLink('${escapeJs(link)}', this)">Copy Link</button>
+            <button class="btn-ghost" onclick="copyInviteLink('${escapeJs(inv.code)}', this)">Copy Link</button>
             <button class="btn-danger" onclick="revokeInvite('${inv.id}')">Revoke</button>
           </div>
         </td>
@@ -1562,6 +1584,38 @@ function copyLink(link, btn) {
   setTimeout(() => { btn.textContent = orig; }, 1500);
 }
 
+function getInvitePlanMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(INVITE_PLAN_MAP_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function getInviteAccessPlan(code) {
+  const plan = getInvitePlanMap()[code];
+  return ['free', 'solo', 'team', 'pro', 'business'].includes(plan) ? plan : 'team';
+}
+
+function setInviteAccessPlan(code, plan) {
+  const map = getInvitePlanMap();
+  map[code] = plan;
+  localStorage.setItem(INVITE_PLAN_MAP_KEY, JSON.stringify(map));
+  renderInvites(invitesCache);
+}
+
+function buildInviteLink(code, plan) {
+  const params = new URLSearchParams({ invite: code });
+  if (plan && plan !== 'free') params.set('plan', plan);
+  return `${location.origin}/app?${params.toString()}`;
+}
+
+function copyInviteLink(code, btn) {
+  const link = buildInviteLink(code, getInviteAccessPlan(code));
+  copyLink(link, btn);
+}
+
 async function createInvite() {
   const label = document.getElementById('inv-label').value.trim();
   const trial_days = parseInt(document.getElementById('inv-days').value, 10) || 30;
@@ -1569,6 +1623,7 @@ async function createInvite() {
   const max_uses = max_uses_raw ? parseInt(max_uses_raw, 10) : null;
   const expires_raw = document.getElementById('inv-expires').value;
   const expires_at = expires_raw ? new Date(expires_raw).toISOString() : null;
+  const accessPlan = document.getElementById('inv-plan').value;
 
   const res = await fetch('/api/admin/invites', {
     method: 'POST',
@@ -1580,11 +1635,15 @@ async function createInvite() {
     alert('Failed to create invite');
     return;
   }
+  const created = await res.json();
+  setInviteAccessPlan(created.code, accessPlan);
 
   document.getElementById('inv-label').value = '';
   document.getElementById('inv-uses').value = '';
   document.getElementById('inv-expires').value = '';
+  document.getElementById('inv-plan').value = 'team';
   await loadInvites();
+  navigator.clipboard.writeText(buildInviteLink(created.code, accessPlan));
 }
 
 async function revokeInvite(id) {

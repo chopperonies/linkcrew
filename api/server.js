@@ -875,7 +875,7 @@ app.get('/api/config', (req, res) => {
 
 // Create a new owner account + tenant
 app.post('/api/auth/signup', async (req, res) => {
-  const { email, password, company_name, invite_code } = req.body;
+  const { email, password, company_name, invite_code, plan: requestedPlan } = req.body;
   if (!email || !password || !company_name) {
     return res.status(400).json({ error: 'Email, password, and company name are required' });
   }
@@ -886,6 +886,8 @@ app.post('/api/auth/signup', async (req, res) => {
   // Resolve invite code if provided
   let trialDays = 14;
   let inviteId = null;
+  let invitePlan = 'free';
+  const planMaxUsers = { free: 1, solo: 1, team: 5, pro: 10, business: 20 };
   if (invite_code) {
     const { data: invite } = await supabaseAdmin.from('beta_invites')
       .select('id, trial_days, max_uses, use_count, expires_at')
@@ -896,6 +898,9 @@ app.post('/api/auth/signup', async (req, res) => {
       if (notExpired && notFull) {
         trialDays = invite.trial_days || 14;
         inviteId = invite.id;
+        if (requestedPlan && planMaxUsers[requestedPlan]) {
+          invitePlan = requestedPlan;
+        }
       }
     }
   }
@@ -913,7 +918,14 @@ app.post('/api/auth/signup', async (req, res) => {
   // Create tenant record
   const { data: tenant, error: tenantError } = await supabaseAdmin
     .from('tenants')
-    .insert({ company_name: company_name.trim(), owner_email: email.toLowerCase(), trial_ends_at: trialEndsAt })
+    .insert({
+      company_name: company_name.trim(),
+      owner_email: email.toLowerCase(),
+      trial_ends_at: trialEndsAt,
+      plan: invitePlan,
+      max_users: planMaxUsers[invitePlan] || 1,
+      subscription_status: 'trialing',
+    })
     .select()
     .single();
 

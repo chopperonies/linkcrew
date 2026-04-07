@@ -737,7 +737,7 @@
         <a class="auth-home-link" href="/">Back to site</a>
       </div>
       <div class="auth-card">
-        <div class="auth-subtitle">Owner dashboard access. Start your 14-day free trial or sign in to continue.</div>
+        <div class="auth-subtitle" id="auth-subtitle">Owner dashboard access. Start your 14-day free trial or sign in to continue.</div>
         <div class="auth-tabs">
           <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
           <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
@@ -2169,6 +2169,7 @@ let currentPlan = null;
 let currentSubscriptionStatus = null;
 let currentMaxUsers = 1;
 let currentExtraUsers = 0;
+const inviteAccessParams = new URLSearchParams(window.location.search);
 
 const TOKEN_KEY = 'fs_token';
 
@@ -2346,6 +2347,16 @@ function switchAuthTab(tab) {
   document.getElementById('auth-success').textContent = '';
 }
 
+if (inviteAccessParams.get('invite')) {
+  switchAuthTab('signup');
+  const plan = (inviteAccessParams.get('plan') || 'free').trim();
+  const subtitle = document.getElementById('auth-subtitle');
+  if (subtitle) {
+    const label = plan === 'free' ? 'Free' : plan.charAt(0).toUpperCase() + plan.slice(1);
+    subtitle.textContent = `You are opening an invite link. Create your account to start a ${label} trial workspace.`;
+  }
+}
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -2377,6 +2388,8 @@ async function doSignup() {
   const company = document.getElementById('signup-company').value.trim();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
+  const inviteCode = (inviteAccessParams.get('invite') || '').trim();
+  const invitePlan = (inviteAccessParams.get('plan') || '').trim();
   const errEl = document.getElementById('auth-error');
   const okEl = document.getElementById('auth-success');
   errEl.textContent = ''; okEl.textContent = '';
@@ -2389,7 +2402,13 @@ async function doSignup() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_name: company, email, password })
+      body: JSON.stringify({
+        company_name: company,
+        email,
+        password,
+        invite_code: inviteCode || null,
+        plan: inviteCode ? (invitePlan || 'free') : null
+      })
     });
     const result = await res.json();
     if (!res.ok) { errEl.textContent = result.error || 'Signup failed.'; return; }
