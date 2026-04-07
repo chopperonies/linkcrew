@@ -433,6 +433,17 @@
     color: var(--muted);
   }
   .analytics-toolbar, .trials-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .analytics-toolbar {
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .analytics-toolbar-left, .analytics-toolbar-right {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
   .trials-toolbar-row {
     display: flex;
     justify-content: space-between;
@@ -898,25 +909,26 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="analytics-toolbar">
-          <button class="range-btn active" id="range-7" onclick="setRange(7)">Last 7 days</button>
-          <button class="range-btn" id="range-30" onclick="setRange(30)">Last 30 days</button>
-          <button class="range-btn" id="range-90" onclick="setRange(90)">Last 90 days</button>
-          <span class="note-line">or custom</span>
-          <input class="field" type="date" id="a-start">
-          <input class="field" type="date" id="a-end">
-          <button class="btn-secondary" onclick="loadAnalytics()">Apply</button>
-        </div>
-      </div>
-
       <div class="analytics-stats" id="a-stats"></div>
 
       <div class="card table-shell">
         <div class="card-header">
           <div>
             <div class="card-title">Daily Breakdown</div>
-            <div class="card-sub">Landing page, owner dashboard, and portal activity by date.</div>
+            <div class="card-sub" id="analytics-range-copy">Landing page, owner dashboard, and portal activity by date.</div>
+          </div>
+        </div>
+        <div class="analytics-toolbar">
+          <div class="analytics-toolbar-left">
+            <button class="range-btn active" id="range-7" onclick="setRange(7)">Last 7 days</button>
+            <button class="range-btn" id="range-30" onclick="setRange(30)">Last 30 days</button>
+            <button class="range-btn" id="range-90" onclick="setRange(90)">Last 90 days</button>
+          </div>
+          <div class="analytics-toolbar-right">
+            <span class="note-line">Custom range</span>
+            <input class="field" type="date" id="a-start" onchange="markCustomRange()" />
+            <input class="field" type="date" id="a-end" onchange="markCustomRange()" />
+            <button class="btn-secondary" onclick="applyCustomRange()">Apply</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1783,6 +1795,26 @@ function setRange(days) {
   loadAnalytics();
 }
 
+function markCustomRange() {
+  document.querySelectorAll('.range-btn[id^="range-"]').forEach(b => b.classList.remove('active'));
+}
+
+function applyCustomRange() {
+  const start = document.getElementById('a-start').value;
+  const end = document.getElementById('a-end').value;
+  if (!start || !end) {
+    alert('Choose both a start and end date');
+    return;
+  }
+  if (start > end) {
+    alert('Start date must be before end date');
+    return;
+  }
+  currentRange = 'custom';
+  markCustomRange();
+  loadAnalytics();
+}
+
 async function loadAnalytics() {
   const start = document.getElementById('a-start').value;
   const end = document.getElementById('a-end').value;
@@ -1794,6 +1826,7 @@ async function loadAnalytics() {
   const d = await res.json();
   currentAdminAnalytics = d;
   renderOverviewBand();
+  updateAnalyticsRangeCopy(start, end);
 
   const conversionColor = parseFloat(d.conversionRate) >= 5 ? '#86efac' : parseFloat(d.conversionRate) >= 2 ? '#fde68a' : '#fca5a5';
 
@@ -1828,6 +1861,22 @@ async function loadAnalytics() {
       </tr>
     `).join('')
     : `<tr><td colspan="5" class="empty">No data for this period.</td></tr>`;
+}
+
+function updateAnalyticsRangeCopy(start, end) {
+  const el = document.getElementById('analytics-range-copy');
+  if (!el) return;
+  if (currentRange === 'custom' && start && end) {
+    const startLabel = new Date(`${start}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endLabel = new Date(`${end}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    el.textContent = `Landing page, owner dashboard, and portal activity from ${startLabel} to ${endLabel}.`;
+    return;
+  }
+  if (typeof currentRange === 'number') {
+    el.textContent = `Landing page, owner dashboard, and portal activity across the last ${currentRange} days.`;
+    return;
+  }
+  el.textContent = 'Landing page, owner dashboard, and portal activity by date.';
 }
 
 function escapeHtml(value) {
