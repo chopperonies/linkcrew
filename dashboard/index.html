@@ -2494,6 +2494,7 @@ async function bootApp() {
 let selectedJobId = null;
 let allJobsData = [], allAssignmentsData = [], allSuppliesData = [], allUpdatesData = [];
 let ownerTwilioConfigured = false;
+const DASHBOARD_STATE_KEY = 'lc_owner_dashboard_state_v1';
 
 const updateIcons = {
   checkin: { icon: '✅', cls: 'ui-checkin' },
@@ -2505,10 +2506,30 @@ const updateIcons = {
   update: { icon: '💬', cls: 'ui-update' }
 };
 
+function readDashboardState() {
+  try {
+    return JSON.parse(localStorage.getItem(DASHBOARD_STATE_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeDashboardState(patch) {
+  const next = { ...readDashboardState(), ...patch };
+  localStorage.setItem(DASHBOARD_STATE_KEY, JSON.stringify(next));
+}
+
 async function init() {
   const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
   if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
   await Promise.all([loadDashboard(), loadSupplies(), loadPhotos(), loadOnboardingBanner(), loadClients(), loadAllEmployees(), loadNotificationCapabilities()]);
+  const state = readDashboardState();
+  if (state.calendarWeekStart) calWeekStart = new Date(state.calendarWeekStart);
+  if (state.calendarSelectedDate) calSelectedDate = state.calendarSelectedDate;
+  switchMainTab(state.mainTab || 'jobs');
+  if ((state.mainTab || 'jobs') === 'clients') {
+    switchClientsTab(state.clientsSubtab || 'all');
+  }
   subscribeRealtime();
 }
 
@@ -3447,6 +3468,7 @@ function closeOverlay(e) {
 function switchMainTab(tab) {
   const scrollableViews = ['team','settings','timesheets','calendar','reports','ideas'];
   const contentArea = document.querySelector('.content-area');
+  writeDashboardState({ mainTab: tab });
   ['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
     const view = document.getElementById(`${t}-view`);
     const tabEl = document.getElementById(`mtab-${t}`);
@@ -3480,6 +3502,7 @@ function switchMainTab(tab) {
 }
 
 function switchClientsTab(sub) {
+  writeDashboardState({ clientsSubtab: sub });
   document.getElementById('clients-sub-all').style.display = sub === 'all' ? '' : 'none';
   document.getElementById('clients-sub-recurring').style.display = sub === 'recurring' ? 'block' : 'none';
   const allTab = document.getElementById('ctab-all');
@@ -3687,12 +3710,14 @@ async function askSchedule() {
 
 function calGoToday() {
   calWeekStart = getWeekStart(new Date());
+  writeDashboardState({ calendarWeekStart: calWeekStart.toISOString(), calendarSelectedDate: toLocalDateInputValue(new Date()) });
   loadCalendarWeek();
 }
 
 function calWeekOffset(dir) {
   calWeekStart = new Date(calWeekStart);
   calWeekStart.setDate(calWeekStart.getDate() + dir * 7);
+  writeDashboardState({ calendarWeekStart: calWeekStart.toISOString() });
   loadCalendarWeek();
 }
 
@@ -3774,6 +3799,7 @@ function renderCalendarGrid() {
 
 function selectCalendarDate(dateStr, openModal = false) {
   calSelectedDate = dateStr;
+  writeDashboardState({ calendarSelectedDate: dateStr });
   updateCalendarMetrics();
   renderCalendarGrid();
   renderCalendarAgenda();
