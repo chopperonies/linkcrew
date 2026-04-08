@@ -2201,6 +2201,16 @@
     </div>
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Team Members</div>
     <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
+    <div id="team-link-panel" style="display:none;margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em">Recent Setup Links</div>
+          <div style="margin-top:4px;font-size:12px;color:#64748b">Saved only in this browser so owners can quickly copy or open a manager setup link again.</div>
+        </div>
+        <button class="btn-cancel" onclick="clearStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Clear</button>
+      </div>
+      <div id="team-link-list"></div>
+    </div>
     <hr class="section-divider">
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
     <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
@@ -3524,6 +3534,103 @@ async function sendWorkOrder(jobId) {
 
 // ── Team Management ───────────────────────────────────────────────────────────
 const roleCls = { owner: 'role-owner', manager: 'role-manager', crew: 'role-crew' };
+const DASHBOARD_LINK_STORAGE_KEY = 'linkcrew_dashboard_access_links_v1';
+
+function getStoredDashboardLinks() {
+  try {
+    const raw = localStorage.getItem(DASHBOARD_LINK_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function setStoredDashboardLinks(links) {
+  try {
+    localStorage.setItem(DASHBOARD_LINK_STORAGE_KEY, JSON.stringify(links));
+  } catch (_) {}
+}
+
+function rememberDashboardLink(employee, inviteUrl, email) {
+  if (!employee?.id || !inviteUrl) return;
+  const links = getStoredDashboardLinks();
+  links[employee.id] = {
+    employee_id: employee.id,
+    name: employee.name || 'Team member',
+    role: employee.role || 'manager',
+    email: email || '',
+    invite_url: inviteUrl,
+    saved_at: new Date().toISOString()
+  };
+  setStoredDashboardLinks(links);
+}
+
+function forgetDashboardLink(employeeId) {
+  if (!employeeId) return;
+  const links = getStoredDashboardLinks();
+  if (!links[employeeId]) return;
+  delete links[employeeId];
+  setStoredDashboardLinks(links);
+}
+
+function clearStoredDashboardLinks() {
+  localStorage.removeItem(DASHBOARD_LINK_STORAGE_KEY);
+  renderStoredDashboardLinks(window._allEmployees || []);
+}
+
+async function copyStoredDashboardLink(employeeId) {
+  const entry = getStoredDashboardLinks()[employeeId];
+  if (!entry?.invite_url) return alert('No saved setup link found for this manager.');
+  try {
+    await navigator.clipboard.writeText(entry.invite_url);
+    alert(`Setup link copied for ${entry.name}.`);
+  } catch (_) {
+    alert('Failed to copy the setup link.');
+  }
+}
+
+function openStoredDashboardLink(employeeId) {
+  const entry = getStoredDashboardLinks()[employeeId];
+  if (!entry?.invite_url) return alert('No saved setup link found for this manager.');
+  window.open(entry.invite_url, '_blank', 'noopener,noreferrer');
+}
+
+function renderStoredDashboardLinks(employees = []) {
+  const panel = document.getElementById('team-link-panel');
+  const list = document.getElementById('team-link-list');
+  if (!panel || !list) return;
+  const links = getStoredDashboardLinks();
+  const activeIds = new Set(
+    (employees || [])
+      .filter(e => e.dashboard_access_enabled && (e.role === 'manager' || e.role === 'owner'))
+      .map(e => e.id)
+  );
+  const entries = Object.values(links)
+    .filter(entry => activeIds.has(entry.employee_id))
+    .sort((a, b) => new Date(b.saved_at || 0) - new Date(a.saved_at || 0));
+
+  if (!entries.length) {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  panel.style.display = 'block';
+  list.innerHTML = entries.map(entry => `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid rgba(191,219,254,0.7)">
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#0f172a">${entry.name}</div>
+        <div style="margin-top:4px;font-size:12px;color:#475569">${entry.email || 'No email saved'} • ${(entry.role || 'manager').toUpperCase()}</div>
+        <div style="margin-top:4px;font-size:11px;color:#64748b">Saved ${new Date(entry.saved_at).toLocaleString()}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <button onclick="copyStoredDashboardLink('${entry.employee_id}')" style="background:#eef6ff;border:1px solid #bfdbfe;color:#1d4ed8;cursor:pointer;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px">Copy Link</button>
+        <button onclick="openStoredDashboardLink('${entry.employee_id}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px">Open Link</button>
+      </div>
+    </div>
+  `).join('');
+}
 
 function getEmployeeDashboardAccessCopy(employee) {
   if (!employee.dashboard_access_enabled) {
@@ -3538,14 +3645,18 @@ function getEmployeeDashboardAccessCopy(employee) {
 function renderTeamRow(employee, inline = false) {
   const accessCopy = getEmployeeDashboardAccessCopy(employee);
   const canInviteDashboard = canManageSettings() && (employee.role === 'manager' || employee.role === 'owner');
+  const hasStoredLink = !!getStoredDashboardLinks()[employee.id]?.invite_url;
   const accessButton = canInviteDashboard
     ? `<button onclick="grantDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}','${employee.role}')" style="background:#eef6ff;border:1px solid #bfdbfe;color:#1d4ed8;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">${employee.dashboard_access_enabled ? 'Resend Access Link' : 'Grant Dashboard Access'}</button>`
+    : '';
+  const copyAccessButton = canInviteDashboard && hasStoredLink
+    ? `<button onclick="copyStoredDashboardLink('${employee.id}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Copy Saved Link</button>`
     : '';
   const disableAccessButton = canManageSettings() && employee.dashboard_access_enabled && employee.role !== 'owner'
     ? `<button onclick="disableDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}')" style="background:#fff5f5;border:1px solid #fecaca;color:#b91c1c;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Disable Access</button>`
     : '';
   const removeButton = `<button onclick="deleteEmployee('${employee.id}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;padding:4px 8px;border-radius:4px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">Remove</button>`;
-  const actionColumn = [accessButton, disableAccessButton, removeButton].filter(Boolean).join('');
+  const actionColumn = [accessButton, copyAccessButton, disableAccessButton, removeButton].filter(Boolean).join('');
   const rowId = inline ? `emp-row-inline-${employee.id}` : `emp-row-${employee.id}`;
   return `
     <div class="team-row" id="${rowId}" style="align-items:flex-start">
@@ -3566,6 +3677,7 @@ function renderTeamRow(employee, inline = false) {
 async function loadAllEmployees() {
   const res = await authFetch('/api/employees');
   window._allEmployees = await res.json();
+  renderStoredDashboardLinks(window._allEmployees);
 }
 
 async function assignCrewMember(jobId, employeeId) {
@@ -3613,6 +3725,8 @@ async function loadTeamInline() {
     setText('team-inline-crew', crewCount);
     setText('team-inline-capacity', currentMaxUsers ? capacityLeft : '—');
     updateSettingsUsageCard();
+    window._allEmployees = employees;
+    renderStoredDashboardLinks(employees);
 
     if (!employees.length) {
       setText('team-attention-title', 'No employees added yet.');
@@ -3647,7 +3761,9 @@ async function loadTeam() {
   try {
     const res = await authFetch('/api/employees');
     const employees = await res.json();
+    window._allEmployees = employees;
     currentEmployeeCount = employees.length;
+    renderStoredDashboardLinks(employees);
     if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>'; return; }
     el.innerHTML = employees.map(e => renderTeamRow(e)).join('');
   } catch (err) {
@@ -3666,6 +3782,7 @@ async function grantDashboardAccess(id, name, role) {
   });
   const data = await res.json();
   if (!res.ok) return alert(data.error || 'Failed to grant dashboard access');
+  if (data.invite_url) rememberDashboardLink({ id, name, role }, data.invite_url, email.trim());
   if (data.invite_url) {
     try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
     if (!data.email_sent) {
@@ -3688,6 +3805,7 @@ async function disableDashboardAccess(id, name) {
   const res = await authFetch(`/api/employees/${id}/dashboard-access`, { method: 'DELETE' });
   const data = await res.json();
   if (!res.ok) return alert(data.error || 'Failed to disable dashboard access');
+  forgetDashboardLink(id);
   await loadTeam();
   if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
   alert('Dashboard access disabled.');
@@ -3780,6 +3898,7 @@ async function saveEmployee() {
     if (!accessRes.ok) {
       alert(`Employee added, but dashboard access was not granted: ${accessData.error || 'Unknown error'}`);
     } else if (accessData.invite_url) {
+      rememberDashboardLink(employee, accessData.invite_url, email);
       try { await navigator.clipboard.writeText(accessData.invite_url); } catch (_) {}
       successMessage = accessData.email_sent
         ? 'Employee added. Dashboard access is enabled, and the setup link was emailed and copied for backup sharing.'
@@ -3795,6 +3914,7 @@ async function saveEmployee() {
 }
 async function deleteEmployee(id) {
   if (!confirm('Remove this employee?')) return;
+  forgetDashboardLink(id);
   await authFetch(`/api/employees/${id}`, { method: 'DELETE' });
   await loadTeam();
   if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
