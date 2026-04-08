@@ -4,8 +4,9 @@ const { createClient } = require('@supabase/supabase-js');
 const https = require('https');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const supabase = createClient(process.env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabaseAdmin = createClient(process.env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const { sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert } = require('../email/digest');
 
 // Track conversation state per user

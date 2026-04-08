@@ -995,14 +995,14 @@ async function loadDashboardAccessMembership(tenantId, employeeId) {
 }
 
 async function sendDashboardAccessInviteEmail({ email, companyName, employeeName, role, actionLink, appUrl, existingUser }) {
-  if (!actionLink || !process.env.RESEND_API_KEY) return false;
+  if (!actionLink || !process.env.RESEND_API_KEY) return { sent: false, emailId: null };
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
   const subject = existingUser
     ? `${companyName || 'Your team'} refreshed your LinkCrew access`
     : `${companyName || 'Your team'} invited you to LinkCrew`;
   const roleLabel = normalizeAppRole(role) === 'owner' ? 'owner' : 'manager';
-  await resend.emails.send({
+  const response = await resend.emails.send({
     from: 'LinkCrew <hello@linkcrew.io>',
     to: email,
     subject,
@@ -1016,14 +1016,14 @@ async function sendDashboardAccessInviteEmail({ email, companyName, employeeName
       <p style="margin:0;color:#64748b;font-size:12px">After setup, your dashboard will be available at ${appUrl}/app.</p>
     </div>`,
   });
-  return true;
+  return { sent: true, emailId: response?.data?.id || null };
 }
 
 async function sendPasswordRecoveryEmail({ email, actionLink, appUrl }) {
-  if (!actionLink || !process.env.RESEND_API_KEY) return false;
+  if (!actionLink || !process.env.RESEND_API_KEY) return { sent: false, emailId: null };
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
+  const response = await resend.emails.send({
     from: 'LinkCrew <hello@linkcrew.io>',
     to: email,
     subject: 'Reset your LinkCrew password',
@@ -1036,7 +1036,7 @@ async function sendPasswordRecoveryEmail({ email, actionLink, appUrl }) {
       <p style="margin:0;color:#64748b;font-size:12px">After reset, your dashboard will be available at ${appUrl}/app.</p>
     </div>`,
   });
-  return true;
+  return { sent: true, emailId: response?.data?.id || null };
 }
 
 async function syncEmployeeDashboardAccess({ tenantId, employeeId, role }) {
@@ -1203,8 +1203,9 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
   }
 
   let emailSent = false;
+  let emailId = null;
   try {
-    emailSent = await sendDashboardAccessInviteEmail({
+    const emailResult = await sendDashboardAccessInviteEmail({
       email: normalizedEmail,
       companyName: tenant?.company_name || 'Your team',
       employeeName: employee.name,
@@ -1213,12 +1214,15 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
       appUrl,
       existingUser: !!authUser,
     });
+    emailSent = !!emailResult?.sent;
+    emailId = emailResult?.emailId || null;
     console.log('[employee dashboard invite] email sent', {
       tenant_id: req.tenantId,
       employee_id: employee.id,
       email: normalizedEmail,
       link_type: linkType,
       existing_user: !!authUser,
+      resend_email_id: emailId,
     });
   } catch (err) {
     console.error('[employee dashboard invite] email error:', err.message);
@@ -1229,6 +1233,7 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
     email: normalizedEmail,
     invite_url: actionLink,
     email_sent: emailSent,
+    email_id: emailId,
     existing_user: !!authUser,
     can_view_financials: canViewFinancials,
   };
@@ -1501,8 +1506,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 
     try {
-      await sendPasswordRecoveryEmail({ email: normalizedEmail, actionLink, appUrl });
-      console.log('[forgot-password] recovery email sent', { email: normalizedEmail });
+      const emailResult = await sendPasswordRecoveryEmail({ email: normalizedEmail, actionLink, appUrl });
+      console.log('[forgot-password] recovery email sent', {
+        email: normalizedEmail,
+        resend_email_id: emailResult?.emailId || null,
+      });
     } catch (mailErr) {
       console.error('[forgot-password] recovery email error:', mailErr.message);
     }

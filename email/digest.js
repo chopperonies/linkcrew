@@ -3,7 +3,8 @@ const { Resend } = require('resend');
 const { createClient } = require('@supabase/supabase-js');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const supabase = createClient(process.env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function sendDailyDigest() {
   const today = new Date();

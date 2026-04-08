@@ -3666,9 +3666,15 @@ async function grantDashboardAccess(id, name, role) {
   });
   const data = await res.json();
   if (!res.ok) return alert(data.error || 'Failed to grant dashboard access');
-  if (data.invite_url && !data.email_sent) {
+  if (data.invite_url) {
     try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
-    alert('Dashboard access is linked. Email delivery is not configured, so the setup link has been copied for manual sharing.');
+    if (!data.email_sent) {
+      alert('Dashboard access is linked. Email delivery is not configured, so the setup link has been copied for manual sharing.');
+    } else {
+      alert(data.existing_user
+        ? 'Access refreshed. A new setup link was emailed and copied so you can share it directly if needed.'
+        : 'Dashboard access granted. The setup link was emailed and copied so you can share it directly if needed.');
+    }
   } else {
     alert(data.existing_user ? 'Access refreshed and a new setup link was sent.' : 'Dashboard access granted and the setup link was sent.');
   }
@@ -3773,9 +3779,11 @@ async function saveEmployee() {
     const accessData = await accessRes.json();
     if (!accessRes.ok) {
       alert(`Employee added, but dashboard access was not granted: ${accessData.error || 'Unknown error'}`);
-    } else if (accessData.invite_url && !accessData.email_sent) {
+    } else if (accessData.invite_url) {
       try { await navigator.clipboard.writeText(accessData.invite_url); } catch (_) {}
-      successMessage = 'Employee added. Dashboard access is enabled, and the setup link was copied for manual sharing.';
+      successMessage = accessData.email_sent
+        ? 'Employee added. Dashboard access is enabled, and the setup link was emailed and copied for backup sharing.'
+        : 'Employee added. Dashboard access is enabled, and the setup link was copied for manual sharing.';
     } else {
       successMessage = 'Employee added. Dashboard access granted.';
     }
