@@ -18,7 +18,7 @@ create table if not exists employees (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   telegram_id bigint unique,
-  role text default 'crew' check (role in ('crew', 'manager', 'owner')),
+  role text default 'crew' check (role in ('crew', 'supervisor', 'manager', 'owner')),
   created_at timestamptz default now()
 );
 

@@ -1047,7 +1047,7 @@
             <div class="owner-signal-title" id="team-attention-title">Loading current roster.</div>
             <div class="owner-signal-copy" id="team-attention-copy">Once crew data loads, this panel will summarize role mix and remaining team capacity.</div>
             <div class="owner-inline-list">
-              <div class="owner-inline-row"><span>Owners and managers</span><strong id="team-inline-leads">—</strong></div>
+              <div class="owner-inline-row"><span>Owners, supervisors, and managers</span><strong id="team-inline-leads">—</strong></div>
               <div class="owner-inline-row"><span>Field crew</span><strong id="team-inline-crew">—</strong></div>
               <div class="owner-inline-row"><span>Seats remaining</span><strong id="team-inline-capacity">—</strong></div>
             </div>
@@ -2230,14 +2230,15 @@
     <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
     <div class="form-group"><label>Phone Number (WhatsApp)</label><input type="tel" id="emp-phone" placeholder="+1 (555) 000-0000"></div>
     <div class="form-group" id="emp-email-group">
-      <label>Dashboard Access Email <span style="color:#94a3b8;font-weight:500">(manager or owner only)</span></label>
+      <label>Dashboard Access Email <span style="color:#94a3b8;font-weight:500">(supervisor, manager, or owner only)</span></label>
       <input type="email" id="emp-email" placeholder="name@company.com">
-      <div style="margin-top:6px;font-size:12px;color:#64748b">Optional. If provided for a manager or owner, LinkCrew will send a secure setup link for `/app` access.</div>
+      <div style="margin-top:6px;font-size:12px;color:#64748b">Optional. If provided for a supervisor, manager, or owner, LinkCrew will send a secure setup link for `/app` access.</div>
     </div>
     <div class="form-group">
       <label>Role</label>
       <select id="emp-role">
         <option value="crew">Crew — field worker</option>
+        <option value="supervisor">Supervisor — field lead / foreman</option>
         <option value="manager">Manager — oversees jobs</option>
         <option value="owner">Owner — full access</option>
       </select>
@@ -2302,7 +2303,7 @@ function canViewFinancials() { return !!(isAdmin || currentCapabilities.can_view
 function canManageFinancials() { return !!(isAdmin || currentCapabilities.can_manage_financials); }
 function canManageSettings() { return !!(isAdmin || currentCapabilities.can_manage_settings); }
 function canManageOperations() { return !!(isAdmin || currentCapabilities.can_manage_operations); }
-function canAccessSettingsTab() { return !!(isAdmin || canManageSettings() || currentRole === 'manager' || currentRole === 'owner'); }
+function canAccessSettingsTab() { return !!(isAdmin || canManageSettings() || currentRole === 'manager' || currentRole === 'supervisor' || currentRole === 'owner'); }
 
 function formatRoleLabel(role) {
   const normalized = String(role || '').trim().toLowerCase();
@@ -2361,12 +2362,22 @@ function applyCapabilityUI() {
   const newJobEstimateWrap = document.getElementById('new-job-estimate-wrap');
   if (newJobEstimateWrap) newJobEstimateWrap.style.display = canManageFinancials() ? 'block' : 'none';
   const ownerRoleOption = document.querySelector('#emp-role option[value="owner"]');
+  const supervisorRoleOption = document.querySelector('#emp-role option[value="supervisor"]');
+  const managerRoleOption = document.querySelector('#emp-role option[value="manager"]');
   if (ownerRoleOption) {
     ownerRoleOption.style.display = canManageSettings() ? '' : 'none';
     ownerRoleOption.disabled = !canManageSettings();
   }
+  if (supervisorRoleOption) {
+    supervisorRoleOption.style.display = canManageSettings() ? '' : 'none';
+    supervisorRoleOption.disabled = !canManageSettings();
+  }
+  if (managerRoleOption) {
+    managerRoleOption.style.display = canManageSettings() ? '' : 'none';
+    managerRoleOption.disabled = !canManageSettings();
+  }
   const roleSelect = document.getElementById('emp-role');
-  if (roleSelect && !canManageSettings() && roleSelect.value === 'owner') roleSelect.value = 'crew';
+  if (roleSelect && !canManageSettings() && ['supervisor', 'manager', 'owner'].includes(roleSelect.value)) roleSelect.value = 'crew';
   const dashboardEmailInput = document.getElementById('emp-email');
   const dashboardEmailGroup = document.getElementById('emp-email-group');
   if (dashboardEmailInput) {
@@ -2375,7 +2386,7 @@ function applyCapabilityUI() {
   }
   if (dashboardEmailGroup) {
     const selectedRole = roleSelect?.value || 'crew';
-    dashboardEmailGroup.style.display = selectedRole === 'manager' || selectedRole === 'owner' ? '' : 'none';
+    dashboardEmailGroup.style.display = canManageSettings() && (selectedRole === 'supervisor' || selectedRole === 'manager' || selectedRole === 'owner') ? '' : 'none';
   }
 }
 
@@ -3571,7 +3582,7 @@ async function sendWorkOrder(jobId) {
 }
 
 // ── Team Management ───────────────────────────────────────────────────────────
-const roleCls = { owner: 'role-owner', manager: 'role-manager', crew: 'role-crew' };
+const roleCls = { owner: 'role-owner', manager: 'role-manager', supervisor: 'role-manager', crew: 'role-crew' };
 const DASHBOARD_LINK_STORAGE_KEY = 'linkcrew_dashboard_access_links_v1';
 
 function getStoredDashboardLinks() {
@@ -3659,7 +3670,7 @@ function renderStoredDashboardLinks(employees = []) {
   const links = getStoredDashboardLinks();
   const activeIds = new Set(
     (employees || [])
-      .filter(e => e.dashboard_access_enabled && (e.role === 'manager' || e.role === 'owner'))
+      .filter(e => e.dashboard_access_enabled && (e.role === 'supervisor' || e.role === 'manager' || e.role === 'owner'))
       .map(e => e.id)
   );
   const entries = Object.values(links)
@@ -3693,12 +3704,12 @@ function renderStoredDashboardLinks(employees = []) {
 
 function getSupervisorSelectorEntries() {
   return (window._allEmployees || [])
-    .filter(employee => employee.role === 'manager' || employee.role === 'owner')
+    .filter(employee => employee.role === 'supervisor' || employee.role === 'manager' || employee.role === 'owner')
     .map(employee => {
       return {
         id: employee.id,
         name: employee.name || 'Team member',
-        role: employee.role || 'manager'
+        role: employee.role || 'supervisor'
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -3750,6 +3761,16 @@ function getSelectedNewJobCrewIds() {
   return Array.from(document.querySelectorAll('.new-job-crew-checkbox:checked')).map(input => input.value);
 }
 
+function buildEmployeeRoleOptions(selectedRole = 'crew') {
+  const options = [
+    { value: 'crew', label: 'Crew' },
+    { value: 'supervisor', label: 'Supervisor' },
+    { value: 'manager', label: 'Manager' }
+  ];
+  if (canManageSettings()) options.push({ value: 'owner', label: 'Owner' });
+  return options.map(option => `<option value="${option.value}" ${option.value === selectedRole ? 'selected' : ''}>${option.label}</option>`).join('');
+}
+
 function getEmployeeDashboardAccessCopy(employee) {
   if (!employee.dashboard_access_enabled) {
     return employee.role === 'crew'
@@ -3781,8 +3802,9 @@ function toggleTeamActions(employeeId, inline = false) {
 
 function renderTeamRow(employee, inline = false) {
   const accessCopy = getEmployeeDashboardAccessCopy(employee);
-  const canInviteDashboard = canManageSettings() && (employee.role === 'manager' || employee.role === 'owner');
+  const canInviteDashboard = canManageSettings() && (employee.role === 'supervisor' || employee.role === 'manager' || employee.role === 'owner');
   const hasStoredLink = !!getStoredDashboardLinks()[employee.id]?.invite_url;
+  const roleSelectId = `team-role-select-${inline ? 'inline-' : ''}${employee.id}`;
   const accessButton = canInviteDashboard
     ? `<button onclick="grantDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}','${employee.role}')" style="background:#eef6ff;border:1px solid #bfdbfe;color:#1d4ed8;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">${employee.dashboard_access_enabled ? 'Resend Access Link' : 'Grant Dashboard Access'}</button>`
     : '';
@@ -3792,8 +3814,16 @@ function renderTeamRow(employee, inline = false) {
   const disableAccessButton = canManageSettings() && employee.dashboard_access_enabled && employee.role !== 'owner'
     ? `<button onclick="disableDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}')" style="background:#fff5f5;border:1px solid #fecaca;color:#b91c1c;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Disable Access</button>`
     : '';
+  const changeRoleUI = canManageSettings() ? `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+      <select id="${roleSelectId}" style="background:#fff;border:1px solid #cbd5e1;color:#0f172a;font-size:12px;padding:6px 8px;border-radius:10px;min-width:112px">
+        ${buildEmployeeRoleOptions(employee.role)}
+      </select>
+      <button onclick="updateEmployeeRole('${employee.id}', '${String(employee.name || '').replace(/'/g, "\\'")}', '${roleSelectId}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Save Role</button>
+    </div>
+  ` : '';
   const removeButton = `<button onclick="deleteEmployee('${employee.id}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;padding:4px 8px;border-radius:4px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">Remove</button>`;
-  const actionButtons = [accessButton, copyAccessButton, disableAccessButton, removeButton].filter(Boolean);
+  const actionButtons = [changeRoleUI, accessButton, copyAccessButton, disableAccessButton, removeButton].filter(Boolean);
   const actionColumn = actionButtons.join('');
   const rowId = inline ? `emp-row-inline-${employee.id}` : `emp-row-${employee.id}`;
   const actionPanelId = `team-actions-panel-${inline ? 'inline-' : ''}${employee.id}`;
@@ -3864,7 +3894,7 @@ async function loadTeamInline() {
     const employees = await res.json();
     currentEmployeeCount = employees.length;
     const crewCount = employees.filter(e => e.role === 'crew').length;
-    const managerCount = employees.filter(e => e.role === 'manager' || e.role === 'owner').length;
+    const managerCount = employees.filter(e => e.role === 'supervisor' || e.role === 'manager' || e.role === 'owner').length;
     const capacityLeft = Math.max(0, (currentMaxUsers || 0) - employees.length);
     setText('team-total-count', employees.length);
     setText('team-crew-count', crewCount);
@@ -3964,6 +3994,22 @@ async function disableDashboardAccess(id, name) {
   alert('Dashboard access disabled.');
 }
 
+async function updateEmployeeRole(id, name, selectId) {
+  const select = document.getElementById(selectId);
+  const role = select?.value;
+  if (!role) return;
+  const res = await authFetch(`/api/employees/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Failed to update role');
+  if (role === 'crew') forgetDashboardLink(id);
+  await loadTeam();
+  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
+  alert(`${name} is now ${role}.`);
+}
+
 function openAccountSecurity() {
   document.getElementById('account-security-modal').classList.add('visible');
   document.getElementById('account-security-status').textContent = '';
@@ -4033,7 +4079,7 @@ async function saveEmployee() {
     return alert('Only the owner can grant dashboard access.');
   }
   if (email && role === 'crew') {
-    return alert('Dashboard access is only available for managers or owners.');
+    return alert('Dashboard access is only available for supervisors, managers, or owners.');
   }
   if (currentEmployeeCount >= currentMaxUsers) {
     return alert(`Plan limit reached. Your ${currentPlan ?? 'current'} plan allows up to ${currentMaxUsers} crew member${currentMaxUsers === 1 ? '' : 's'}. Upgrade at linkcrew.io/pricing.`);

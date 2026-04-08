@@ -58,7 +58,7 @@ function notifyManager(message) {
   const managerId = process.env.MANAGER_TELEGRAM_ID;
   if (managerId) {
     // WhatsApp notification to manager if they have a whatsapp number set
-    supabase.from('employees').select('whatsapp_number').eq('role', 'manager').then(({ data }) => {
+    supabase.from('employees').select('whatsapp_number').in('role', ['manager', 'supervisor']).then(({ data }) => {
       (data || []).filter(m => m.whatsapp_number).forEach(m => {
         send(`whatsapp:${m.whatsapp_number}`, message).catch(console.error);
       });

@@ -786,7 +786,7 @@ const FINANCIAL_JOB_FIELDS = ['estimate_amount', 'invoice_amount', 'payment_stat
 
 function normalizeAppRole(role) {
   const normalized = String(role || '').trim().toLowerCase();
-  return ['owner', 'manager', 'crew', 'client', 'admin'].includes(normalized) ? normalized : 'owner';
+  return ['owner', 'manager', 'supervisor', 'crew', 'client', 'admin'].includes(normalized) ? normalized : 'owner';
 }
 
 function buildCapabilities(role, canViewFinancials = false) {
@@ -811,7 +811,7 @@ function buildCapabilities(role, canViewFinancials = false) {
       can_manage_financials: true,
     };
   }
-  if (normalizedRole === 'manager') {
+  if (normalizedRole === 'manager' || normalizedRole === 'supervisor') {
     return {
       can_access_dashboard: true,
       can_manage_operations: true,
@@ -1018,7 +1018,12 @@ async function sendDashboardAccessInviteEmail({ email, companyName, employeeName
   const subject = existingUser
     ? `${companyName || 'Your team'} refreshed your LinkCrew access`
     : `${companyName || 'Your team'} invited you to LinkCrew`;
-  const roleLabel = normalizeAppRole(role) === 'owner' ? 'owner' : 'manager';
+  const normalizedRole = normalizeAppRole(role);
+  const roleLabel = normalizedRole === 'owner'
+    ? 'owner'
+    : normalizedRole === 'supervisor'
+      ? 'supervisor'
+      : 'manager';
   const response = await resend.emails.send({
     from: 'LinkCrew <hello@linkcrew.io>',
     to: email,
@@ -1061,7 +1066,7 @@ async function syncEmployeeDashboardAccess({ tenantId, employeeId, role }) {
   const { enabled: managerFinancialsEnabled } = await getTenantManagerFinancialAccess(tenantId);
   const canViewFinancials = normalizedRole === 'owner'
     ? true
-    : normalizedRole === 'manager'
+    : normalizedRole === 'manager' || normalizedRole === 'supervisor'
       ? !!managerFinancialsEnabled
       : false;
 
@@ -1093,8 +1098,8 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
   const normalizedEmail = normalizeEmailAddress(email);
   if (!normalizedEmail) return { error: 'A valid email is required to invite dashboard access.' };
   const normalizedRole = normalizeAppRole(employee.role);
-  if (!['manager', 'owner'].includes(normalizedRole)) {
-    return { error: 'Dashboard access can only be granted to managers or owners.' };
+  if (!['manager', 'supervisor', 'owner'].includes(normalizedRole)) {
+    return { error: 'Dashboard access can only be granted to supervisors, managers, or owners.' };
   }
 
   const appUrl = getAppUrl(req);
@@ -1270,9 +1275,9 @@ function ensureFinancialFieldsAllowed(req, res, next) {
 
 function ensureEmployeeRoleAllowed(req, res, next) {
   const requestedRole = normalizeAppRole(req.body.role || 'crew');
-  if (requestedRole !== 'owner') return next();
+  if (requestedRole === 'crew') return next();
   if (req.isAdmin || req.capabilities?.can_manage_settings) return next();
-  return res.status(403).json({ error: 'forbidden', message: 'Only the owner can assign owner access.' });
+  return res.status(403).json({ error: 'forbidden', message: 'Only the owner can assign supervisor, manager, or owner access.' });
 }
 
 
@@ -1325,7 +1330,7 @@ async function auth(req, res, next) {
   req.role = normalizeAppRole(tenantUser.role || 'owner');
   req.employeeId = tenantUser.employee_id || null;
   let managerFinancialAccess = tenantUser.can_view_financials;
-  if (req.role === 'manager' && managerFinancialAccess === undefined) {
+  if ((req.role === 'manager' || req.role === 'supervisor') && managerFinancialAccess === undefined) {
     const toggleState = await getTenantManagerFinancialAccess(req.tenantId);
     managerFinancialAccess = toggleState.enabled;
   }
@@ -2973,7 +2978,7 @@ app.patch('/api/settings', auth, requireSettingsAccess, async (req, res) => {
       .from('tenant_users')
       .update({ can_view_financials: !!enabled })
       .eq('tenant_id', tenantId)
-      .eq('role', 'manager');
+      .in('role', ['manager', 'supervisor']);
     if (syncResult.error && !/column/i.test(syncResult.error.message || '')) {
       throw syncResult.error;
     }
