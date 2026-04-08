@@ -3426,7 +3426,7 @@ async function openDetail(jobId, jobName) {
           <div class="update-body">
             <div class="ub-name" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <span>${u.employees?.name||'Owner note'}</span>
-              <button onclick="editJobNote('${job.id}','${u.id}', ${JSON.stringify(u.message || '')})" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px">Edit</button>
+              <button data-message="${encodeInlineData(u.message || '')}" onclick="editJobNote('${job.id}','${u.id}', decodeURIComponent(this.dataset.message || ''))" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px">Edit</button>
             </div>
             <div class="ub-msg">${u.message||''}</div>
             <div class="ub-time">${new Date(u.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
@@ -3767,6 +3767,10 @@ function renderTeamSummary(employees = []) {
     `${ownerCount} owner${ownerCount === 1 ? '' : 's'}`
   ];
   summary.textContent = parts.join(' • ');
+}
+
+function encodeInlineData(value) {
+  return encodeURIComponent(String(value || ''));
 }
 
 async function copyStoredDashboardLink(employeeId) {
