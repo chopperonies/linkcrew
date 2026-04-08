@@ -3965,6 +3965,7 @@ async function loadTeamInline() {
   }
 }
 async function openTeam() {
+  setStoredDashboardLinksExpanded(false);
   document.getElementById('team-modal').classList.add('visible');
   await loadTeam();
 }
@@ -3975,6 +3976,7 @@ function closeTeam() {
   document.getElementById('emp-email').value = '';
   document.getElementById('emp-role').value = 'crew';
   setTeamListExpanded(false);
+  setStoredDashboardLinksExpanded(false);
   applyCapabilityUI();
 }
 let currentEmployeeCount = 0;
