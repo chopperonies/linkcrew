@@ -1745,7 +1745,7 @@
     </div>
 
     <!-- Logo -->
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
+    <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
       <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:20px">Company Logo</div>
       <div style="display:flex;align-items:center;gap:20px">
         <div id="logo-preview"
@@ -1766,7 +1766,7 @@
     </div>
 
     <!-- Company info -->
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px">
+    <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px">
       <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:20px">Company Info</div>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div>
@@ -1823,7 +1823,7 @@
     </div>
 
     <!-- Plan Usage -->
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
+    <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px">
         <div style="font-size:15px;font-weight:700;color:#17191c">Plan Usage</div>
         <a href="/pricing" style="font-size:12px;font-weight:700;color:#0265dc;text-decoration:none">View Plans</a>
@@ -2288,6 +2288,7 @@ function canViewFinancials() { return !!(isAdmin || currentCapabilities.can_view
 function canManageFinancials() { return !!(isAdmin || currentCapabilities.can_manage_financials); }
 function canManageSettings() { return !!(isAdmin || currentCapabilities.can_manage_settings); }
 function canManageOperations() { return !!(isAdmin || currentCapabilities.can_manage_operations); }
+function canAccessSettingsTab() { return !!(isAdmin || canManageSettings() || currentRole === 'manager' || currentRole === 'owner'); }
 
 function formatRoleLabel(role) {
   const normalized = String(role || '').trim().toLowerCase();
@@ -2313,7 +2314,7 @@ function getAccessibleTabs() {
   if (canViewFinancials()) {
     tabs.push('agreements', 'reports');
   }
-  if (canManageSettings()) {
+  if (canAccessSettingsTab()) {
     tabs.push('settings');
   }
   if (isAdmin || ['active', 'trialing'].includes(currentSubscriptionStatus)) {
@@ -2337,6 +2338,10 @@ function applyCapabilityUI() {
   if (recurringTab) recurringTab.style.display = canViewFinancials() ? '' : 'none';
   const settingsButtons = document.querySelectorAll('#settings-view .owner-page-actions button');
   settingsButtons.forEach(btn => { btn.style.display = canManageSettings() ? '' : 'none'; });
+  const ownerOnlySettingsSections = document.querySelectorAll('#settings-view [data-owner-settings]');
+  ownerOnlySettingsSections.forEach(section => {
+    section.style.display = canManageSettings() ? '' : 'none';
+  });
   const managerFinancialsSection = document.getElementById('manager-financials-section');
   if (managerFinancialsSection) managerFinancialsSection.style.display = canManageSettings() ? 'block' : 'none';
   const newJobEstimateWrap = document.getElementById('new-job-estimate-wrap');
@@ -4064,7 +4069,14 @@ function switchMainTab(tab) {
   if (tab === 'agreements' && canViewFinancials()) { selectedAgreementId = null; loadAgreements(); }
   if (tab === 'calendar') initCalendar();
   if (tab === 'timesheets') initTimesheets();
-  if (tab === 'settings' && canManageSettings()) { loadSettings(); loadCrewInviteUrl(); }
+  if (tab === 'settings' && canAccessSettingsTab()) {
+    if (canManageSettings()) {
+      loadSettings();
+      loadCrewInviteUrl();
+    } else {
+      updateSignedInAccountUI();
+    }
+  }
   if (tab === 'ideas') {
     // Reset to form state when tab is opened
     document.getElementById('ideas-form-state').style.display = 'block';
