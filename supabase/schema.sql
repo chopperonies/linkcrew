@@ -8,6 +8,7 @@ create table if not exists jobs (
   address text,
   status text default 'active' check (status in ('active', 'completed', 'on_hold')),
   manager_email text,
+  primary_supervisor_employee_id uuid,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

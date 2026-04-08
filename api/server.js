@@ -1686,9 +1686,17 @@ app.patch('/api/supplies/:id', auth, async (req, res) => {
 });
 
 app.post('/api/jobs', auth, requireOperationAccess, ensureFinancialFieldsAllowed, async (req, res) => {
-  const { name, address, manager_email, description, estimate_amount } = req.body;
+  const { name, address, manager_email, description, estimate_amount, primary_supervisor_employee_id } = req.body;
   const { data } = await supabaseAdmin.from('jobs')
-    .insert({ name, address, manager_email, description, estimate_amount: estimate_amount || null, tenant_id: req.tenantId }).select().single();
+    .insert({
+      name,
+      address,
+      manager_email,
+      description,
+      estimate_amount: estimate_amount || null,
+      primary_supervisor_employee_id: primary_supervisor_employee_id || null,
+      tenant_id: req.tenantId
+    }).select().single();
   res.json(redactJobsForRole(data, req));
 });
 
@@ -1752,7 +1760,7 @@ app.post('/api/jobs/:id/send-workorder', auth, async (req, res) => {
 
 app.patch('/api/jobs/:id', auth, requireOperationAccess, ensureFinancialFieldsAllowed, async (req, res) => {
   const { id } = req.params;
-  const allowed = ['status', 'client_id', 'name', 'address', 'description', 'estimate_amount', 'manager_email'];
+  const allowed = ['status', 'client_id', 'name', 'address', 'description', 'estimate_amount', 'manager_email', 'primary_supervisor_employee_id'];
   const updates = {};
   allowed.forEach(f => {
     if (req.body[f] === undefined) return;
