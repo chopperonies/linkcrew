@@ -1719,10 +1719,10 @@ app.get('/api/employees', auth, async (req, res) => {
     .eq('tenant_id', req.tenantId)
     .in('employee_id', employeeIds);
 
-  if (dashboardAccessResult.error && /column/i.test(dashboardAccessResult.error.message || '')) {
+  if (dashboardAccessResult.error) {
+    console.error('[employees] dashboard access metadata query failed:', dashboardAccessResult.error.message);
     return res.json(employees);
   }
-  if (dashboardAccessResult.error) return res.status(400).json({ error: dashboardAccessResult.error.message });
 
   const accessByEmployeeId = new Map((dashboardAccessResult.data || [])
     .filter(entry => entry.employee_id)
