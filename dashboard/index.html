@@ -2301,10 +2301,28 @@ let currentCapabilities = {
 const inviteAccessParams = new URLSearchParams(window.location.search);
 
 const TOKEN_KEY = 'fs_token';
+const REFRESH_TOKEN_KEY = 'fs_refresh_token';
+let currentRefreshToken = null;
+let refreshPromise = null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
-function setToken(t) { localStorage.setItem(TOKEN_KEY, t); currentToken = t; }
-function clearToken() { localStorage.removeItem(TOKEN_KEY); currentToken = null; }
+function getRefreshToken() { return localStorage.getItem(REFRESH_TOKEN_KEY); }
+function setSessionTokens(accessToken, refreshToken) {
+  if (accessToken) {
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    currentToken = accessToken;
+  }
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    currentRefreshToken = refreshToken;
+  }
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  currentToken = null;
+  currentRefreshToken = null;
+}
 function canViewFinancials() { return !!(isAdmin || currentCapabilities.can_view_financials); }
 function canManageFinancials() { return !!(isAdmin || currentCapabilities.can_manage_financials); }
 function canManageSettings() { return !!(isAdmin || currentCapabilities.can_manage_settings); }
@@ -2417,14 +2435,59 @@ async function authFetch(url, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
   if (currentTenantId && isAdmin) headers['x-tenant-id'] = currentTenantId;
-  const res = await fetch(url, { ...opts, headers });
-  if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+  let res = await fetch(url, { ...opts, headers });
+  if (res.status === 401) {
+    const refreshed = await refreshDashboardSession();
+    if (!refreshed) {
+      doLogout();
+      throw new Error('Session expired');
+    }
+    const retryHeaders = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (currentToken) retryHeaders['Authorization'] = `Bearer ${currentToken}`;
+    if (currentTenantId && isAdmin) retryHeaders['x-tenant-id'] = currentTenantId;
+    res = await fetch(url, { ...opts, headers: retryHeaders });
+    if (res.status === 401) {
+      doLogout();
+      throw new Error('Session expired');
+    }
+  }
   if (res.status === 402) { showLockout(await res.json()); throw new Error('Subscription required'); }
   if (res.status === 403) {
     const body = await res.json().catch(() => ({}));
     if (body.error === 'account_blocked') { showLockout({ error: 'account_blocked' }); throw new Error('Account blocked'); }
   }
   return res;
+}
+
+async function refreshDashboardSession() {
+  if (!currentRefreshToken) return false;
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: currentRefreshToken })
+      });
+      if (!res.ok) {
+        clearToken();
+        return false;
+      }
+      const data = await res.json();
+      if (!data?.access_token) {
+        clearToken();
+        return false;
+      }
+      setSessionTokens(data.access_token, data.refresh_token || currentRefreshToken);
+      return true;
+    } catch (_) {
+      clearToken();
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
 }
 
 // ── Billing ───────────────────────────────────────────────────────────────────
@@ -2613,7 +2676,7 @@ async function doLogin() {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) { errEl.textContent = error.message; return; }
 
-    setToken(data.session.access_token);
+    setSessionTokens(data.session.access_token, data.session.refresh_token);
     await bootApp();
   } catch (e) {
     errEl.textContent = e.message || 'Could not sign in.';
@@ -2659,7 +2722,7 @@ async function doSignup() {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) { errEl.textContent = 'Account created — please sign in.'; switchAuthTab('login'); return; }
 
-    setToken(data.session.access_token);
+    setSessionTokens(data.session.access_token, data.session.refresh_token);
     await bootApp();
   } catch (e) {
     errEl.textContent = e.message || 'Something went wrong.';
@@ -6427,7 +6490,12 @@ if (impToken) {
   bootApp();
 } else {
   const saved = getToken();
-  if (saved) { currentToken = saved; bootApp(); }
+  const savedRefresh = getRefreshToken();
+  if (saved) {
+    currentToken = saved;
+    currentRefreshToken = savedRefresh;
+    bootApp();
+  }
   else { document.getElementById('auth-screen').classList.add('visible'); }
 }
 </script>
