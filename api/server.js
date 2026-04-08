@@ -1019,6 +1019,26 @@ async function sendDashboardAccessInviteEmail({ email, companyName, employeeName
   return true;
 }
 
+async function sendPasswordRecoveryEmail({ email, actionLink, appUrl }) {
+  if (!actionLink || !process.env.RESEND_API_KEY) return false;
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'LinkCrew <hello@linkcrew.io>',
+    to: email,
+    subject: 'Reset your LinkCrew password',
+    html: `<div style="font-family:sans-serif;max-width:560px">
+      <h2 style="margin:0 0 12px;color:#0f172a">Reset your LinkCrew password</h2>
+      <p style="margin:0 0 12px;color:#334155">Use the secure link below to set a new password for your LinkCrew account.</p>
+      <p style="margin:20px 0"><a href="${actionLink}" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">Reset Password</a></p>
+      <p style="margin:0 0 12px;color:#475569;font-size:13px">If the button does not open, copy this URL into your browser:</p>
+      <p style="margin:0 0 12px;color:#0f172a;font-size:13px;word-break:break-all">${actionLink}</p>
+      <p style="margin:0;color:#64748b;font-size:12px">After reset, your dashboard will be available at ${appUrl}/app.</p>
+    </div>`,
+  });
+  return true;
+}
+
 async function syncEmployeeDashboardAccess({ tenantId, employeeId, role }) {
   const normalizedRole = normalizeAppRole(role);
   const { enabled: managerFinancialsEnabled } = await getTenantManagerFinancialAccess(tenantId);
@@ -1090,6 +1110,14 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
   }
 
   const linkType = authUser ? 'recovery' : 'invite';
+  console.log('[employee dashboard invite] request', {
+    tenant_id: req.tenantId,
+    employee_id: employee.id,
+    email: normalizedEmail,
+    role: normalizedRole,
+    link_type: linkType,
+    existing_user: !!authUser,
+  });
   const linkResult = await supabaseAdmin.auth.admin.generateLink({
     type: linkType,
     email: normalizedEmail,
@@ -1104,12 +1132,18 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
   });
 
   if (linkResult.error) {
+    console.error('[employee dashboard invite] generateLink error:', linkResult.error.message);
     return { error: linkResult.error.message };
   }
 
   const actionLink = getActionLinkFromAdminResponse(linkResult.data);
   const userId = linkResult.data?.user?.id || authUser?.id || null;
   if (!userId) {
+    console.error('[employee dashboard invite] missing user id after generateLink', {
+      tenant_id: req.tenantId,
+      employee_id: employee.id,
+      email: normalizedEmail,
+    });
     return { error: 'Dashboard invite link was created, but the auth user could not be linked.' };
   }
 
@@ -1178,6 +1212,13 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
       actionLink,
       appUrl,
       existingUser: !!authUser,
+    });
+    console.log('[employee dashboard invite] email sent', {
+      tenant_id: req.tenantId,
+      employee_id: employee.id,
+      email: normalizedEmail,
+      link_type: linkType,
+      existing_user: !!authUser,
     });
   } catch (err) {
     console.error('[employee dashboard invite] email error:', err.message);
@@ -1437,17 +1478,33 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 
   try {
-    const { error } = await supabaseAdmin.auth.admin.generateLink({
+    const normalizedEmail = email.toLowerCase();
+    const appUrl = process.env.APP_URL || req.headers.origin || 'https://linkcrew.io';
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       options: {
-        redirectTo: `${req.headers.origin || 'https://linkcrew.io'}/auth/reset-password`,
+        redirectTo: `${appUrl}/auth/reset-password`,
       },
     });
 
     if (error) {
+      console.error('[forgot-password] generateLink error:', error.message);
       // Return generic message for security (don't reveal if email exists)
       return res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
+    }
+
+    const actionLink = getActionLinkFromAdminResponse(data);
+    if (!actionLink) {
+      console.error('[forgot-password] missing action link', { email: normalizedEmail });
+      return res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
+    }
+
+    try {
+      await sendPasswordRecoveryEmail({ email: normalizedEmail, actionLink, appUrl });
+      console.log('[forgot-password] recovery email sent', { email: normalizedEmail });
+    } catch (mailErr) {
+      console.error('[forgot-password] recovery email error:', mailErr.message);
     }
 
     res.json({ ok: true, message: 'If an account exists with this email, a recovery link has been sent' });
