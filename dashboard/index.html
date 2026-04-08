@@ -2206,14 +2206,19 @@
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Team Members</div>
     <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
     <div id="team-link-panel" style="display:none;margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
-        <div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="min-width:0">
           <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em">Recent Setup Links</div>
           <div style="margin-top:4px;font-size:12px;color:#64748b">Saved only in this browser so owners can quickly copy or open a manager setup link again.</div>
         </div>
-        <button class="btn-cancel" onclick="clearStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Clear</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <button id="team-link-toggle" class="btn-cancel" onclick="toggleStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Show Saved Links</button>
+          <button class="btn-cancel" onclick="clearStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Clear</button>
+        </div>
       </div>
-      <div id="team-link-list"></div>
+      <div id="team-link-content" style="display:none;margin-top:10px">
+        <div id="team-link-list"></div>
+      </div>
     </div>
     <hr class="section-divider">
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
@@ -3577,6 +3582,22 @@ function setStoredDashboardLinks(links) {
   } catch (_) {}
 }
 
+function isStoredDashboardLinksExpanded() {
+  return window._teamLinksExpanded === true;
+}
+
+function setStoredDashboardLinksExpanded(expanded) {
+  window._teamLinksExpanded = expanded === true;
+  const content = document.getElementById('team-link-content');
+  const toggle = document.getElementById('team-link-toggle');
+  if (content) content.style.display = window._teamLinksExpanded ? 'block' : 'none';
+  if (toggle) toggle.textContent = window._teamLinksExpanded ? 'Hide Saved Links' : 'Show Saved Links';
+}
+
+function toggleStoredDashboardLinks() {
+  setStoredDashboardLinksExpanded(!isStoredDashboardLinksExpanded());
+}
+
 function rememberDashboardLink(employee, inviteUrl, email) {
   if (!employee?.id || !inviteUrl) return;
   const links = getStoredDashboardLinks();
@@ -3601,6 +3622,7 @@ function forgetDashboardLink(employeeId) {
 
 function clearStoredDashboardLinks() {
   localStorage.removeItem(DASHBOARD_LINK_STORAGE_KEY);
+  setStoredDashboardLinksExpanded(false);
   renderStoredDashboardLinks(window._allEmployees || []);
 }
 
@@ -3623,8 +3645,9 @@ function openStoredDashboardLink(employeeId) {
 
 function renderStoredDashboardLinks(employees = []) {
   const panel = document.getElementById('team-link-panel');
+  const content = document.getElementById('team-link-content');
   const list = document.getElementById('team-link-list');
-  if (!panel || !list) return;
+  if (!panel || !content || !list) return;
   const links = getStoredDashboardLinks();
   const activeIds = new Set(
     (employees || [])
@@ -3637,11 +3660,14 @@ function renderStoredDashboardLinks(employees = []) {
 
   if (!entries.length) {
     panel.style.display = 'none';
+    content.style.display = 'none';
+    setStoredDashboardLinksExpanded(false);
     list.innerHTML = '';
     return;
   }
 
   panel.style.display = 'block';
+  setStoredDashboardLinksExpanded(isStoredDashboardLinksExpanded());
   list.innerHTML = entries.map(entry => `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid rgba(191,219,254,0.7)">
       <div style="min-width:0">
@@ -3836,7 +3862,10 @@ async function grantDashboardAccess(id, name, role) {
   });
   const data = await res.json();
   if (!res.ok) return alert(data.error || 'Failed to grant dashboard access');
-  if (data.invite_url) rememberDashboardLink({ id, name, role }, data.invite_url, email.trim());
+  if (data.invite_url) {
+    rememberDashboardLink({ id, name, role }, data.invite_url, email.trim());
+    setStoredDashboardLinksExpanded(true);
+  }
   if (data.invite_url) {
     try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
     if (!data.email_sent) {
@@ -3953,6 +3982,7 @@ async function saveEmployee() {
       alert(`Employee added, but dashboard access was not granted: ${accessData.error || 'Unknown error'}`);
     } else if (accessData.invite_url) {
       rememberDashboardLink(employee, accessData.invite_url, email);
+      setStoredDashboardLinksExpanded(true);
       try { await navigator.clipboard.writeText(accessData.invite_url); } catch (_) {}
       successMessage = accessData.email_sent
         ? 'Employee added. Dashboard access is enabled, and the setup link was emailed and copied for backup sharing.'
