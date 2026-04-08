@@ -826,6 +826,11 @@
     <div style="height:1px;background:rgba(255,255,255,0.07);margin:10px 8px 8px"></div>
 
     <div class="sidebar-live"><div class="live-dot"></div> Live updates on</div>
+    <div style="margin:10px 8px 8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);border-radius:12px;background:rgba(255,255,255,0.04)">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.48);margin-bottom:4px">Signed In As</div>
+      <div id="sidebar-account-email" style="font-size:12px;font-weight:700;color:#fff;word-break:break-word;line-height:1.5">—</div>
+      <div id="sidebar-account-role" style="font-size:11px;color:rgba(255,255,255,0.62);margin-top:2px">—</div>
+    </div>
     <button id="invite-crew-btn" class="sidebar-action-btn crew" onclick="goToCrewInvite()">
       <i data-lucide="user-plus" style="width:13px;height:13px"></i> Invite Crew
     </button>
@@ -1724,6 +1729,21 @@
       </div>
     </div>
 
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:6px">Signed-in Account</div>
+      <div style="font-size:13px;color:#737475;line-height:1.7;margin-bottom:18px">This shows the exact account currently controlling the dashboard so you can verify identity without relying on the company name.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <div style="padding:14px 16px;border:1px solid #e8e8e8;border-radius:12px;background:#fafafa">
+          <div style="font-size:11px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Email</div>
+          <div id="settings-account-email" style="font-size:16px;font-weight:800;color:#17191c;margin-top:6px;word-break:break-word">—</div>
+        </div>
+        <div style="padding:14px 16px;border:1px solid #e8e8e8;border-radius:12px;background:#fafafa">
+          <div style="font-size:11px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Role</div>
+          <div id="settings-account-role" style="font-size:16px;font-weight:800;color:#17191c;margin-top:6px">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Logo -->
     <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
       <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:20px">Company Logo</div>
@@ -2208,6 +2228,7 @@ let currentSubscriptionStatus = null;
 let currentMaxUsers = 1;
 let currentExtraUsers = 0;
 let currentRole = 'owner';
+let currentUserEmail = '';
 let currentCapabilities = {
   can_access_dashboard: true,
   can_manage_operations: true,
@@ -2227,6 +2248,25 @@ function canViewFinancials() { return !!(isAdmin || currentCapabilities.can_view
 function canManageFinancials() { return !!(isAdmin || currentCapabilities.can_manage_financials); }
 function canManageSettings() { return !!(isAdmin || currentCapabilities.can_manage_settings); }
 function canManageOperations() { return !!(isAdmin || currentCapabilities.can_manage_operations); }
+
+function formatRoleLabel(role) {
+  const normalized = String(role || '').trim().toLowerCase();
+  if (!normalized) return '—';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function updateSignedInAccountUI() {
+  const email = currentUserEmail || '—';
+  const roleLabel = isAdmin ? 'Admin' : formatRoleLabel(currentRole);
+  const sidebarEmail = document.getElementById('sidebar-account-email');
+  const sidebarRole = document.getElementById('sidebar-account-role');
+  const settingsEmail = document.getElementById('settings-account-email');
+  const settingsRole = document.getElementById('settings-account-role');
+  if (sidebarEmail) sidebarEmail.textContent = email;
+  if (sidebarRole) sidebarRole.textContent = roleLabel;
+  if (settingsEmail) settingsEmail.textContent = email;
+  if (settingsRole) settingsRole.textContent = roleLabel;
+}
 
 function getAccessibleTabs() {
   const tabs = ['jobs', 'team', 'clients', 'calendar', 'timesheets'];
@@ -2279,6 +2319,7 @@ async function loadCurrentUserContext() {
   const res = await authFetch('/api/me');
   const me = await res.json();
   isAdmin = !!me.is_admin;
+  currentUserEmail = me.email || '';
   currentRole = me.role || 'owner';
   currentCapabilities = {
     can_access_dashboard: !!me.capabilities?.can_access_dashboard,
@@ -2288,6 +2329,7 @@ async function loadCurrentUserContext() {
     can_view_financials: !!me.capabilities?.can_view_financials,
     can_manage_financials: !!me.capabilities?.can_manage_financials,
   };
+  updateSignedInAccountUI();
 }
 
 async function authFetch(url, opts = {}) {
@@ -2637,6 +2679,7 @@ async function doLogout() {
   isAdmin = false;
   currentTenantId = null;
   currentRole = 'owner';
+  currentUserEmail = '';
   currentCapabilities = {
     can_access_dashboard: true,
     can_manage_operations: true,
@@ -2645,6 +2688,7 @@ async function doLogout() {
     can_view_financials: true,
     can_manage_financials: true,
   };
+  updateSignedInAccountUI();
   if (supabaseClient) { try { supabaseClient.removeAllChannels(); } catch(_){} }
   document.getElementById('auth-screen').classList.add('visible');
   document.getElementById('app-shell').style.display = 'none';
