@@ -957,6 +957,28 @@ function getActionLinkFromAdminResponse(data) {
     || null;
 }
 
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loadEmployeeForDashboardAccess(tenantId, employeeId) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await supabaseAdmin
+      .from('employees')
+      .select('id, name, role, tenant_id')
+      .eq('id', employeeId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (!result.error && result.data) return { employee: result.data, error: null };
+    if (result.error && !/multiple|0 rows|no rows/i.test(result.error.message || '')) {
+      return { employee: null, error: result.error };
+    }
+    if (attempt < 2) await wait(250 * (attempt + 1));
+  }
+  return { employee: null, error: null };
+}
+
 async function sendDashboardAccessInviteEmail({ email, companyName, employeeName, role, actionLink, appUrl, existingUser }) {
   if (!actionLink || !process.env.RESEND_API_KEY) return false;
   const { Resend } = require('resend');
@@ -1766,14 +1788,9 @@ app.post('/api/employees/:id/dashboard-access', auth, requireSettingsAccess, asy
     return res.status(400).json({ error: 'A valid email is required.' });
   }
 
-  const { data: employee, error: employeeError } = await supabaseAdmin
-    .from('employees')
-    .select('id, name, role, tenant_id')
-    .eq('id', id)
-    .eq('tenant_id', req.tenantId)
-    .single();
-
-  if (employeeError || !employee) return res.status(404).json({ error: 'Employee not found.' });
+  const { employee, error: employeeError } = await loadEmployeeForDashboardAccess(req.tenantId, id);
+  if (employeeError) return res.status(400).json({ error: employeeError.message });
+  if (!employee) return res.status(404).json({ error: 'Employee not found.' });
 
   const inviteResult = await provisionEmployeeDashboardAccess({ req, employee, email });
   if (inviteResult.error) return res.status(400).json({ error: inviteResult.error });
