@@ -3424,7 +3424,10 @@ async function openDetail(jobId, jobName) {
         <div class="update-item">
           <div class="update-icon ui-update">📝</div>
           <div class="update-body">
-            <div class="ub-name">${u.employees?.name||'Owner note'}</div>
+            <div class="ub-name" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span>${u.employees?.name||'Owner note'}</span>
+              <button onclick="editJobNote('${job.id}','${u.id}', ${JSON.stringify(u.message || '')})" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px">Edit</button>
+            </div>
             <div class="ub-msg">${u.message||''}</div>
             <div class="ub-time">${new Date(u.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
           </div>
@@ -3533,6 +3536,23 @@ async function addJobUpdate(jobId, type) {
     return;
   }
   input.value = '';
+  await loadDashboard();
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
+}
+
+async function editJobNote(jobId, updateId, currentMessage) {
+  const nextMessage = window.prompt('Edit owner note', currentMessage || '');
+  if (nextMessage === null) return;
+  if (!nextMessage.trim()) return alert('Note cannot be empty.');
+  const res = await authFetch(`/api/jobs/${jobId}/updates/${updateId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ message: nextMessage.trim() }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || 'Failed to update note');
+    return;
+  }
   await loadDashboard();
   await openDetail(jobId, document.getElementById('detail-title').textContent);
 }

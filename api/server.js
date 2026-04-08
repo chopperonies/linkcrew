@@ -1844,6 +1844,40 @@ app.post('/api/jobs/:id/updates', auth, async (req, res) => {
   res.json(data);
 });
 
+app.patch('/api/jobs/:jobId/updates/:updateId', auth, async (req, res) => {
+  const { jobId, updateId } = req.params;
+  const { message } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: 'Message is required' });
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('id')
+    .eq('id', jobId)
+    .eq('tenant_id', req.tenantId)
+    .single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const { data: existing } = await supabaseAdmin
+    .from('job_updates')
+    .select('id, type, job_id')
+    .eq('id', updateId)
+    .eq('job_id', jobId)
+    .maybeSingle();
+  if (!existing) return res.status(404).json({ error: 'Update not found' });
+  if (existing.type !== 'note') return res.status(400).json({ error: 'Only owner notes can be edited.' });
+
+  const { data, error } = await supabaseAdmin
+    .from('job_updates')
+    .update({ message: message.trim() })
+    .eq('id', updateId)
+    .eq('job_id', jobId)
+    .select('*, employees(name)')
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 app.post('/api/send-note', auth, async (req, res) => {
   const { subject, body } = req.body;
   if (!body) return res.status(400).json({ error: 'body is required' });
