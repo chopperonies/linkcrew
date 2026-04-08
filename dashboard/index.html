@@ -2209,7 +2209,13 @@
       <button class="btn-cancel" onclick="closeTeam()" style="padding:4px 10px">✕</button>
     </div>
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Team Members</div>
-    <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
+      <div id="team-summary-copy" style="font-size:12px;color:#64748b;line-height:1.5">Loading team summary...</div>
+      <button id="team-list-toggle" class="btn-cancel" onclick="toggleTeamList()" style="padding:6px 10px;font-size:12px;flex-shrink:0">Show Team Members</button>
+    </div>
+    <div id="team-list-wrap" style="display:none">
+      <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
+    </div>
     <div id="team-link-panel" style="display:none;margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div style="min-width:0">
@@ -3645,6 +3651,41 @@ function clearStoredDashboardLinks() {
   renderStoredDashboardLinks(window._allEmployees || []);
 }
 
+function isTeamListExpanded() {
+  return window._teamListExpanded === true;
+}
+
+function setTeamListExpanded(expanded) {
+  window._teamListExpanded = expanded === true;
+  const wrap = document.getElementById('team-list-wrap');
+  const toggle = document.getElementById('team-list-toggle');
+  if (wrap) wrap.style.display = window._teamListExpanded ? 'block' : 'none';
+  if (toggle) toggle.textContent = window._teamListExpanded ? 'Hide Team Members' : 'Show Team Members';
+}
+
+function toggleTeamList() {
+  setTeamListExpanded(!isTeamListExpanded());
+}
+
+function renderTeamSummary(employees = []) {
+  const summary = document.getElementById('team-summary-copy');
+  if (!summary) return;
+  if (!employees.length) {
+    summary.textContent = 'No team members added yet.';
+    return;
+  }
+  const crewCount = employees.filter(e => e.role === 'crew').length;
+  const supervisorManagerCount = employees.filter(e => e.role === 'supervisor' || e.role === 'manager').length;
+  const ownerCount = employees.filter(e => e.role === 'owner').length;
+  const parts = [
+    `${employees.length} team member${employees.length === 1 ? '' : 's'}`,
+    `${crewCount} crew`,
+    `${supervisorManagerCount} supervisor${supervisorManagerCount === 1 ? '' : 's'}/manager${supervisorManagerCount === 1 ? '' : 's'}`,
+    `${ownerCount} owner${ownerCount === 1 ? '' : 's'}`
+  ];
+  summary.textContent = parts.join(' • ');
+}
+
 async function copyStoredDashboardLink(employeeId) {
   const entry = getStoredDashboardLinks()[employeeId];
   if (!entry?.invite_url) return alert('No saved setup link found for this manager.');
@@ -3933,6 +3974,7 @@ function closeTeam() {
   document.getElementById('emp-phone').value = '';
   document.getElementById('emp-email').value = '';
   document.getElementById('emp-role').value = 'crew';
+  setTeamListExpanded(false);
   applyCapabilityUI();
 }
 let currentEmployeeCount = 0;
@@ -3943,10 +3985,16 @@ async function loadTeam() {
     const employees = await res.json();
     window._allEmployees = employees;
     currentEmployeeCount = employees.length;
+    renderTeamSummary(employees);
     renderStoredDashboardLinks(employees);
-    if (!employees.length) { el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>'; return; }
+    setTeamListExpanded(isTeamListExpanded() && employees.length > 0);
+    if (!employees.length) {
+      el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>';
+      return;
+    }
     el.innerHTML = employees.map(e => renderTeamRow(e)).join('');
   } catch (err) {
+    renderTeamSummary([]);
     el.innerHTML = '<div class="empty" style="padding:12px;color:#dc2626">Failed to load team. Please try again.</div>';
   }
 }
