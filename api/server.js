@@ -929,8 +929,25 @@ function normalizeEmailAddress(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+function normalizePublicBaseUrl(rawUrl) {
+  const value = String(rawUrl || '').trim();
+  if (!value) return '';
+  const normalized = value.replace(/\/+$/, '');
+  try {
+    const parsed = new URL(normalized);
+    if (['localhost', '127.0.0.1', '0.0.0.0'].includes(parsed.hostname)) return '';
+    return parsed.origin;
+  } catch (_) {
+    return '';
+  }
+}
+
 function getAppUrl(req) {
-  return process.env.APP_URL || req.headers.origin || 'https://linkcrew.io';
+  const envUrl = normalizePublicBaseUrl(process.env.APP_URL);
+  if (envUrl) return envUrl;
+  const originUrl = normalizePublicBaseUrl(req.headers.origin);
+  if (originUrl) return originUrl;
+  return 'https://linkcrew.io';
 }
 
 async function findAuthUserByEmail(email) {
@@ -1122,7 +1139,7 @@ async function provisionEmployeeDashboardAccess({ req, employee, email }) {
     type: linkType,
     email: normalizedEmail,
     options: {
-      redirectTo: `${appUrl}/auth/reset-password`,
+      redirectTo: `${appUrl}/auth/reset-password.html`,
       data: {
         tenant_id: req.tenantId,
         employee_id: employee.id,
@@ -1484,12 +1501,12 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
   try {
     const normalizedEmail = email.toLowerCase();
-    const appUrl = process.env.APP_URL || req.headers.origin || 'https://linkcrew.io';
+    const appUrl = getAppUrl(req);
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: normalizedEmail,
       options: {
-        redirectTo: `${appUrl}/auth/reset-password`,
+        redirectTo: `${appUrl}/auth/reset-password.html`,
       },
     });
 
@@ -3806,7 +3823,7 @@ app.delete('/api/admin/invites/:id', auth, async (req, res) => {
 app.get('/api/crew-invite', auth, requireSettingsAccess, async (req, res) => {
   const tenantId = req.tenantId;
   if (!tenantId) return res.json({ url: null });
-  const appUrl = process.env.APP_URL || 'https://linkcrew.io';
+  const appUrl = getAppUrl(req);
   const { data } = await supabaseAdmin.from('crew_invite_links')
     .select('token').eq('tenant_id', tenantId).maybeSingle();
   if (!data) return res.json({ url: null });
@@ -3817,7 +3834,7 @@ app.get('/api/crew-invite', auth, requireSettingsAccess, async (req, res) => {
 app.post('/api/crew-invite', auth, requireSettingsAccess, async (req, res) => {
   const tenantId = req.tenantId;
   if (!tenantId) return res.status(400).json({ error: 'Cannot generate invite — no organization found' });
-  const appUrl = process.env.APP_URL || 'https://linkcrew.io';
+  const appUrl = getAppUrl(req);
   const token = require('crypto').randomBytes(16).toString('hex');
   const { error } = await supabaseAdmin.from('crew_invite_links')
     .upsert({ tenant_id: tenantId, token, created_at: new Date().toISOString() }, { onConflict: 'tenant_id' });
