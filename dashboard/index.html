@@ -4208,8 +4208,15 @@ async function updateEmployeeStatus(id, name, selectId) {
   const data = await res.json();
   if (!res.ok) return alert(data.error || data.message || 'Failed to update status');
   if (status === 'suspended') forgetDashboardLink(id);
-  await Promise.all([loadTeam(), loadAllEmployees()]);
-  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
+  if (Array.isArray(window._allEmployees)) {
+    window._allEmployees = window._allEmployees.map(employee => (
+      employee.id === id ? { ...employee, status } : employee
+    ));
+  }
+  await loadTeam();
+  await loadAllEmployees();
+  const teamView = document.getElementById('team-view');
+  if (teamView && teamView.style.display !== 'none') await loadTeamInline();
   alert(`${name} is now ${formatEmployeeStatusLabel(status).toLowerCase()}.`);
 }
 
