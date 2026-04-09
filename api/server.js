@@ -2613,6 +2613,22 @@ app.post('/api/timesheets/punch-out', auth, requireOperationAccess, async (req, 
   res.json({ ok: true });
 });
 
+app.get('/api/timesheets/my-active', auth, requireOperationAccess, async (req, res) => {
+  if (!req.employeeId) return res.json({ entry: null });
+  const { data: entry, error } = await supabaseAdmin
+    .from('job_assignments')
+    .select('id, job_id, checked_in_at, checked_out_at, jobs(name)')
+    .eq('tenant_id', req.tenantId)
+    .eq('employee_id', req.employeeId)
+    .not('checked_in_at', 'is', null)
+    .is('checked_out_at', null)
+    .order('checked_in_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ entry: entry || null });
+});
+
 // Update a timesheet entry manually (admin correction)
 app.patch('/api/timesheets/:id', auth, requireOperationAccess, async (req, res) => {
   const { checked_in_at, checked_out_at } = req.body;

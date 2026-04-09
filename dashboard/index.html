@@ -1343,7 +1343,7 @@
         <div class="owner-page-copy">
           <div class="owner-page-eyebrow">Timesheets</div>
           <div class="owner-page-title">Review hours, catch missing punch-outs, and keep payroll clean.</div>
-          <div class="owner-page-subtitle">This page should help the owner verify labor fast: who worked, for how long, and which entries still need attention before payroll or billing.</div>
+          <div class="owner-page-subtitle" id="timesheets-page-subtitle">This page should help the owner verify labor fast: who worked, for how long, and which entries still need attention before payroll or billing.</div>
         </div>
         <div class="owner-page-actions">
           <button class="owner-btn" onclick="printTimesheet()">Print</button>
@@ -1425,6 +1425,28 @@
               <div class="owner-inline-row"><span>Total entries</span><strong id="ts-inline-entries">—</strong></div>
               <div class="owner-inline-row"><span>Open punches</span><strong id="ts-inline-open">—</strong></div>
               <div class="owner-inline-row"><span>Manual entries</span><strong id="ts-inline-manual">—</strong></div>
+            </div>
+          </div>
+
+          <div id="ts-self-punch-panel" class="owner-card" style="margin-bottom:0;display:none">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">My Shift</div>
+                <div class="owner-card-headline">Clock yourself in or out</div>
+                <div class="owner-card-sub">Use this when a supervisor or manager needs to log their own time from the web dashboard.</div>
+              </div>
+            </div>
+            <div id="ts-self-punch-summary" style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:12px">Checking your current punch status...</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:#737475;margin-bottom:5px">Job (optional)</div>
+                <select id="ts-self-punch-job" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:180px">
+                  <option value="">No specific job</option>
+                </select>
+              </div>
+              <button id="ts-self-punch-in-btn" onclick="selfPunchIn()" style="background:#166534;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">Punch In</button>
+              <button id="ts-self-punch-out-btn" onclick="selfPunchOut()" style="background:#dc2626;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">Punch Out</button>
+              <span id="ts-self-punch-status" style="font-size:13px;color:#4ade80"></span>
             </div>
           </div>
 
@@ -2362,6 +2384,7 @@ let currentSubscriptionStatus = null;
 let currentMaxUsers = 1;
 let currentExtraUsers = 0;
 let currentRole = 'owner';
+let currentEmployeeId = null;
 let currentUserEmail = '';
 let apptReturnToDay = false;
 let currentCapabilities = {
@@ -2518,6 +2541,7 @@ async function loadCurrentUserContext() {
   isAdmin = !!me.is_admin;
   currentUserEmail = me.email || '';
   currentRole = me.role || 'owner';
+  currentEmployeeId = me.employee_id || null;
   currentCapabilities = {
     can_access_dashboard: !!me.capabilities?.can_access_dashboard,
     can_manage_operations: !!me.capabilities?.can_manage_operations,
@@ -2921,6 +2945,7 @@ async function doLogout() {
   isAdmin = false;
   currentTenantId = null;
   currentRole = 'owner';
+  currentEmployeeId = null;
   currentUserEmail = '';
   currentCapabilities = {
     can_access_dashboard: true,
@@ -2991,6 +3016,8 @@ let allJobsData = [], allAssignmentsData = [], allSuppliesData = [], allUpdatesD
 let ownerTwilioConfigured = false;
 let jobsViewMode = 'active';
 let recentOutcomeRangeDays = 7;
+const jobInvoiceUiState = {};
+const clientInvoiceUiState = {};
 const DASHBOARD_STATE_KEY = 'lc_owner_dashboard_state_v1';
 
 const updateIcons = {
@@ -3002,6 +3029,50 @@ const updateIcons = {
   photo: { icon: '📸', cls: 'ui-photo' },
   update: { icon: '💬', cls: 'ui-update' }
 };
+
+function setInvoiceUiState(store, key, patch) {
+  store[key] = { ...(store[key] || {}), ...patch };
+}
+
+function clearInvoiceUiState(store, key) {
+  delete store[key];
+}
+
+function getInvoiceStatusColor(tone) {
+  if (tone === 'success') return '#166534';
+  if (tone === 'error') return '#dc2626';
+  return '#64748b';
+}
+
+function renderInvoiceStatus(store, key) {
+  const status = store[key];
+  if (!status?.text) return '';
+  return `<div id="${key}-invoice-status" style="margin-top:8px;font-size:12px;color:${getInvoiceStatusColor(status.tone)}">${status.text}</div>`;
+}
+
+function getTimesheetPunchableJobs() {
+  return (allJobsData || []).filter(j => ['active','in_progress','scheduled'].includes(j.status));
+}
+
+function populateTimesheetJobOptions() {
+  const jobs = getTimesheetPunchableJobs();
+  ['ts-punch-job', 'ts-self-punch-job'].forEach(id => {
+    const jobSel = document.getElementById(id);
+    if (!jobSel) return;
+    const currentValue = jobSel.value || '';
+    jobSel.innerHTML = '<option value="">No specific job</option>';
+    jobs.forEach(j => {
+      jobSel.innerHTML += `<option value="${j.id}">${j.name}</option>`;
+    });
+    if (currentValue && jobs.some(j => j.id === currentValue)) {
+      jobSel.value = currentValue;
+    }
+  });
+}
+
+function canSelfPunchTimesheets() {
+  return !!currentEmployeeId && (currentRole === 'manager' || currentRole === 'supervisor');
+}
 
 function readDashboardState() {
   try {
@@ -3653,12 +3724,14 @@ async function openDetail(jobId, jobName) {
   const invEl = document.getElementById('detail-invoice');
   const isPaid = canViewFinancials() && job?.payment_status === 'paid';
   const hasInvoice = canViewFinancials() && job?.invoice_amount > 0;
+  const invoiceStatusMarkup = renderInvoiceStatus(jobInvoiceUiState, `job-${job.id}`);
   invEl.innerHTML = canViewFinancials() ? `
     <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
     <div class="panel-title">Invoice</div>
     ${isPaid
       ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#166534;font-weight:600;margin-bottom:8px">✅ Paid — $${parseFloat(job.invoice_amount).toFixed(2)}</div>
-         <a href="/invoice?job_id=${job.id}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View Invoice</a>`
+         <a href="/invoice?job_id=${job.id}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View Invoice</a>
+         ${invoiceStatusMarkup}`
       : hasInvoice
         ? `<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;font-weight:600;margin-bottom:8px">⏳ Awaiting payment — $${parseFloat(job.invoice_amount).toFixed(2)}</div>
            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -3670,15 +3743,17 @@ async function openDetail(jobId, jobName) {
              </select>
              <button onclick="openSetInvoice('${job.id}', ${job.invoice_amount})" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475">Edit amount</button>
              <a href="/invoice?job_id=${job.id}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View Invoice</a>
-           </div>`
+           </div>
+           ${invoiceStatusMarkup}`
         : `<div style="display:flex;gap:8px;align-items:center">
              <input type="number" id="inv-amount-${job?.id}" placeholder="0.00" min="0" step="0.01"
                style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c">
-             <button onclick="sendInvoice('${job?.id}')"
+             <button id="send-invoice-btn-${job?.id}" onclick="sendInvoice('${job?.id}')"
                style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
                Send Invoice
              </button>
-           </div>`
+           </div>
+           ${invoiceStatusMarkup}`
     }
     </div>
   ` : `
@@ -3842,17 +3917,32 @@ async function linkJobClient(jobId, clientId) {
 
 async function sendInvoice(jobId) {
   const input = document.getElementById(`inv-amount-${jobId}`);
+  const button = document.getElementById(`send-invoice-btn-${jobId}`);
   const amount = parseFloat(input?.value);
-  if (!amount || amount <= 0) return alert('Enter a valid amount');
+  if (!amount || amount <= 0) {
+    setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { tone: 'error', text: 'Enter a valid invoice amount.' });
+    await openDetail(jobId, document.getElementById('detail-title').textContent);
+    return;
+  }
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Sending...';
+  }
+  setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { tone: 'info', text: 'Saving invoice and preparing delivery...' });
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
   const res = await authFetch(`/api/jobs/${jobId}/invoice`, { method: 'POST', body: JSON.stringify({ amount }) });
   const json = await res.json();
-  if (!res.ok) return alert('Error: ' + (json.error || 'Failed to save invoice'));
-  if (json.invoice_email_sent && json.invoice_emailed_to) {
-    alert(`Invoice emailed to ${json.invoice_emailed_to}`);
-  } else {
-    alert('Invoice saved. No client email was available, so nothing was sent.');
+  if (!res.ok) {
+    setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { tone: 'error', text: json.error || 'Failed to save invoice.' });
+    await openDetail(jobId, document.getElementById('detail-title').textContent);
+    return;
   }
-  openDetail(jobId, document.getElementById('detail-title').textContent);
+  if (json.invoice_email_sent && json.invoice_emailed_to) {
+    setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { tone: 'success', text: `Invoice emailed to ${json.invoice_emailed_to}.` });
+  } else {
+    setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { tone: 'info', text: 'Invoice saved. No client email was on file, so nothing was sent.' });
+  }
+  await openDetail(jobId, document.getElementById('detail-title').textContent);
 }
 
 async function markInvoicePaid(jobId) {
@@ -3865,33 +3955,52 @@ async function markInvoicePaid(jobId) {
 }
 
 function openSetInvoice(jobId, current) {
+  setInvoiceUiState(jobInvoiceUiState, `job-${jobId}`, { text: '' });
   const invEl = document.getElementById('detail-invoice');
   invEl.querySelector('button')?.remove();
   invEl.innerHTML += `
     <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
       <input type="number" id="inv-amount-${jobId}" value="${current}" min="0" step="0.01"
         style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c">
-      <button onclick="sendInvoice('${jobId}')"
+      <button id="send-invoice-btn-${jobId}" onclick="sendInvoice('${jobId}')"
         style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">
         Update
       </button>
-    </div>`;
+    </div>
+    ${renderInvoiceStatus(jobInvoiceUiState, `job-${jobId}`)}`;
 }
 
 async function createClientInvoice(clientId) {
-  const amount = parseFloat(document.getElementById(`client-invoice-amount-${clientId}`)?.value);
-  const description = document.getElementById(`client-invoice-desc-${clientId}`)?.value.trim() || '';
-  if (!amount || amount <= 0) return alert('Enter a valid amount');
+  const amountInput = document.getElementById(`client-invoice-amount-${clientId}`);
+  const descInput = document.getElementById(`client-invoice-desc-${clientId}`);
+  const button = document.getElementById(`client-invoice-btn-${clientId}`);
+  const amount = parseFloat(amountInput?.value);
+  const description = descInput?.value.trim() || '';
+  if (!amount || amount <= 0) {
+    setInvoiceUiState(clientInvoiceUiState, `client-${clientId}`, { tone: 'error', text: 'Enter a valid invoice amount.' });
+    await openClientDetail(clientId);
+    return;
+  }
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Sending...';
+  }
+  setInvoiceUiState(clientInvoiceUiState, `client-${clientId}`, { tone: 'info', text: 'Creating invoice and preparing delivery...' });
+  await openClientDetail(clientId);
   const res = await authFetch(`/api/clients/${clientId}/invoice`, {
     method: 'POST',
     body: JSON.stringify({ amount, description }),
   });
   const json = await res.json();
-  if (!res.ok) return alert('Error: ' + (json.error || 'Failed to create invoice'));
+  if (!res.ok) {
+    setInvoiceUiState(clientInvoiceUiState, `client-${clientId}`, { tone: 'error', text: json.error || 'Failed to create invoice.' });
+    await openClientDetail(clientId);
+    return;
+  }
   if (json.invoice_email_sent && json.invoice_emailed_to) {
-    alert(`Invoice emailed to ${json.invoice_emailed_to}`);
+    setInvoiceUiState(clientInvoiceUiState, `client-${clientId}`, { tone: 'success', text: `Invoice emailed to ${json.invoice_emailed_to}.` });
   } else {
-    alert('Invoice created. No client email was available, so nothing was sent.');
+    setInvoiceUiState(clientInvoiceUiState, `client-${clientId}`, { tone: 'info', text: 'Invoice created. No client email was on file, so nothing was sent.' });
   }
   await openClientDetail(clientId);
   await loadClients();
@@ -5522,6 +5631,17 @@ let tsEditingId = null;
 let allEmployeesData = [];
 
 async function initTimesheets() {
+  const selfPanel = document.getElementById('ts-self-punch-panel');
+  const manualPanel = document.getElementById('ts-punch-panel');
+  const subtitle = document.getElementById('timesheets-page-subtitle');
+  if (selfPanel) selfPanel.style.display = canSelfPunchTimesheets() ? '' : 'none';
+  if (manualPanel) manualPanel.style.display = canManageSettings() ? '' : 'none';
+  if (subtitle) {
+    subtitle.textContent = canSelfPunchTimesheets()
+      ? 'Review labor hours for the team and clock yourself in or out when you are working from the dashboard.'
+      : 'This page should help the owner verify labor fast: who worked, for how long, and which entries still need attention before payroll or billing.';
+  }
+
   // Set default date range to current week
   if (!document.getElementById('ts-start').value) {
     const weekStart = getWeekStart(new Date());
@@ -5545,9 +5665,11 @@ async function initTimesheets() {
   // Load active jobs for punch panel
   if (!allJobsData.length) {
     const res = await authFetch('/api/jobs');
-    allJobsData = (await res.json()).filter(j => ['active','in_progress','scheduled'].includes(j.status));
-    const jobSel = document.getElementById('ts-punch-job');
-    allJobsData.forEach(j => jobSel.innerHTML += `<option value="${j.id}">${j.name}</option>`);
+    allJobsData = await res.json();
+  }
+  populateTimesheetJobOptions();
+  if (canSelfPunchTimesheets()) {
+    await loadSelfPunchState();
   }
 
   await loadTimesheets();
@@ -5724,6 +5846,97 @@ async function manualPunchOut() {
   statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Punched out';
   setTimeout(() => statusEl.textContent = '', 3000);
   await loadTimesheets();
+}
+
+async function loadSelfPunchState() {
+  const summaryEl = document.getElementById('ts-self-punch-summary');
+  const punchInBtn = document.getElementById('ts-self-punch-in-btn');
+  const punchOutBtn = document.getElementById('ts-self-punch-out-btn');
+  if (!summaryEl || !canSelfPunchTimesheets()) return;
+  summaryEl.textContent = 'Checking your current punch status...';
+  try {
+    const res = await authFetch('/api/timesheets/my-active');
+    const json = await res.json();
+    const active = json?.entry || null;
+    if (active?.checked_in_at) {
+      const started = new Date(active.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const label = active.jobs?.name || 'No specific job';
+      summaryEl.textContent = `You are currently clocked in on ${label} since ${started}.`;
+      if (punchInBtn) punchInBtn.disabled = true;
+      if (punchOutBtn) punchOutBtn.disabled = false;
+      const selfJobSel = document.getElementById('ts-self-punch-job');
+      if (selfJobSel && active.job_id) selfJobSel.value = active.job_id;
+      return;
+    }
+    summaryEl.textContent = 'You are currently clocked out. Choose an optional job, then punch in when work starts.';
+    if (punchInBtn) punchInBtn.disabled = false;
+    if (punchOutBtn) punchOutBtn.disabled = true;
+  } catch (err) {
+    summaryEl.textContent = 'Could not load your current punch status.';
+    if (punchInBtn) punchInBtn.disabled = false;
+    if (punchOutBtn) punchOutBtn.disabled = false;
+  }
+}
+
+async function selfPunchIn() {
+  if (!currentEmployeeId) return alert('This dashboard user is not linked to an employee record yet.');
+  const job_id = document.getElementById('ts-self-punch-job')?.value || null;
+  const statusEl = document.getElementById('ts-self-punch-status');
+  const button = document.getElementById('ts-self-punch-in-btn');
+  let lat, lng;
+  if (currentPlan === 'business') {
+    try {
+      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch (e) { /* GPS optional */ }
+  }
+  if (button) button.disabled = true;
+  statusEl.style.color = '#737475';
+  statusEl.textContent = 'Punching in...';
+  const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id: currentEmployeeId, job_id, lat, lng }) });
+  const json = await res.json();
+  if (!res.ok) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = json.error || 'Punch in failed.';
+    if (button) button.disabled = false;
+    return;
+  }
+  statusEl.style.color = '#16a34a';
+  statusEl.textContent = '✓ Punched in';
+  await loadSelfPunchState();
+  await loadTimesheets();
+  setTimeout(() => { statusEl.textContent = ''; }, 3000);
+}
+
+async function selfPunchOut() {
+  if (!currentEmployeeId) return alert('This dashboard user is not linked to an employee record yet.');
+  const statusEl = document.getElementById('ts-self-punch-status');
+  const button = document.getElementById('ts-self-punch-out-btn');
+  let lat, lng;
+  if (currentPlan === 'business') {
+    try {
+      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch (e) { /* GPS optional */ }
+  }
+  if (button) button.disabled = true;
+  statusEl.style.color = '#737475';
+  statusEl.textContent = 'Punching out...';
+  const res = await authFetch('/api/timesheets/punch-out', { method: 'POST', body: JSON.stringify({ employee_id: currentEmployeeId, lat, lng }) });
+  const json = await res.json();
+  if (!res.ok) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = json.error || 'Punch out failed.';
+    if (button) button.disabled = false;
+    return;
+  }
+  statusEl.style.color = '#16a34a';
+  statusEl.textContent = '✓ Punched out';
+  await loadSelfPunchState();
+  await loadTimesheets();
+  setTimeout(() => { statusEl.textContent = ''; }, 3000);
 }
 
 function openTsEditModal(id, inAt, outAt) {
@@ -6326,6 +6539,7 @@ async function openClientDetail(clientId) {
   if (!client) return;
 
   const today = new Date().toISOString().split('T')[0];
+  const clientInvoiceStatusMarkup = renderInvoiceStatus(clientInvoiceUiState, `client-${client.id}`);
 
   panel.innerHTML = `
     <div class="cd-header">
@@ -6374,8 +6588,9 @@ async function openClientDetail(clientId) {
           style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c">
         <input type="number" id="client-invoice-amount-${client.id}" placeholder="0.00" min="0" step="0.01"
           style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c">
-        <button class="btn-save" onclick="createClientInvoice('${client.id}')">Send Invoice</button>
+        <button class="btn-save" id="client-invoice-btn-${client.id}" onclick="createClientInvoice('${client.id}')">Send Invoice</button>
       </div>
+      ${clientInvoiceStatusMarkup}
       <div style="margin-top:8px;font-size:12px;color:#64748b">Creates a standalone invoice for this client without requiring an existing job.</div>
     </div>` : ''}
 
