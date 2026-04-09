@@ -1553,6 +1553,31 @@
           <div class="owner-card">
             <div class="owner-card-header">
               <div>
+                <div class="owner-card-title">Team Availability</div>
+                <div class="owner-card-headline">Who is available before you assign work</div>
+                <div class="owner-card-sub">Vacation and suspension live in Team, but the scheduler should still see the current picture here.</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px">
+              <div style="padding:12px 14px;border:1px solid rgba(15,118,110,0.16);background:rgba(15,118,110,0.06);border-radius:14px">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#0f766e">Active</div>
+                <div id="cal-team-active-count" style="font-size:24px;font-weight:800;color:#0f172a;margin-top:6px">—</div>
+              </div>
+              <div style="padding:12px 14px;border:1px solid rgba(180,83,9,0.18);background:rgba(245,158,11,0.08);border-radius:14px">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#b45309">On Vacation</div>
+                <div id="cal-team-vacation-count" style="font-size:24px;font-weight:800;color:#0f172a;margin-top:6px">—</div>
+              </div>
+              <div style="padding:12px 14px;border:1px solid rgba(185,28,28,0.18);background:rgba(239,68,68,0.08);border-radius:14px">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#b91c1c">Suspended</div>
+                <div id="cal-team-suspended-count" style="font-size:24px;font-weight:800;color:#0f172a;margin-top:6px">—</div>
+              </div>
+            </div>
+            <div id="cal-team-status-list" style="display:grid;gap:10px"></div>
+          </div>
+
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
                 <div class="owner-card-title">Service Library</div>
                 <div class="owner-card-headline">Pre-defined services</div>
                 <div class="owner-card-sub">Keep reusable services ready so scheduling stays fast and consistent.</div>
@@ -4678,6 +4703,45 @@ function updateCalendarMetrics() {
   setText('cal-attention-copy', 'Today is clear, but upcoming work is already lined up. Use the day agenda to check gaps, client notes, and service mix before booking over it.');
 }
 
+function renderCalendarTeamAvailability() {
+  const employees = Array.isArray(window._allEmployees) ? window._allEmployees : [];
+  const active = employees.filter(employee => normalizeEmployeeStatus(employee.status) === 'active');
+  const vacation = employees.filter(employee => normalizeEmployeeStatus(employee.status) === 'vacation');
+  const suspended = employees.filter(employee => normalizeEmployeeStatus(employee.status) === 'suspended');
+  setText('cal-team-active-count', active.length);
+  setText('cal-team-vacation-count', vacation.length);
+  setText('cal-team-suspended-count', suspended.length);
+
+  const listEl = document.getElementById('cal-team-status-list');
+  if (!listEl) return;
+
+  const sections = [
+    {
+      title: 'On Vacation',
+      empty: 'No one is marked on vacation right now.',
+      color: '#b45309',
+      people: vacation,
+    },
+    {
+      title: 'Suspended',
+      empty: 'No suspended team members.',
+      color: '#b91c1c',
+      people: suspended,
+    },
+  ];
+
+  listEl.innerHTML = sections.map(section => `
+    <div style="padding:12px 14px;border:1px solid rgba(148,163,184,0.18);border-radius:14px;background:rgba(255,255,255,0.72)">
+      <div style="font-size:12px;font-weight:700;color:${section.color};text-transform:uppercase;letter-spacing:0.08em">${section.title}</div>
+      <div style="margin-top:8px;font-size:13px;color:#475569;line-height:1.6">
+        ${section.people.length
+          ? section.people.map(person => `${person.name || 'Team member'} (${String(person.role || 'crew').toUpperCase()})`).join('<br>')
+          : section.empty}
+      </div>
+    </div>
+  `).join('');
+}
+
 function getWeekStart(date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -4690,6 +4754,7 @@ function getWeekStart(date) {
 async function initCalendar() {
   if (!calWeekStart) calWeekStart = getWeekStart(new Date());
   await Promise.all([loadCalendarWeek(), loadServices()]);
+  renderCalendarTeamAvailability();
   calInitialized = true;
 }
 
@@ -4752,6 +4817,7 @@ async function loadCalendarWeek() {
     calSelectedDate = visibleDates.includes(today) ? today : visibleDates[0];
   }
   updateCalendarMetrics();
+  renderCalendarTeamAvailability();
   renderCalendarGrid();
   renderCalendarAgenda();
 }
