@@ -794,10 +794,7 @@
 
   <nav class="sidebar-nav">
     <div class="sidebar-section-label">Workspace</div>
-    <div class="nav-item active" id="mtab-remote-control" onclick="switchMainTab('remote-control')">
-      <i data-lucide="radar"></i><span>Remote Control</span>
-    </div>
-    <div class="nav-item" id="mtab-jobs" onclick="switchMainTab('jobs')">
+    <div class="nav-item active" id="mtab-jobs" onclick="switchMainTab('jobs')">
       <i data-lucide="briefcase"></i><span>Jobs</span>
     </div>
     <div class="nav-item" id="mtab-team" onclick="switchMainTab('team')">
@@ -884,161 +881,6 @@
     <div class="overlay-body" id="overlay-body"></div>
   </div>
 </div>
-
-<!-- Remote Control view -->
-<div id="remote-control-view">
-<div class="owner-page">
-  <div class="owner-page-shell">
-    <div class="owner-page-header">
-      <div class="owner-page-copy">
-        <div class="owner-page-eyebrow">Remote Control</div>
-        <div class="owner-page-title">Run the jobsite without the windshield time.</div>
-        <div class="owner-page-subtitle">This is the owner command center for proof, execution, crew readiness, and risk. If something here looks weak, that is the job most likely to pull you back to the site.</div>
-      </div>
-      <div class="owner-page-actions">
-        <button class="owner-btn" onclick="switchMainTab('jobs')">Open Jobs</button>
-        <button class="owner-btn primary" onclick="openAddJob()">+ Add Job</button>
-      </div>
-    </div>
-
-    <div class="owner-ops-layout">
-      <div class="owner-section-stack">
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">At-Risk Jobs</div>
-              <div class="owner-card-headline">Where the owner should focus first</div>
-              <div class="owner-card-sub">These are the jobs most likely to force a site visit because proof, crew readiness, or plan clarity is still weak.</div>
-            </div>
-          </div>
-          <div id="remote-control-risk-list"><div class="empty"><div class="e-icon">🛰️</div>Loading remote control signals...</div></div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Plans / Schematics / Special Notes</div>
-              <div class="owner-card-headline">Critical plans, measurements, diagrams, finish standards, or install instructions</div>
-            </div>
-          </div>
-          <div id="remote-control-plans-card"><div class="empty"><div class="e-icon">🧭</div>Selecting lead job...</div></div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Order Of Work / Execution Plan</div>
-              <div class="owner-card-headline">What should happen first, next, and last</div>
-            </div>
-          </div>
-          <div id="remote-control-execution-card"><div class="empty"><div class="e-icon">🪜</div>Loading execution plan...</div></div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Owner Checklist</div>
-              <div class="owner-card-headline">What must be verified before the job is truly done</div>
-            </div>
-          </div>
-          <div id="remote-control-checklist-card"><div class="empty"><div class="e-icon">✅</div>Loading checklist...</div></div>
-        </div>
-      </div>
-
-      <div class="owner-section-stack">
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Missing Items / Risk Watchlist</div>
-              <div class="owner-card-headline">Materials, measurements, and customer concerns that can still derail the job</div>
-            </div>
-          </div>
-          <div id="remote-control-watchlist-card"><div class="empty"><div class="e-icon">📦</div>Loading watchlist...</div></div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Client Communication Plan</div>
-              <div class="owner-card-headline">What the crew should confirm and when they should update the client</div>
-            </div>
-          </div>
-          <div id="remote-control-client-comms-card"><div class="empty"><div class="e-icon">💬</div>Loading communication plan...</div></div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Proof And Execution Snapshot</div>
-              <div class="owner-card-headline">The one-glance field read on assignment, proof, and plan compliance</div>
-            </div>
-          </div>
-          <div id="remote-control-proof-card"><div class="empty"><div class="e-icon">📷</div>Loading proof snapshot...</div></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-          <div class="owner-card">
-            <div class="owner-card-header">
-              <div>
-                <div class="owner-card-title">Expected Hours</div>
-                <div class="owner-card-headline">Planned duration</div>
-              </div>
-            </div>
-            <div id="remote-control-duration-card"><div class="empty"><div class="e-icon">⏱️</div>Loading duration...</div></div>
-          </div>
-          <div class="owner-card">
-            <div class="owner-card-header">
-              <div>
-                <div class="owner-card-title">Crew Confirmation</div>
-                <div class="owner-card-headline">Have they confirmed the plan?</div>
-              </div>
-            </div>
-            <div id="remote-control-confirmation-card"><div class="empty"><div class="e-icon">🤝</div>Loading confirmation...</div></div>
-          </div>
-          <div class="owner-card">
-            <div class="owner-card-header">
-              <div>
-                <div class="owner-card-title">Crew Readiness</div>
-                <div class="owner-card-headline">Lead, crew, and on-site status</div>
-              </div>
-            </div>
-            <div id="remote-control-crew-card"><div class="empty"><div class="e-icon">👷</div>Loading crew readiness...</div></div>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-          <div class="owner-card">
-            <div class="owner-card-header"><div><div class="owner-card-title">Before Photos</div></div></div>
-            <div id="remote-control-before-photos-card"><div class="empty"><div class="e-icon">📸</div>Loading...</div></div>
-          </div>
-          <div class="owner-card">
-            <div class="owner-card-header"><div><div class="owner-card-title">Mid-Job Photos</div></div></div>
-            <div id="remote-control-mid-photos-card"><div class="empty"><div class="e-icon">📸</div>Loading...</div></div>
-          </div>
-          <div class="owner-card">
-            <div class="owner-card-header"><div><div class="owner-card-title">Completion Photos</div></div></div>
-            <div id="remote-control-completion-photos-card"><div class="empty"><div class="e-icon">📸</div>Loading...</div></div>
-          </div>
-          <div class="owner-card">
-            <div class="owner-card-header"><div><div class="owner-card-title">Cleanup Photos</div></div></div>
-            <div id="remote-control-cleanup-photos-card"><div class="empty"><div class="e-icon">📸</div>Loading...</div></div>
-          </div>
-        </div>
-
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
-              <div class="owner-card-title">Blockers</div>
-              <div class="owner-card-headline">What can still blow up the day</div>
-            </div>
-          </div>
-          <div id="remote-control-blockers-card"><div class="empty"><div class="e-icon">⚠️</div>Loading blockers...</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</div><!-- end remote-control-view -->
 
 <!-- Jobs view -->
 <div id="jobs-view">
@@ -2605,7 +2447,7 @@ function updateSignedInAccountUI() {
 }
 
 function getAccessibleTabs() {
-  const tabs = ['remote-control', 'jobs', 'team', 'clients', 'calendar', 'timesheets'];
+  const tabs = ['jobs', 'team', 'clients', 'calendar', 'timesheets'];
   if (canViewFinancials()) {
     tabs.push('agreements', 'reports');
   }
@@ -2620,7 +2462,7 @@ function getAccessibleTabs() {
 
 function applyCapabilityUI() {
   const accessibleTabs = new Set(getAccessibleTabs());
-  ['remote-control','jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(tab => {
+  ['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(tab => {
     const tabEl = document.getElementById(`mtab-${tab}`);
     if (tabEl) tabEl.style.display = accessibleTabs.has(tab) ? '' : 'none';
   });
@@ -3176,7 +3018,7 @@ function writeDashboardState(patch) {
 
 function getTabFromLocationHash() {
   const raw = window.location.hash.replace(/^#/, '').trim();
-  const allowed = new Set(['remote-control','jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas']);
+  const allowed = new Set(['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas']);
   return allowed.has(raw) ? raw : null;
 }
 
@@ -3190,8 +3032,8 @@ async function init() {
   if (state.calendarWeekStart) calWeekStart = new Date(state.calendarWeekStart);
   if (state.calendarSelectedDate) calSelectedDate = state.calendarSelectedDate;
   const accessibleTabs = getAccessibleTabs();
-  const requestedTab = getTabFromLocationHash() || state.mainTab || 'remote-control';
-  const restoredTab = accessibleTabs.includes(requestedTab) ? requestedTab : (accessibleTabs[0] || 'remote-control');
+  const requestedTab = getTabFromLocationHash() || state.mainTab || 'jobs';
+  const restoredTab = accessibleTabs.includes(requestedTab) ? requestedTab : (accessibleTabs[0] || 'jobs');
   switchMainTab(restoredTab);
   if (restoredTab === 'clients') {
     const requestedClientsSubtab = state.clientsSubtab || 'all';
@@ -3294,34 +3136,14 @@ function setText(id, value) {
   if (el) el.textContent = value;
 }
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function getJobStatusChip(status) {
   const normalized = String(status || '').toLowerCase();
-  if (!normalized) return { cls: 'chip-green', label: 'Active' };
   if (normalized === 'scheduled') return { cls: 'chip-blue', label: 'Scheduled' };
   if (normalized === 'in_progress') return { cls: 'chip-yellow', label: 'In Progress' };
   if (normalized === 'active') return { cls: 'chip-green', label: 'Active' };
   if (normalized === 'invoiced') return { cls: 'chip-blue', label: 'Invoiced' };
   if (normalized === 'completed') return { cls: 'chip-green', label: 'Completed' };
   return { cls: 'chip-blue', label: status || 'Open' };
-}
-
-function isOperationalJobStatus(status) {
-  const normalized = String(status || '').toLowerCase();
-  return !normalized || ['active', 'in_progress', 'scheduled'].includes(normalized);
-}
-
-function isRemoteControlJobStatus(status) {
-  const normalized = String(status || '').toLowerCase();
-  return !normalized || ['scheduled', 'in_progress', 'active', 'on_hold'].includes(normalized);
 }
 
 function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount, requestCount = 0) {
@@ -3354,7 +3176,7 @@ function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCoun
 }
 
 function isHistoricalJob(job) {
-  return !isOperationalJobStatus(job?.status);
+  return !['active', 'in_progress', 'scheduled'].includes(String(job?.status || '').toLowerCase());
 }
 
 function updateJobsViewModeUI() {
@@ -3408,14 +3230,19 @@ function isPortalRequestJob(job) {
 }
 
 function renderClientRequests(jobs = []) {
+  const list = document.getElementById('client-requests-list');
+  if (!list) return;
   const requests = (jobs || [])
     .filter(isPortalRequestJob)
     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
     .slice(0, 8);
 
-  const html = !requests.length
-    ? '<div class="empty"><div class="e-icon">✅</div>No new client requests waiting right now</div>'
-    : requests.map(job => `
+  if (!requests.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No new client requests waiting right now</div>';
+    return;
+  }
+
+  list.innerHTML = requests.map(job => `
     <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div style="min-width:0">
@@ -3427,240 +3254,6 @@ function renderClientRequests(jobs = []) {
       </div>
     </div>
   `).join('');
-  ['client-requests-list', 'rc-client-requests-list'].forEach((id) => {
-    const list = document.getElementById(id);
-    if (list) list.innerHTML = html;
-  });
-}
-
-function getJobRemoteControlSignals(job) {
-  const checklistItems = Array.isArray(job?.checklist_items) ? job.checklist_items : [];
-  const assignments = Array.isArray(job?.assignments) ? job.assignments : [];
-  const updates = Array.isArray(job?.updates) ? job.updates : [];
-  const onSiteCount = assignments.filter(a => a.checked_in_at && !a.checked_out_at).length;
-  const photoCount = updates.filter(u => u.type === 'photo' && u.photo_url).length;
-  const requiredPhotos = (job?.required_before_photos || 0) + (job?.required_mid_job_photos || 0) + (job?.required_completion_photos || 0) + (job?.required_cleanup_photos || 0);
-  const bottleneckCount = updates.filter(u => u.type === 'bottleneck').length;
-  const missingPlan = !job?.crew_plan_confirmed;
-  const missingLead = !job?.primary_supervisor_employee_id;
-  const missingCrew = assignments.length === 0;
-  const missingChecklist = checklistItems.length === 0;
-  const missingProof = requiredPhotos > 0 ? photoCount < requiredPhotos : photoCount === 0;
-  const riskCount = [missingPlan, missingLead, missingCrew, missingChecklist, missingProof].filter(Boolean).length + bottleneckCount;
-  return { checklistItems, onSiteCount, photoCount, requiredPhotos, bottleneckCount, missingPlan, missingLead, missingCrew, missingChecklist, missingProof, riskCount };
-}
-
-function renderRemoteControlBoard(jobs = []) {
-  const scopedJobs = (jobs || [])
-    .filter(job => isRemoteControlJobStatus(job?.status))
-    .map(job => ({ job, signals: getJobRemoteControlSignals(job) }))
-    .sort((a, b) => b.signals.riskCount - a.signals.riskCount || new Date(b.job.updated_at || b.job.created_at || 0) - new Date(a.job.updated_at || a.job.created_at || 0))
-    .slice(0, 8);
-
-  const riskHtml = !scopedJobs.length
-    ? '<div class="empty"><div class="e-icon">🛰️</div>No jobs need remote oversight right now</div>'
-    : scopedJobs.map(({ job, signals }) => `
-    <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-        <div style="min-width:0;flex:1">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div style="font-size:14px;font-weight:800;color:#0f172a">${job.name}</div>
-            <span class="chip" style="background:${statusColors[job.status]||'#f5f5f5'};color:${statusTextColors[job.status]||'#737475'}">${String(job.status || 'unknown').replace('_',' ')}</span>
-          </div>
-          <div style="font-size:12px;color:#64748b;margin-top:4px">${job.address || 'No address provided'}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-            <span class="chip" style="background:${signals.missingLead ? '#fef2f2' : '#eff6ff'};color:${signals.missingLead ? '#b91c1c' : '#1d4ed8'}">${signals.missingLead ? 'No lead' : 'Lead assigned'}</span>
-            <span class="chip" style="background:${signals.missingCrew ? '#fef2f2' : '#f0fdf4'};color:${signals.missingCrew ? '#b91c1c' : '#166534'}">${signals.missingCrew ? 'No crew' : `${signals.onSiteCount} on site`}</span>
-            <span class="chip" style="background:${signals.missingPlan ? '#fff7ed' : '#f0fdf4'};color:${signals.missingPlan ? '#c2410c' : '#166534'}">${signals.missingPlan ? 'Plan unconfirmed' : 'Plan confirmed'}</span>
-            <span class="chip" style="background:${signals.missingProof ? '#fff7ed' : '#f0fdf4'};color:${signals.missingProof ? '#c2410c' : '#166534'}">Proof ${signals.photoCount}/${signals.requiredPhotos || 0}</span>
-            <span class="chip" style="background:${signals.missingChecklist ? '#fff7ed' : '#eff6ff'};color:${signals.missingChecklist ? '#c2410c' : '#1d4ed8'}">${signals.missingChecklist ? 'Checklist missing' : `${signals.checklistItems.length} checklist items`}</span>
-            ${signals.bottleneckCount ? `<span class="chip chip-yellow">${signals.bottleneckCount} blocker${signals.bottleneckCount === 1 ? '' : 's'}</span>` : ''}
-          </div>
-        </div>
-        <div style="text-align:right;min-width:72px">
-          <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em">Risk</div>
-          <div style="font-size:24px;font-weight:900;color:${signals.riskCount > 2 ? '#dc2626' : signals.riskCount > 0 ? '#d97706' : '#16a34a'}">${signals.riskCount}</div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-  const lead = scopedJobs[0] || null;
-  const leadJob = lead?.job || null;
-  const leadSignals = lead?.signals || null;
-  const leadChecklist = Array.isArray(leadJob?.checklist_items) ? leadJob.checklist_items : [];
-  const leadPhotos = (leadJob?.updates || []).filter(u => u.type === 'photo' && u.photo_url).slice(0, 4);
-  const blockers = scopedJobs
-    .flatMap(({ job, signals }) => {
-      const rows = [];
-      if (job?.missing_items_watchlist) rows.push({ job, tone: '#c2410c', label: 'Watchlist', text: job.missing_items_watchlist });
-      (job?.updates || []).filter(u => u.type === 'bottleneck').slice(0, 2).forEach(u => rows.push({ job, tone: '#b45309', label: 'Blocker', text: u.message }));
-      return rows;
-    })
-    .slice(0, 8);
-  const crewRows = scopedJobs.slice(0, 6);
-
-  const planHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">🧭</div>No lead job selected yet</div>'
-    : `
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
-        <div>
-          <div style="font-size:15px;font-weight:800;color:#0f172a">${leadJob.name}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:4px">${leadJob.address || 'No address provided'}</div>
-        </div>
-        <span class="chip" style="background:${statusColors[leadJob.status]||'#f5f5f5'};color:${statusTextColors[leadJob.status]||'#737475'}">${String(leadJob.status || 'unknown').replace('_',' ')}</span>
-      </div>
-      <div style="font-size:13px;color:#334155;line-height:1.8;white-space:pre-wrap">${leadJob.plans_notes || 'No plans or schematics notes saved yet.'}</div>
-    `;
-
-  const executionHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">🪜</div>No lead job selected yet</div>'
-    : `<div style="font-size:13px;color:#334155;line-height:1.8;white-space:pre-wrap">${leadJob.execution_plan || 'No execution plan saved yet.'}</div>`;
-
-  const checklistHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">✅</div>No lead job selected yet</div>'
-    : leadChecklist.length
-      ? `<div style="display:flex;flex-direction:column;gap:10px">${leadChecklist.map((item, index) => `<div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#334155"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;width:22px;height:22px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:11px;font-weight:700">${index + 1}</span><span style="line-height:1.7">${item}</span></div>`).join('')}</div>`
-      : '<div style="font-size:13px;color:#94a3b8">No checklist saved yet.</div>';
-
-  const watchlistHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📦</div>No lead job selected yet</div>'
-    : `<div style="font-size:13px;color:#334155;line-height:1.8;white-space:pre-wrap">${leadJob.missing_items_watchlist || 'No missing items or risk watchlist saved yet.'}</div>`;
-
-  const clientCommsHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">💬</div>No lead job selected yet</div>'
-    : `<div style="font-size:13px;color:#334155;line-height:1.8;white-space:pre-wrap">${leadJob.client_communication_plan || 'No client communication plan saved yet.'}</div>`;
-
-  const durationHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">⏱️</div>No lead job selected yet</div>'
-    : `<div style="font-size:30px;font-weight:900;color:#0f172a">${leadJob.expected_duration_hours != null && leadJob.expected_duration_hours !== '' ? leadJob.expected_duration_hours : '—'}</div><div style="font-size:12px;color:#64748b;margin-top:6px">Expected hours</div>`;
-
-  const confirmationHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">🤝</div>No lead job selected yet</div>'
-    : `
-      <div style="padding:14px;border:1px solid ${leadJob.crew_plan_confirmed ? '#bbf7d0' : '#fdba74'};border-radius:12px;background:${leadJob.crew_plan_confirmed ? '#f0fdf4' : '#fff7ed'}">
-        <div style="font-size:14px;font-weight:800;color:${leadJob.crew_plan_confirmed ? '#166534' : '#c2410c'}">${leadJob.crew_plan_confirmed ? 'Confirmed' : 'Needs Confirm'}</div>
-        <div style="font-size:12px;color:#475569;line-height:1.7;margin-top:6px">Crew has ${leadJob.crew_plan_confirmed ? '' : 'not '}confirmed they understand the plan, order of work, and proof required.</div>
-      </div>
-    `;
-
-  const proofHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📸</div>No proof targets to show yet</div>'
-    : `
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px">
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Lead Assigned</div>
-          <div style="font-size:14px;font-weight:800;color:${leadSignals?.missingLead ? '#b91c1c' : '#0f172a'}">${leadSignals?.missingLead ? 'Missing' : escapeHtml(leadJob.supervisor_name || 'Assigned')}</div>
-        </div>
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Crew Assigned</div>
-          <div style="font-size:28px;font-weight:900;color:#0f172a">${Array.isArray(leadJob.assignments) ? leadJob.assignments.length : 0}</div>
-        </div>
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Crew On Site</div>
-          <div style="font-size:28px;font-weight:900;color:#0f172a">${leadSignals?.onSiteCount || 0}</div>
-        </div>
-        <div style="padding:14px;border:1px solid ${leadJob.crew_plan_confirmed ? '#bbf7d0' : '#fdba74'};border-radius:12px;background:${leadJob.crew_plan_confirmed ? '#f0fdf4' : '#fff7ed'}">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Plan Confirmed</div>
-          <div style="font-size:14px;font-weight:800;color:${leadJob.crew_plan_confirmed ? '#166534' : '#c2410c'}">${leadJob.crew_plan_confirmed ? 'Confirmed' : 'Needs Confirm'}</div>
-        </div>
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Checklist</div>
-          <div style="font-size:14px;font-weight:800;color:#0f172a">${leadChecklist.length} item${leadChecklist.length === 1 ? '' : 's'}</div>
-        </div>
-        <div style="padding:14px;border:1px solid ${leadSignals?.missingProof ? '#fdba74' : '#bbf7d0'};border-radius:12px;background:${leadSignals?.missingProof ? '#fff7ed' : '#f0fdf4'}">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proof Photos</div>
-          <div style="font-size:14px;font-weight:800;color:${leadSignals?.missingProof ? '#c2410c' : '#166534'}">${leadSignals?.photoCount || 0} / ${leadSignals?.requiredPhotos || 0}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px">
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Owner Checklist</div>
-          ${leadChecklist.length ? `<div style="display:flex;flex-direction:column;gap:8px">${leadChecklist.map(item => `<div style="font-size:13px;color:#334155;line-height:1.7">• ${escapeHtml(item)}</div>`).join('')}</div>` : '<div style="font-size:13px;color:#94a3b8">No checklist saved yet.</div>'}
-        </div>
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:11px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proof Targets</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Before start</span><strong>${leadJob.required_before_photos ?? 0}</strong></div>
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Mid-job</span><strong>${leadJob.required_mid_job_photos ?? 0}</strong></div>
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Completion</span><strong>${leadJob.required_completion_photos ?? 0}</strong></div>
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Cleanup</span><strong>${leadJob.required_cleanup_photos ?? 0}</strong></div>
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Expected hours</span><strong>${leadJob.expected_duration_hours != null && leadJob.expected_duration_hours !== '' ? leadJob.expected_duration_hours : '—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#334155"><span>Actual photos</span><strong>${leadSignals?.photoCount || 0}</strong></div>
-          </div>
-        </div>
-      </div>
-      ${leadPhotos.length ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px">${leadPhotos.map(photo => `<img src="${photo.photo_url}" onclick="window.open('${photo.photo_url}','_blank')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid #e8e8e8;cursor:pointer">`).join('')}</div>` : ''}
-    `;
-
-  const crewHtml = !crewRows.length
-    ? '<div class="empty"><div class="e-icon">👷</div>No active jobs to assess</div>'
-    : crewRows.map(({ job, signals }) => `
-      <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-          <div style="min-width:0;flex:1">
-            <div style="font-size:13px;font-weight:800;color:#0f172a">${job.name}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${signals.onSiteCount} on site • ${signals.missingCrew ? 'crew missing' : 'crew assigned'} • ${signals.missingLead ? 'lead missing' : 'lead assigned'}</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-            <span class="chip" style="background:${signals.missingLead ? '#fef2f2' : '#eff6ff'};color:${signals.missingLead ? '#b91c1c' : '#1d4ed8'}">${signals.missingLead ? 'No lead' : 'Lead ready'}</span>
-            <span class="chip" style="background:${signals.missingCrew ? '#fef2f2' : '#f0fdf4'};color:${signals.missingCrew ? '#b91c1c' : '#166534'}">${signals.missingCrew ? 'No crew' : 'Crew ready'}</span>
-            <span class="chip" style="background:${signals.missingPlan ? '#fff7ed' : '#f0fdf4'};color:${signals.missingPlan ? '#c2410c' : '#166534'}">${signals.missingPlan ? 'Unconfirmed' : 'Confirmed'}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-
-  const blockersHtml = !blockers.length
-    ? '<div class="empty"><div class="e-icon">✅</div>No blockers or watchlist items are surfacing right now</div>'
-    : blockers.map(entry => `
-      <div class="supply-item" style="cursor:pointer" onclick="openDetail('${entry.job.id}','${String(entry.job.name || '').replace(/'/g,"\\'")}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-          <div style="min-width:0;flex:1">
-            <div style="font-size:13px;font-weight:800;color:#0f172a">${entry.job.name}</div>
-            <div style="font-size:11px;font-weight:800;color:${entry.tone};text-transform:uppercase;letter-spacing:0.05em;margin-top:6px">${entry.label}</div>
-            <div style="font-size:13px;color:#475569;line-height:1.7;margin-top:4px">${entry.text}</div>
-          </div>
-        </div>
-      </div>
-    `).join('');
-
-  const beforePhotosHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📸</div>No lead job selected yet</div>'
-    : `<div style="font-size:30px;font-weight:900;color:#0f172a">${leadJob.required_before_photos ?? 0}</div><div style="font-size:12px;color:#64748b;margin-top:6px">Before-start proof required</div>`;
-
-  const midPhotosHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📸</div>No lead job selected yet</div>'
-    : `<div style="font-size:30px;font-weight:900;color:#0f172a">${leadJob.required_mid_job_photos ?? 0}</div><div style="font-size:12px;color:#64748b;margin-top:6px">Mid-job proof required</div>`;
-
-  const completionPhotosHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📸</div>No lead job selected yet</div>'
-    : `<div style="font-size:30px;font-weight:900;color:#0f172a">${leadJob.required_completion_photos ?? 0}</div><div style="font-size:12px;color:#64748b;margin-top:6px">Completion proof required</div>`;
-
-  const cleanupPhotosHtml = !leadJob
-    ? '<div class="empty"><div class="e-icon">📸</div>No lead job selected yet</div>'
-    : `<div style="font-size:30px;font-weight:900;color:#0f172a">${leadJob.required_cleanup_photos ?? 0}</div><div style="font-size:12px;color:#64748b;margin-top:6px">Cleanup proof required</div>`;
-
-  const targets = {
-    'remote-control-risk-list': riskHtml,
-    'remote-control-plans-card': planHtml,
-    'remote-control-execution-card': executionHtml,
-    'remote-control-checklist-card': checklistHtml,
-    'remote-control-watchlist-card': watchlistHtml,
-    'remote-control-client-comms-card': clientCommsHtml,
-    'remote-control-duration-card': durationHtml,
-    'remote-control-confirmation-card': confirmationHtml,
-    'remote-control-proof-card': proofHtml,
-    'remote-control-crew-card': crewHtml,
-    'remote-control-before-photos-card': beforePhotosHtml,
-    'remote-control-mid-photos-card': midPhotosHtml,
-    'remote-control-completion-photos-card': completionPhotosHtml,
-    'remote-control-cleanup-photos-card': cleanupPhotosHtml,
-    'remote-control-blockers-card': blockersHtml,
-  };
-  Object.entries(targets).forEach(([id, html]) => {
-    const list = document.getElementById(id);
-    if (list) list.innerHTML = html;
-  });
 }
 
 function renderJobsBoard(jobs = []) {
@@ -3706,7 +3299,7 @@ function renderJobsBoard(jobs = []) {
     return;
   }
 
-  const activeJobs = jobs.filter(j => isOperationalJobStatus(j.status));
+  const activeJobs = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
   if (!activeJobs.length) {
     list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No active jobs right now.<br><span style="font-size:13px;color:#0265dc;cursor:pointer;font-weight:600" onclick="openAddJob()">+ Add a new job</span></div>';
     return;
@@ -3734,6 +3327,8 @@ function renderJobsBoard(jobs = []) {
 
 function renderRecentOutcomes(jobs = []) {
   updateRecentOutcomeRangeUI();
+  const list = document.getElementById('recent-outcomes-list');
+  if (!list) return;
   const now = Date.now();
   const outcomes = (jobs || [])
     .filter(job => ['complete', 'invoiced'].includes(String(job?.status || '').toLowerCase()) || String(job?.payment_status || '').toLowerCase() === 'paid')
@@ -3745,9 +3340,12 @@ function renderRecentOutcomes(jobs = []) {
     .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
     .slice(0, 8);
 
-  const html = !outcomes.length
-    ? '<div class="empty"><div class="e-icon">✅</div>No completed or paid jobs in this range</div>'
-    : outcomes.map(job => `
+  if (!outcomes.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No completed or paid jobs in this range</div>';
+    return;
+  }
+
+  list.innerHTML = outcomes.map(job => `
     <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div style="min-width:0">
@@ -3762,37 +3360,23 @@ function renderRecentOutcomes(jobs = []) {
       </div>
     </div>
   `).join('');
-  ['recent-outcomes-list', 'rc-recent-outcomes-list'].forEach((id) => {
-    const list = document.getElementById(id);
-    if (list) list.innerHTML = html;
-  });
 }
 
 async function loadDashboard() {
   const res = await authFetch('/api/jobs');
   const jobs = await res.json();
-  const jobsWithDetail = await Promise.all((jobs || []).map(async (job) => {
-    try {
-      const r = await authFetch(`/api/jobs/${job.id}`);
-      const d = await r.json();
-      return { ...job, assignments: d.assignments || [], supplies: d.supplies || [], updates: d.updates || [] };
-    } catch (_) {
-      return { ...job, assignments: [], supplies: [], updates: [] };
-    }
-  }));
-  allJobsData = jobsWithDetail;
+  allJobsData = jobs;
   updateJobsViewModeUI();
   updateRecentOutcomeRangeUI();
-  renderClientRequests(jobsWithDetail);
-  renderRecentOutcomes(jobsWithDetail);
-  renderRemoteControlBoard(jobsWithDetail);
-  const requestCount = jobsWithDetail.filter(isPortalRequestJob).length;
+  renderClientRequests(jobs);
+  renderRecentOutcomes(jobs);
+  const requestCount = jobs.filter(isPortalRequestJob).length;
 
-  const active = jobsWithDetail.filter(j => isOperationalJobStatus(j.status));
+  const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
   setText('stat-jobs', active.length);
   setText('jobs-active-count', active.length);
 
-  if (!jobsWithDetail.length) {
+  if (!jobs.length) {
     setText('stat-crew', 0);
     setText('stat-supplies', 0);
     setText('stat-bottlenecks', 0);
@@ -3800,17 +3384,18 @@ async function loadDashboard() {
     setText('jobs-supplies-count', 0);
     setText('jobs-bottlenecks-count', 0);
     updateJobsAttention(0, 0, 0, 0, 0);
-    renderJobsBoard(jobsWithDetail);
+    renderJobsBoard(jobs);
     return;
   }
-  renderJobsBoard(jobsWithDetail);
+  renderJobsBoard(jobs);
 
   allAssignmentsData = []; allSuppliesData = []; allUpdatesData = [];
   let totalCrew = 0, totalSupplies = 0, totalBottlenecks = 0;
   const today = new Date(); today.setHours(0,0,0,0);
 
   await Promise.all(active.map(async job => {
-    const d = job;
+    const r = await authFetch(`/api/jobs/${job.id}`);
+    const d = await r.json();
     const onSite = (d.assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
     const pending = (d.supplies || []).filter(s => s.status === 'pending');
     const bottlenecks = (d.updates || []).filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
@@ -3837,9 +3422,6 @@ async function loadDashboard() {
   setText('jobs-crew-count', totalCrew);
   setText('jobs-supplies-count', totalSupplies);
   setText('jobs-bottlenecks-count', totalBottlenecks);
-  setText('rc-inline-active', active.length);
-  setText('rc-inline-crew', totalCrew);
-  setText('rc-inline-supplies', totalSupplies);
   updateJobsAttention(active.length, totalCrew, totalSupplies, totalBottlenecks, requestCount);
 }
 
@@ -3928,18 +3510,6 @@ async function openDetail(jobId, jobName) {
   const { job, assignments, supplies, updates } = await res.json();
   const noteUpdates = (updates || []).filter(u => u.type === 'note');
   const bottleneckUpdates = (updates || []).filter(u => u.type === 'bottleneck');
-  const photoUpdates = (updates || []).filter(u => u.type === 'photo' && u.photo_url);
-  const checklistItems = Array.isArray(job?.checklist_items) ? job.checklist_items : [];
-  const requiredProofPhotos = (job?.required_before_photos || 0) + (job?.required_mid_job_photos || 0) + (job?.required_completion_photos || 0) + (job?.required_cleanup_photos || 0);
-  const onSiteAssignments = (assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
-  const remoteSignals = [
-    { label: 'Lead Assigned', value: job?.primary_supervisor_employee_id ? 'Ready' : 'Missing', ok: !!job?.primary_supervisor_employee_id },
-    { label: 'Crew Assigned', value: `${(assignments || []).length}`, ok: (assignments || []).length > 0 },
-    { label: 'Crew On Site', value: `${onSiteAssignments.length}`, ok: onSiteAssignments.length > 0 },
-    { label: 'Plan Confirmed', value: job?.crew_plan_confirmed ? 'Yes' : 'Needs Confirm', ok: !!job?.crew_plan_confirmed },
-    { label: 'Checklist', value: `${checklistItems.length} items`, ok: checklistItems.length > 0 },
-    { label: 'Proof Photos', value: `${photoUpdates.length} / ${requiredProofPhotos}`, ok: requiredProofPhotos === 0 ? photoUpdates.length > 0 : photoUpdates.length >= requiredProofPhotos },
-  ];
 
   const empEl = document.getElementById('detail-employees');
   const assignedIds = new Set((assignments||[]).map(a => a.employee_id));
@@ -4048,47 +3618,6 @@ async function openDetail(jobId, jobName) {
         <label>Scope / Work Being Done</label>
         <textarea id="detail-job-description" rows="5" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit">${job?.description || ''}</textarea>
       </div>
-      <div style="margin-top:14px;padding:16px;border:1px solid #e8eef3;border-radius:14px;background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%)">
-        <div style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Remote Control Plan</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="form-group" style="margin-bottom:0">
-            <label>Plans / Schematics / Special Notes</label>
-            <textarea id="detail-job-plans-notes" rows="4" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit" placeholder="Critical plans, measurements, diagrams, finish standards, or install instructions...">${job?.plans_notes || ''}</textarea>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label>Order of Work / Execution Plan</label>
-            <textarea id="detail-job-execution-plan" rows="4" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit" placeholder="1. Prep area&#10;2. Confirm measurements&#10;3. Install&#10;4. Final punch">${job?.execution_plan || ''}</textarea>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-          <div class="form-group" style="margin-bottom:0">
-            <label>Owner Checklist</label>
-            <textarea id="detail-job-checklist" rows="6" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit" placeholder="One required item per line&#10;Arrival photos&#10;Protect floors&#10;Confirm measurements&#10;Final cleanup photos">${checklistItems.join('\n')}</textarea>
-            <div style="margin-top:6px;font-size:12px;color:#64748b">These are the steps the owner expects verified before the job is truly done.</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div class="form-group" style="margin-bottom:0">
-              <label>Missing Items / Risk Watchlist</label>
-              <textarea id="detail-job-missing-items" rows="3" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit" placeholder="Materials still needed, measurements to double-check, customer concerns...">${job?.missing_items_watchlist || ''}</textarea>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label>Client Communication Plan</label>
-              <textarea id="detail-job-client-comms" rows="3" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit" placeholder="What the crew should confirm with the client, and when they should update them...">${job?.client_communication_plan || ''}</textarea>
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:12px">
-          <div class="form-group" style="margin-bottom:0"><label>Expected Hours</label><input type="number" id="detail-job-expected-duration" value="${job?.expected_duration_hours || ''}" min="0" step="0.5" placeholder="4"></div>
-          <div class="form-group" style="margin-bottom:0"><label>Before Photos</label><input type="number" id="detail-job-before-photos" value="${job?.required_before_photos ?? 2}" min="0" step="1"></div>
-          <div class="form-group" style="margin-bottom:0"><label>Mid-Job Photos</label><input type="number" id="detail-job-mid-photos" value="${job?.required_mid_job_photos ?? 1}" min="0" step="1"></div>
-          <div class="form-group" style="margin-bottom:0"><label>Completion Photos</label><input type="number" id="detail-job-completion-photos" value="${job?.required_completion_photos ?? 2}" min="0" step="1"></div>
-          <div class="form-group" style="margin-bottom:0"><label>Cleanup Photos</label><input type="number" id="detail-job-cleanup-photos" value="${job?.required_cleanup_photos ?? 1}" min="0" step="1"></div>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:600;color:#0f172a">
-          <input type="checkbox" id="detail-job-crew-confirmed" ${job?.crew_plan_confirmed ? 'checked' : ''}>
-          Crew has confirmed they understand the plan, order of work, and proof required.
-        </label>
-      </div>
       <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
         <button class="btn-save" onclick="saveJobOverview('${job.id}')">Save Job Details</button>
         <span id="detail-job-status-msg" style="font-size:12px;color:#4ade80"></span>
@@ -4161,45 +3690,6 @@ async function openDetail(jobId, jobName) {
 
   const notesEl = document.getElementById('detail-notes');
   notesEl.innerHTML = `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft);margin-bottom:16px">
-      <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>Remote Control</span>
-        <span style="font-size:12px;color:#64748b">Proof and execution snapshot</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-        ${remoteSignals.map(signal => `
-          <div style="padding:12px;border:1px solid ${signal.ok ? '#bbf7d0' : '#fde68a'};border-radius:12px;background:${signal.ok ? '#f0fdf4' : '#fffbeb'}">
-            <div style="font-size:11px;font-weight:700;color:${signal.ok ? '#166534' : '#92400e'};text-transform:uppercase;letter-spacing:0.04em">${signal.label}</div>
-            <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:4px">${signal.value}</div>
-          </div>
-        `).join('')}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Owner Checklist</div>
-          ${checklistItems.length ? `<div style="display:flex;flex-direction:column;gap:8px">${checklistItems.map((item, index) => `<div style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#334155"><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:11px;font-weight:700">${index + 1}</span><span>${item}</span></div>`).join('')}</div>` : '<div style="font-size:13px;color:#94a3b8">No checklist saved yet.</div>'}
-        </div>
-        <div style="padding:14px;border:1px solid #e8eef3;border-radius:12px;background:#f8fbfd">
-          <div style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Proof Targets</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:#334155">
-            <div>Before start: <strong>${job?.required_before_photos ?? 0}</strong></div>
-            <div>Mid-job: <strong>${job?.required_mid_job_photos ?? 0}</strong></div>
-            <div>Completion: <strong>${job?.required_completion_photos ?? 0}</strong></div>
-            <div>Cleanup: <strong>${job?.required_cleanup_photos ?? 0}</strong></div>
-            <div>Expected hours: <strong>${job?.expected_duration_hours || '—'}</strong></div>
-            <div>Actual photos: <strong>${photoUpdates.length}</strong></div>
-          </div>
-          ${(job?.plans_notes || job?.execution_plan || job?.missing_items_watchlist || job?.client_communication_plan) ? `
-            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#475569;line-height:1.6">
-              ${job?.plans_notes ? `<div><strong style="color:#0f172a">Plans:</strong> ${job.plans_notes}</div>` : ''}
-              ${job?.execution_plan ? `<div><strong style="color:#0f172a">Order of work:</strong> ${job.execution_plan}</div>` : ''}
-              ${job?.missing_items_watchlist ? `<div><strong style="color:#0f172a">Watchlist:</strong> ${job.missing_items_watchlist}</div>` : ''}
-              ${job?.client_communication_plan ? `<div><strong style="color:#0f172a">Client comms:</strong> ${job.client_communication_plan}</div>` : ''}
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    </div>
     <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
       <div class="panel-title">Owner Notes</div>
       <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px">
@@ -4291,20 +3781,6 @@ async function saveJobOverview(jobId) {
     address: document.getElementById('detail-job-address').value.trim() || null,
     status: document.getElementById('detail-job-status').value,
     description: document.getElementById('detail-job-description').value.trim() || null,
-    plans_notes: document.getElementById('detail-job-plans-notes')?.value.trim() || null,
-    execution_plan: document.getElementById('detail-job-execution-plan')?.value.trim() || null,
-    checklist_items: (document.getElementById('detail-job-checklist')?.value || '')
-      .split('\n')
-      .map(item => item.trim())
-      .filter(Boolean),
-    missing_items_watchlist: document.getElementById('detail-job-missing-items')?.value.trim() || null,
-    client_communication_plan: document.getElementById('detail-job-client-comms')?.value.trim() || null,
-    expected_duration_hours: document.getElementById('detail-job-expected-duration')?.value || null,
-    required_before_photos: document.getElementById('detail-job-before-photos')?.value || 0,
-    required_mid_job_photos: document.getElementById('detail-job-mid-photos')?.value || 0,
-    required_completion_photos: document.getElementById('detail-job-completion-photos')?.value || 0,
-    required_cleanup_photos: document.getElementById('detail-job-cleanup-photos')?.value || 0,
-    crew_plan_confirmed: !!document.getElementById('detail-job-crew-confirmed')?.checked,
   };
   const estimateEl = document.getElementById('detail-job-estimate');
   if (estimateEl && canManageFinancials()) {
@@ -5261,13 +4737,13 @@ function closeOverlay(e) {
 function switchMainTab(tab) {
   const accessibleTabs = getAccessibleTabs();
   if (!accessibleTabs.includes(tab)) {
-    tab = accessibleTabs[0] || 'remote-control';
+    tab = accessibleTabs[0] || 'jobs';
   }
-  const scrollableViews = ['team','settings','timesheets','calendar','reports','ideas','remote-control'];
+  const scrollableViews = ['team','settings','timesheets','calendar','reports','ideas'];
   const contentArea = document.querySelector('.content-area');
   writeDashboardState({ mainTab: tab });
   history.replaceState(null, '', `#${tab}`);
-  ['remote-control','jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
+  ['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
     const view = document.getElementById(`${t}-view`);
     const tabEl = document.getElementById(`mtab-${t}`);
     if (view) view.style.display = t === tab ? 'block' : 'none';
@@ -5275,11 +4751,11 @@ function switchMainTab(tab) {
   });
   // Let full-height views (crm, ag, jobs) control their own overflow
   if (contentArea) {
-    contentArea.style.overflowY = ['remote-control','jobs','clients','agreements'].includes(tab) ? 'hidden' : 'auto';
+    contentArea.style.overflowY = ['jobs','clients','agreements'].includes(tab) ? 'hidden' : 'auto';
   }
-  // Stats bar relevant on Remote Control and Jobs
+  // Stats bar only relevant on jobs view
   const statsEl = document.querySelector('.stats');
-  if (statsEl) statsEl.style.display = ['remote-control','jobs'].includes(tab) ? 'flex' : 'none';
+  if (statsEl) statsEl.style.display = tab === 'jobs' ? 'flex' : 'none';
   if (tab === 'team') loadTeamInline();
   if (tab === 'clients' && !allClientsData.length) loadClients();
   if (tab === 'reports' && canViewFinancials()) loadReports(30);
@@ -6976,8 +6452,9 @@ async function openClientDetail(clientId) {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
             ${canViewFinancials() ? (j.invoice_amount > 0
               ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>`
-              : `<button onclick="event.stopPropagation();openDetail('${j.id}','${String(j.name || '').replace(/'/g,"\\'")}');setTimeout(() => openSetInvoice('${j.id}', ${j.invoice_amount || 0}), 120)" style="background:none;border:none;color:#0265dc;cursor:pointer;font-size:12px;font-weight:700;padding:0">Invoice</button>`) : ''}
-            <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
+              : `<button onclick="event.stopPropagation();openDetail('${j.id}','${String(j.name || '').replace(/'/g,"\\'")}');setTimeout(() => openSetInvoice('${j.id}', ${j.invoice_amount || 0}), 120)" style="background:none;border:none;color:#0265dc;cursor:pointer;font-size:12px;font-weight:700;padding:0">Invoice</button>`)
+            : ''}
+          <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
           </div>
         </div>
       `).join('') : '<div style="font-size:13px;color:#949596;font-style:italic">No jobs linked to this client yet.</div>'}
