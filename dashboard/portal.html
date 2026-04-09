@@ -230,8 +230,9 @@
         <textarea class="form-textarea" id="req-description" rows="4" placeholder="Describe the work you'd like done..."></textarea>
         <label class="form-label">Property Address</label>
         <input class="form-input" type="text" id="req-address" placeholder="123 Main St, Miami FL">
-        <label class="form-label">Photo <span style="font-weight:400;color:#b0b0b0">(optional)</span></label>
-        <input type="file" id="req-photo" accept="image/*" capture="environment" style="margin-bottom:14px;font-size:13px;color:#737475">
+        <label class="form-label">Photos <span style="font-weight:400;color:#b0b0b0">(optional, up to 5)</span></label>
+        <input type="file" id="req-photo" accept="image/*" capture="environment" multiple style="margin-bottom:6px;font-size:13px;color:#737475">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:14px">Photos are compressed before upload to keep requests fast on mobile.</div>
         <button class="submit-btn" id="req-btn" onclick="submitRequest()">Submit Request</button>
         <div class="form-success" id="req-success">
           ✅ Your request has been submitted! We'll be in touch soon.
@@ -468,11 +469,51 @@
 
   // ── Request ───────────────────────────────────────────────────────────────
 
+  async function compressRequestPhoto(file) {
+    if (!file || !file.type.startsWith('image/')) return file;
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Unable to read image'));
+      reader.readAsDataURL(file);
+    });
+
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Unable to load image'));
+      image.src = dataUrl;
+    });
+
+    const maxDimension = 1600;
+    let { width, height } = img;
+    if (width > height && width > maxDimension) {
+      height = Math.round((height * maxDimension) / width);
+      width = maxDimension;
+    } else if (height >= width && height > maxDimension) {
+      width = Math.round((width * maxDimension) / height);
+      height = maxDimension;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.78));
+    if (!blob) return file;
+    const safeName = String(file.name || 'request-photo').replace(/\.[^.]+$/, '');
+    return new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
+  }
+
   async function submitRequest() {
     const description = document.getElementById('req-description').value.trim();
     const address = document.getElementById('req-address').value.trim();
-    const photoFile = document.getElementById('req-photo').files[0];
+    const photoFiles = Array.from(document.getElementById('req-photo').files || []);
     if (!description) { document.getElementById('req-description').focus(); return; }
+    if (photoFiles.length > 5) return alert('You can upload up to 5 photos per request.');
 
     const btn = document.getElementById('req-btn');
     btn.disabled = true;
@@ -481,7 +522,16 @@
     const formData = new FormData();
     formData.append('description', description);
     formData.append('address', address);
-    if (photoFile) formData.append('photo', photoFile);
+    try {
+      for (const photoFile of photoFiles.slice(0, 5)) {
+        const compressed = await compressRequestPhoto(photoFile);
+        formData.append('photos', compressed);
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Request';
+      return alert('One of the photos could not be prepared for upload. Please try again.');
+    }
 
     const res = await fetch('/portal/api/requests', {
       method: 'POST',
@@ -495,6 +545,9 @@
       document.getElementById('req-photo').value = '';
       document.getElementById('req-success').classList.add('visible');
       setTimeout(() => document.getElementById('req-success').classList.remove('visible'), 5000);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || 'Unable to submit request right now.');
     }
 
     btn.disabled = false;

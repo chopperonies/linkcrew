@@ -2733,7 +2733,7 @@ app.post('/portal/api/set-password', portalAuth, async (req, res) => {
 });
 
 // Portal: submit a new job request (with optional photo)
-app.post('/portal/api/requests', portalAuth, upload.single('photo'), async (req, res) => {
+app.post('/portal/api/requests', portalAuth, upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'photo', maxCount: 1 }]), async (req, res) => {
   const { description, address } = req.body;
   if (!description) return res.status(400).json({ error: 'Description is required' });
 
@@ -2749,25 +2749,35 @@ app.post('/portal/api/requests', portalAuth, upload.single('photo'), async (req,
 
   if (error) return res.status(400).json({ error: error.message });
 
-  let photoUrl = null;
-  if (req.file) {
-    const ext = req.file.mimetype.split('/')[1] || 'jpg';
-    const filePath = `requests/${job.id}/${Date.now()}.${ext}`;
-    const { data: uploaded, error: uploadErr } = await supabaseAdmin.storage
-      .from('portal-photos')
-      .upload(filePath, req.file.buffer, { contentType: req.file.mimetype });
-    if (!uploadErr && uploaded) {
-      const { data: { publicUrl } } = supabaseAdmin.storage.from('portal-photos').getPublicUrl(uploaded.path);
-      photoUrl = publicUrl;
-    }
-  }
-
   await supabaseAdmin.from('job_updates').insert({
     job_id: job.id,
     message: description,
-    type: photoUrl ? 'photo' : 'note',
-    photo_url: photoUrl,
+    type: 'note',
+    photo_url: null,
   });
+
+  const requestPhotos = [
+    ...((req.files && req.files.photos) || []),
+    ...((req.files && req.files.photo) || []),
+  ].slice(0, 5);
+
+  for (let i = 0; i < requestPhotos.length; i++) {
+    const file = requestPhotos[i];
+    const ext = file.mimetype.split('/')[1] || 'jpg';
+    const filePath = `requests/${job.id}/${Date.now()}-${i + 1}.${ext}`;
+    const { data: uploaded, error: uploadErr } = await supabaseAdmin.storage
+      .from('portal-photos')
+      .upload(filePath, file.buffer, { contentType: file.mimetype });
+    if (uploadErr || !uploaded) continue;
+
+    const { data: { publicUrl } } = supabaseAdmin.storage.from('portal-photos').getPublicUrl(uploaded.path);
+    await supabaseAdmin.from('job_updates').insert({
+      job_id: job.id,
+      message: requestPhotos.length > 1 ? `Client request photo ${i + 1} of ${requestPhotos.length}` : 'Client request photo',
+      type: 'photo',
+      photo_url: publicUrl,
+    });
+  }
 
   if (tenant?.owner_email) {
     sendClientRequestToOwner({
