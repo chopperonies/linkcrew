@@ -5662,8 +5662,8 @@ async function initTimesheets() {
     });
   }
 
-  // Load active jobs for punch panel
-  if (!allJobsData.length) {
+  // Always refresh jobs here so punch selectors never reuse stale dashboard state.
+  {
     const res = await authFetch('/api/jobs');
     allJobsData = await res.json();
   }
