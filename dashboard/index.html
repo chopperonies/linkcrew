@@ -982,6 +982,17 @@
             <div id="photos-content" style="display:none"><div id="photos-list"><div class="empty"><div class="e-icon">📸</div>Loading photos...</div></div></div>
           </div>
         </div>
+
+        <div class="owner-card">
+          <div class="owner-card-header">
+            <div>
+              <div class="owner-card-title">Client Requests</div>
+              <div class="owner-card-headline">Portal requests waiting for review</div>
+              <div class="owner-card-sub">Requests sent from the client portal land here as quoted jobs so the office can estimate, schedule, or follow up quickly.</div>
+            </div>
+          </div>
+          <div id="client-requests-list"><div class="empty"><div class="e-icon">✉️</div>Loading requests...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -3111,11 +3122,16 @@ function getJobStatusChip(status) {
   return { cls: 'chip-blue', label: status || 'Open' };
 }
 
-function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount) {
+function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount, requestCount = 0) {
   setText('jobs-inline-active', `${activeCount}`);
   setText('jobs-inline-crew', `${crewCount}`);
   setText('jobs-inline-supplies', `${supplyCount}`);
 
+  if (requestCount > 0) {
+    setText('jobs-attention-title', `${requestCount} client request${requestCount > 1 ? 's are' : ' is'} waiting for review.`);
+    setText('jobs-attention-copy', 'A client submitted new work through the portal. Review the quoted request, estimate it, and move it into scheduling if it should go forward.');
+    return;
+  }
   if (supplyCount > 0) {
     setText('jobs-attention-title', `${supplyCount} supply request${supplyCount > 1 ? 's' : ''} need office action.`);
     setText('jobs-attention-copy', 'Materials are the clearest blocker right now. Clear pending requests first so active jobs keep moving.');
@@ -3135,10 +3151,44 @@ function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCoun
   setText('jobs-attention-copy', 'Operations are moving cleanly. Use this board to monitor fresh photos, crew presence, and the next job that needs office input.');
 }
 
+function isPortalRequestJob(job) {
+  return String(job?.status || '').toLowerCase() === 'quoted'
+    && String(job?.name || '').startsWith('Request – ');
+}
+
+function renderClientRequests(jobs = []) {
+  const list = document.getElementById('client-requests-list');
+  if (!list) return;
+  const requests = (jobs || [])
+    .filter(isPortalRequestJob)
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 8);
+
+  if (!requests.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No new client requests waiting right now</div>';
+    return;
+  }
+
+  list.innerHTML = requests.map(job => `
+    <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#0f172a">${job.name.replace(/^Request –\s*/, '')}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px">${job.address || 'No address provided'}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:6px">${job.created_at ? new Date(job.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : ''}</div>
+        </div>
+        <span class="chip chip-blue">Quoted</span>
+      </div>
+    </div>
+  `).join('');
+}
+
 async function loadDashboard() {
   const res = await authFetch('/api/jobs');
   const jobs = await res.json();
   allJobsData = jobs;
+  renderClientRequests(jobs);
+  const requestCount = jobs.filter(isPortalRequestJob).length;
 
   const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
   setText('stat-jobs', active.length);
@@ -3153,7 +3203,7 @@ async function loadDashboard() {
     setText('jobs-crew-count', 0);
     setText('jobs-supplies-count', 0);
     setText('jobs-bottlenecks-count', 0);
-    updateJobsAttention(0, 0, 0, 0);
+    updateJobsAttention(0, 0, 0, 0, 0);
     return;
   }
 
@@ -3213,7 +3263,7 @@ async function loadDashboard() {
   setText('jobs-crew-count', totalCrew);
   setText('jobs-supplies-count', totalSupplies);
   setText('jobs-bottlenecks-count', totalBottlenecks);
-  updateJobsAttention(active.length, totalCrew, totalSupplies, totalBottlenecks);
+  updateJobsAttention(active.length, totalCrew, totalSupplies, totalBottlenecks, requestCount);
 }
 
 async function loadSupplies() {

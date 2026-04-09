@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
-const { sendDailyDigest, sendNote, sendInvoiceToClient, sendClientPortalInvite, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder } = require('../email/digest');
+const { sendDailyDigest, sendNote, sendInvoiceToClient, sendClientPortalInvite, sendClientRequestToOwner, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder } = require('../email/digest');
 const { LINKCREW_FROM, LINKCREW_ALERT_FROM, EMAIL_FROM_ADDRESS, formatFrom } = require('../email/config');
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -2737,7 +2737,10 @@ app.post('/portal/api/requests', portalAuth, upload.single('photo'), async (req,
   const { description, address } = req.body;
   if (!description) return res.status(400).json({ error: 'Description is required' });
 
-  const { data: client } = await supabaseAdmin.from('clients').select('name').eq('id', req.clientId).single();
+  const [{ data: client }, { data: tenant }] = await Promise.all([
+    supabaseAdmin.from('clients').select('name').eq('id', req.clientId).single(),
+    supabaseAdmin.from('tenants').select('company_name, owner_email').eq('id', req.tenantId).single(),
+  ]);
 
   const { data: job, error } = await supabaseAdmin
     .from('jobs')
@@ -2765,6 +2768,19 @@ app.post('/portal/api/requests', portalAuth, upload.single('photo'), async (req,
     type: photoUrl ? 'photo' : 'note',
     photo_url: photoUrl,
   });
+
+  if (tenant?.owner_email) {
+    sendClientRequestToOwner({
+      ownerEmail: tenant.owner_email,
+      tenantName: tenant.company_name,
+      clientName: client?.name || 'Client',
+      address,
+      description,
+      dashboardUrl: `${req.protocol}://${req.get('host')}`,
+    }).catch((emailErr) => {
+      console.error('[portal request] owner email error:', emailErr.message);
+    });
+  }
 
   res.json(job);
 });

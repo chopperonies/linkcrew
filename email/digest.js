@@ -364,6 +364,52 @@ async function sendPaymentReceivedToOwner({ ownerEmail, clientName, jobName, amo
   });
 }
 
+async function sendClientRequestToOwner({ ownerEmail, tenantName, clientName, address, description, dashboardUrl }) {
+  const html = `
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
+<div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:#7c2d12;padding:24px">
+    <h2 style="margin:0;color:#fed7aa;font-size:20px">New Client Service Request</h2>
+    <p style="margin:6px 0 0;color:#fdba74;font-size:14px">${clientName} submitted a new request through the client portal</p>
+  </div>
+  <div style="padding:28px">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280;width:96px">Client</td>
+        <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600">${clientName}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;font-size:13px;color:#6b7280">Address</td>
+        <td style="padding:8px 0;font-size:13px;color:#111827">${address || 'No address provided'}</td>
+      </tr>
+    </table>
+    <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:16px;margin-bottom:24px">
+      <div style="font-size:12px;color:#9a3412;font-weight:700;margin-bottom:8px">Request Details</div>
+      <div style="font-size:14px;color:#7c2d12;line-height:1.6">${description}</div>
+    </div>
+    ${dashboardUrl ? `
+    <a href="${dashboardUrl}" style="display:block;background:#0265dc;color:white;text-decoration:none;text-align:center;padding:14px 24px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:16px">
+      Open LinkCrew Dashboard
+    </a>
+    ` : ''}
+    <p style="font-size:12px;color:#9ca3af;line-height:1.6;margin:0">
+      This request was added to LinkCrew as a quoted job so your team can review and schedule it.
+    </p>
+  </div>
+  <div style="padding:16px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center">
+    ${tenantName || 'LinkCrew'} — Field Service Management
+  </div>
+</div>
+</body></html>`;
+
+  await resend.emails.send({
+    from: LINKCREW_ALERT_FROM,
+    to: ownerEmail,
+    subject: `New client request from ${clientName}`,
+    html,
+  });
+}
+
 function detectCallbackRequest(transcript) {
   const callerLines = transcript.filter(m => m.role === 'user').map(m => m.content.toLowerCase()).join(' ');
   const keywords = ['call me back', 'call me at', 'callback', 'call back', 'reach me', 'get back to me', 'give me a call', 'have someone call', 'can you call', 'please call'];
@@ -577,4 +623,4 @@ async function sendAppointmentReminder({ clientName, clientEmail, title, startTi
   });
 }
 
-module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendClientPortalInvite, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder };
+module.exports = { sendDailyDigest, sendSupplyAlert, sendBottleneckAlert, sendPhotoAlert, sendNote, sendInvoiceToClient, sendClientPortalInvite, sendClientRequestToOwner, sendPaymentReceivedToOwner, sendCallTranscriptToOwner, sendWorkOrderToClient, sendIncomingSmsNotification, sendBusinessOnboardingEmail, sendAppointmentConfirmation, sendAppointmentReminder };
