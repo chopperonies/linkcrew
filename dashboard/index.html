@@ -945,6 +945,17 @@
         <div class="owner-card">
           <div class="owner-card-header">
             <div>
+              <div class="owner-card-title">Remote Control</div>
+              <div class="owner-card-headline">Site command center</div>
+              <div class="owner-card-sub">This is the owner-facing proof board: what is assigned, what is on site, what proof is missing, and which jobs are still risky enough to justify a drive.</div>
+            </div>
+          </div>
+          <div id="jobs-remote-control-list"><div class="empty"><div class="e-icon">🛰️</div>Loading remote control signals...</div></div>
+        </div>
+
+        <div class="owner-card">
+          <div class="owner-card-header">
+            <div>
               <div class="owner-card-title">Operations Board</div>
               <div class="owner-card-headline" id="jobs-board-headline">Active jobs</div>
               <div class="owner-card-sub" id="jobs-board-copy">Each card should answer the owner’s next question fast: status, crew presence, and whether materials are holding up the work.</div>
@@ -3256,6 +3267,64 @@ function renderClientRequests(jobs = []) {
   `).join('');
 }
 
+function getJobRemoteControlSignals(job) {
+  const checklistItems = Array.isArray(job?.checklist_items) ? job.checklist_items : [];
+  const assignments = Array.isArray(job?.assignments) ? job.assignments : [];
+  const updates = Array.isArray(job?.updates) ? job.updates : [];
+  const onSiteCount = assignments.filter(a => a.checked_in_at && !a.checked_out_at).length;
+  const photoCount = updates.filter(u => u.type === 'photo' && u.photo_url).length;
+  const requiredPhotos = (job?.required_before_photos || 0) + (job?.required_mid_job_photos || 0) + (job?.required_completion_photos || 0) + (job?.required_cleanup_photos || 0);
+  const bottleneckCount = updates.filter(u => u.type === 'bottleneck').length;
+  const missingPlan = !job?.crew_plan_confirmed;
+  const missingLead = !job?.primary_supervisor_employee_id;
+  const missingCrew = assignments.length === 0;
+  const missingChecklist = checklistItems.length === 0;
+  const missingProof = requiredPhotos > 0 ? photoCount < requiredPhotos : photoCount === 0;
+  const riskCount = [missingPlan, missingLead, missingCrew, missingChecklist, missingProof].filter(Boolean).length + bottleneckCount;
+  return { checklistItems, onSiteCount, photoCount, requiredPhotos, bottleneckCount, missingPlan, missingLead, missingCrew, missingChecklist, missingProof, riskCount };
+}
+
+function renderRemoteControlBoard(jobs = []) {
+  const list = document.getElementById('jobs-remote-control-list');
+  if (!list) return;
+  const scopedJobs = (jobs || [])
+    .filter(job => ['quoted', 'scheduled', 'in_progress', 'active', 'on_hold'].includes(String(job?.status || '').toLowerCase()))
+    .map(job => ({ job, signals: getJobRemoteControlSignals(job) }))
+    .sort((a, b) => b.signals.riskCount - a.signals.riskCount || new Date(b.job.updated_at || b.job.created_at || 0) - new Date(a.job.updated_at || a.job.created_at || 0))
+    .slice(0, 6);
+
+  if (!scopedJobs.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">🛰️</div>No jobs need remote oversight right now</div>';
+    return;
+  }
+
+  list.innerHTML = scopedJobs.map(({ job, signals }) => `
+    <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="font-size:14px;font-weight:800;color:#0f172a">${job.name}</div>
+            <span class="chip" style="background:${statusColors[job.status]||'#f5f5f5'};color:${statusTextColors[job.status]||'#737475'}">${String(job.status || 'unknown').replace('_',' ')}</span>
+          </div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px">${job.address || 'No address provided'}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            <span class="chip" style="background:${signals.missingLead ? '#fef2f2' : '#eff6ff'};color:${signals.missingLead ? '#b91c1c' : '#1d4ed8'}">${signals.missingLead ? 'No lead' : 'Lead assigned'}</span>
+            <span class="chip" style="background:${signals.missingCrew ? '#fef2f2' : '#f0fdf4'};color:${signals.missingCrew ? '#b91c1c' : '#166534'}">${signals.missingCrew ? 'No crew' : `${signals.onSiteCount} on site`}</span>
+            <span class="chip" style="background:${signals.missingPlan ? '#fff7ed' : '#f0fdf4'};color:${signals.missingPlan ? '#c2410c' : '#166534'}">${signals.missingPlan ? 'Plan unconfirmed' : 'Plan confirmed'}</span>
+            <span class="chip" style="background:${signals.missingProof ? '#fff7ed' : '#f0fdf4'};color:${signals.missingProof ? '#c2410c' : '#166534'}">Proof ${signals.photoCount}/${signals.requiredPhotos || 0}</span>
+            <span class="chip" style="background:${signals.missingChecklist ? '#fff7ed' : '#eff6ff'};color:${signals.missingChecklist ? '#c2410c' : '#1d4ed8'}">${signals.missingChecklist ? 'Checklist missing' : `${signals.checklistItems.length} checklist items`}</span>
+            ${signals.bottleneckCount ? `<span class="chip chip-yellow">${signals.bottleneckCount} blocker${signals.bottleneckCount === 1 ? '' : 's'}</span>` : ''}
+          </div>
+        </div>
+        <div style="text-align:right;min-width:72px">
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em">Risk</div>
+          <div style="font-size:24px;font-weight:900;color:${signals.riskCount > 2 ? '#dc2626' : signals.riskCount > 0 ? '#d97706' : '#16a34a'}">${signals.riskCount}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 function renderJobsBoard(jobs = []) {
   updateJobsViewModeUI();
   const list = document.getElementById('jobs-list');
@@ -3365,18 +3434,28 @@ function renderRecentOutcomes(jobs = []) {
 async function loadDashboard() {
   const res = await authFetch('/api/jobs');
   const jobs = await res.json();
-  allJobsData = jobs;
+  const jobsWithDetail = await Promise.all((jobs || []).map(async (job) => {
+    try {
+      const r = await authFetch(`/api/jobs/${job.id}`);
+      const d = await r.json();
+      return { ...job, assignments: d.assignments || [], supplies: d.supplies || [], updates: d.updates || [] };
+    } catch (_) {
+      return { ...job, assignments: [], supplies: [], updates: [] };
+    }
+  }));
+  allJobsData = jobsWithDetail;
   updateJobsViewModeUI();
   updateRecentOutcomeRangeUI();
-  renderClientRequests(jobs);
-  renderRecentOutcomes(jobs);
-  const requestCount = jobs.filter(isPortalRequestJob).length;
+  renderClientRequests(jobsWithDetail);
+  renderRecentOutcomes(jobsWithDetail);
+  renderRemoteControlBoard(jobsWithDetail);
+  const requestCount = jobsWithDetail.filter(isPortalRequestJob).length;
 
-  const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  const active = jobsWithDetail.filter(j => ['active','in_progress','scheduled'].includes(j.status));
   setText('stat-jobs', active.length);
   setText('jobs-active-count', active.length);
 
-  if (!jobs.length) {
+  if (!jobsWithDetail.length) {
     setText('stat-crew', 0);
     setText('stat-supplies', 0);
     setText('stat-bottlenecks', 0);
@@ -3384,18 +3463,17 @@ async function loadDashboard() {
     setText('jobs-supplies-count', 0);
     setText('jobs-bottlenecks-count', 0);
     updateJobsAttention(0, 0, 0, 0, 0);
-    renderJobsBoard(jobs);
+    renderJobsBoard(jobsWithDetail);
     return;
   }
-  renderJobsBoard(jobs);
+  renderJobsBoard(jobsWithDetail);
 
   allAssignmentsData = []; allSuppliesData = []; allUpdatesData = [];
   let totalCrew = 0, totalSupplies = 0, totalBottlenecks = 0;
   const today = new Date(); today.setHours(0,0,0,0);
 
   await Promise.all(active.map(async job => {
-    const r = await authFetch(`/api/jobs/${job.id}`);
-    const d = await r.json();
+    const d = job;
     const onSite = (d.assignments || []).filter(a => a.checked_in_at && !a.checked_out_at);
     const pending = (d.supplies || []).filter(s => s.status === 'pending');
     const bottlenecks = (d.updates || []).filter(u => u.type === 'bottleneck' && new Date(u.created_at) >= today);
