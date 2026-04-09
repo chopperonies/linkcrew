@@ -5630,6 +5630,38 @@ let tsInitialized = false;
 let tsEditingId = null;
 let allEmployeesData = [];
 
+async function getPunchLocation() {
+  if (currentPlan !== 'business' || !navigator.geolocation) {
+    return { lat: null, lng: null, warning: '' };
+  }
+  try {
+    const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(
+      resolve,
+      reject,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    ));
+    const accuracy = Number(pos?.coords?.accuracy || 0);
+    if (accuracy && accuracy > 1500) {
+      return {
+        lat: null,
+        lng: null,
+        warning: 'GPS fix was too broad, so no location pin was saved. Try again on mobile or with Wi-Fi/location services enabled.'
+      };
+    }
+    return {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      warning: ''
+    };
+  } catch (err) {
+    return {
+      lat: null,
+      lng: null,
+      warning: 'GPS was unavailable, so the punch was saved without a location pin.'
+    };
+  }
+}
+
 async function initTimesheets() {
   const selfPanel = document.getElementById('ts-self-punch-panel');
   const manualPanel = document.getElementById('ts-punch-panel');
@@ -5808,20 +5840,14 @@ async function manualPunchIn() {
   const job_id = document.getElementById('ts-punch-job').value;
   const statusEl = document.getElementById('ts-punch-status');
   if (!employee_id) return alert('Select a crew member first');
-
-  let lat, lng;
-  if (currentPlan === 'business') {
-    try {
-      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
-      lat = pos.coords.latitude; lng = pos.coords.longitude;
-    } catch (e) { /* GPS optional */ }
-  }
+  const { lat, lng, warning } = await getPunchLocation();
 
   statusEl.style.color = '#737475'; statusEl.textContent = 'Punching in…';
   const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id, job_id: job_id || null, lat, lng }) });
   const json = await res.json();
   if (!res.ok) { statusEl.style.color = '#dc2626'; statusEl.textContent = json.error; return; }
-  statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Punched in';
+  statusEl.style.color = warning ? '#92400e' : '#4ade80';
+  statusEl.textContent = warning ? `✓ Punched in. ${warning}` : '✓ Punched in';
   setTimeout(() => statusEl.textContent = '', 3000);
   await loadTimesheets();
 }
@@ -5830,20 +5856,14 @@ async function manualPunchOut() {
   const employee_id = document.getElementById('ts-punch-employee').value;
   const statusEl = document.getElementById('ts-punch-status');
   if (!employee_id) return alert('Select a crew member first');
-
-  let lat, lng;
-  if (currentPlan === 'business') {
-    try {
-      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
-      lat = pos.coords.latitude; lng = pos.coords.longitude;
-    } catch (e) { /* GPS optional */ }
-  }
+  const { lat, lng, warning } = await getPunchLocation();
 
   statusEl.style.color = '#737475'; statusEl.textContent = 'Punching out…';
   const res = await authFetch('/api/timesheets/punch-out', { method: 'POST', body: JSON.stringify({ employee_id, lat, lng }) });
   const json = await res.json();
   if (!res.ok) { statusEl.style.color = '#dc2626'; statusEl.textContent = json.error; return; }
-  statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Punched out';
+  statusEl.style.color = warning ? '#92400e' : '#4ade80';
+  statusEl.textContent = warning ? `✓ Punched out. ${warning}` : '✓ Punched out';
   setTimeout(() => statusEl.textContent = '', 3000);
   await loadTimesheets();
 }
@@ -5883,14 +5903,7 @@ async function selfPunchIn() {
   const job_id = document.getElementById('ts-self-punch-job')?.value || null;
   const statusEl = document.getElementById('ts-self-punch-status');
   const button = document.getElementById('ts-self-punch-in-btn');
-  let lat, lng;
-  if (currentPlan === 'business') {
-    try {
-      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch (e) { /* GPS optional */ }
-  }
+  const { lat, lng, warning } = await getPunchLocation();
   if (button) button.disabled = true;
   statusEl.style.color = '#737475';
   statusEl.textContent = 'Punching in...';
@@ -5902,8 +5915,8 @@ async function selfPunchIn() {
     if (button) button.disabled = false;
     return;
   }
-  statusEl.style.color = '#16a34a';
-  statusEl.textContent = '✓ Punched in';
+  statusEl.style.color = warning ? '#92400e' : '#16a34a';
+  statusEl.textContent = warning ? `✓ Punched in. ${warning}` : '✓ Punched in';
   await loadSelfPunchState();
   await loadTimesheets();
   setTimeout(() => { statusEl.textContent = ''; }, 3000);
@@ -5913,14 +5926,7 @@ async function selfPunchOut() {
   if (!currentEmployeeId) return alert('This dashboard user is not linked to an employee record yet.');
   const statusEl = document.getElementById('ts-self-punch-status');
   const button = document.getElementById('ts-self-punch-out-btn');
-  let lat, lng;
-  if (currentPlan === 'business') {
-    try {
-      const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch (e) { /* GPS optional */ }
-  }
+  const { lat, lng, warning } = await getPunchLocation();
   if (button) button.disabled = true;
   statusEl.style.color = '#737475';
   statusEl.textContent = 'Punching out...';
@@ -5932,8 +5938,8 @@ async function selfPunchOut() {
     if (button) button.disabled = false;
     return;
   }
-  statusEl.style.color = '#16a34a';
-  statusEl.textContent = '✓ Punched out';
+  statusEl.style.color = warning ? '#92400e' : '#16a34a';
+  statusEl.textContent = warning ? `✓ Punched out. ${warning}` : '✓ Punched out';
   await loadSelfPunchState();
   await loadTimesheets();
   setTimeout(() => { statusEl.textContent = ''; }, 3000);
