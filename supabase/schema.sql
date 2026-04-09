@@ -6,7 +6,7 @@ create table if not exists jobs (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   address text,
-  status text default 'active' check (status in ('active', 'completed', 'on_hold')),
+  status text default 'active' check (status in ('quoted', 'scheduled', 'in_progress', 'active', 'on_hold', 'completed', 'invoiced', 'saved_for_later', 'cancelled', 'archived')),
   manager_email text,
   primary_supervisor_employee_id uuid,
   plans_notes text,

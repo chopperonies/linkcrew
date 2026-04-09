@@ -797,6 +797,9 @@
     <div class="nav-item active" id="mtab-jobs" onclick="switchMainTab('jobs')">
       <i data-lucide="briefcase"></i><span>Jobs</span>
     </div>
+    <div class="nav-item" id="mtab-jobs-records" onclick="switchMainTab('jobs-records')">
+      <i data-lucide="archive"></i><span>Job Records</span>
+    </div>
     <div class="nav-item" id="mtab-team" onclick="switchMainTab('team')">
       <i data-lucide="users"></i><span>Team</span>
     </div>
@@ -908,10 +911,7 @@
         <div class="owner-page-subtitle">This becomes the owner operating layer for LinkCrew: active work, open requests, fresh site photos, and the jobs that need attention next.</div>
       </div>
       <div class="owner-page-actions">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button class="owner-mini-btn" id="jobs-mode-active-btn" onclick="setJobsViewMode('active')">Active Jobs</button>
-          <button class="owner-mini-btn" id="jobs-mode-history-btn" onclick="setJobsViewMode('history')">Job History</button>
-        </div>
+        <button class="owner-btn" onclick="switchMainTab('jobs-records')">Open Job Records</button>
         <button class="owner-btn" onclick="switchMainTab('calendar')">Open Calendar</button>
         <button class="owner-btn primary" onclick="openAddJob()">+ Add Job</button>
       </div>
@@ -1018,6 +1018,66 @@
   </div>
 </div>
 </div><!-- end jobs-view -->
+
+<!-- Job records view -->
+<div id="jobs-records-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div class="owner-page-eyebrow">Job Records</div>
+          <div class="owner-page-title">Closed, deferred, cancelled, and archived work.</div>
+          <div class="owner-page-subtitle">Keep current operations on the main Jobs page and move finished or deferred work into a dedicated records workspace that stays searchable and easy to manage later.</div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('jobs')">Back to Jobs</button>
+          <button class="owner-btn primary" onclick="openAddJob()">+ Add Job</button>
+        </div>
+      </div>
+
+      <div class="owner-kpi-grid">
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Completed</div>
+          <div class="owner-kpi-value" id="job-records-completed-count">—</div>
+          <div class="owner-kpi-meta">Work that finished and may still need billing or warranty follow-up.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Saved For Later</div>
+          <div class="owner-kpi-value" id="job-records-saved-count">—</div>
+          <div class="owner-kpi-meta">Deferred jobs that are still valid opportunities for later scheduling.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Cancelled</div>
+          <div class="owner-kpi-value" id="job-records-cancelled-count">—</div>
+          <div class="owner-kpi-meta">Jobs that are closed with no more work expected.</div>
+        </div>
+        <div class="owner-kpi-card">
+          <div class="owner-kpi-label">Archived</div>
+          <div class="owner-kpi-value" id="job-records-archived-count">—</div>
+          <div class="owner-kpi-meta">Older records hidden from daily workflows but kept for reference.</div>
+        </div>
+      </div>
+
+      <div class="owner-card">
+        <div class="owner-card-header">
+          <div>
+            <div class="owner-card-title">Record Browser</div>
+            <div class="owner-card-headline" id="job-records-headline">All non-active jobs</div>
+            <div class="owner-card-sub" id="job-records-copy">Choose a lifecycle bucket to review finished, deferred, cancelled, or archived work without cluttering the live operations board.</div>
+          </div>
+          <div class="owner-card-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="owner-mini-btn" id="job-records-filter-all-btn" onclick="setJobRecordsFilter('all')">All</button>
+            <button class="owner-mini-btn" id="job-records-filter-completed-btn" onclick="setJobRecordsFilter('completed')">Completed</button>
+            <button class="owner-mini-btn" id="job-records-filter-saved_for_later-btn" onclick="setJobRecordsFilter('saved_for_later')">Saved For Later</button>
+            <button class="owner-mini-btn" id="job-records-filter-cancelled-btn" onclick="setJobRecordsFilter('cancelled')">Cancelled</button>
+            <button class="owner-mini-btn" id="job-records-filter-archived-btn" onclick="setJobRecordsFilter('archived')">Archived</button>
+          </div>
+        </div>
+        <div id="job-records-list"><div class="empty"><div class="e-icon">🗂️</div>Loading records...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Team view -->
 <div id="team-view" style="display:none">
@@ -2482,7 +2542,7 @@ function updateSignedInAccountUI() {
 }
 
 function getAccessibleTabs() {
-  const tabs = ['jobs', 'team', 'clients', 'calendar', 'timesheets'];
+  const tabs = ['jobs', 'jobs-records', 'team', 'clients', 'calendar', 'timesheets'];
   if (canViewFinancials()) {
     tabs.push('agreements', 'reports');
   }
@@ -2497,7 +2557,7 @@ function getAccessibleTabs() {
 
 function applyCapabilityUI() {
   const accessibleTabs = new Set(getAccessibleTabs());
-  ['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(tab => {
+  ['jobs','jobs-records','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(tab => {
     const tabEl = document.getElementById(`mtab-${tab}`);
     if (tabEl) tabEl.style.display = accessibleTabs.has(tab) ? '' : 'none';
   });
@@ -3026,8 +3086,8 @@ async function bootApp() {
 let selectedJobId = null;
 let allJobsData = [], allAssignmentsData = [], allSuppliesData = [], allUpdatesData = [];
 let ownerTwilioConfigured = false;
-let jobsViewMode = 'active';
 let recentOutcomeRangeDays = 7;
+let jobsRecordsFilter = 'all';
 const jobInvoiceUiState = {};
 const clientInvoiceUiState = {};
 const DASHBOARD_STATE_KEY = 'lc_owner_dashboard_state_v1';
@@ -3052,6 +3112,39 @@ const TIMESHEET_WORK_TYPES = [
   { value: 'field_work_other', label: 'Field Work (Other)' },
 ];
 
+const ACTIVE_JOB_STATUSES = ['active', 'in_progress', 'scheduled'];
+const CLOSED_JOB_STATUSES = ['completed', 'invoiced', 'saved_for_later', 'cancelled', 'archived', 'on_hold', 'quoted'];
+const JOB_STATUS_OPTIONS = [
+  { value: 'quoted', label: 'Lead / Estimate' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'active', label: 'Active' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'invoiced', label: 'Invoiced' },
+  { value: 'saved_for_later', label: 'Saved For Later' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'archived', label: 'Archived' },
+];
+
+function normalizeJobStatus(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  return normalized === 'complete' ? 'completed' : normalized;
+}
+
+function getJobStatusLabel(status) {
+  const normalized = normalizeJobStatus(status);
+  return JOB_STATUS_OPTIONS.find(option => option.value === normalized)?.label || String(status || 'Open').replace(/_/g, ' ');
+}
+
+function isActiveJob(job) {
+  return ACTIVE_JOB_STATUSES.includes(normalizeJobStatus(job?.status));
+}
+
+function isJobRecord(job) {
+  return !isActiveJob(job);
+}
+
 function setInvoiceUiState(store, key, patch) {
   store[key] = { ...(store[key] || {}), ...patch };
 }
@@ -3073,7 +3166,7 @@ function renderInvoiceStatus(store, key) {
 }
 
 function getTimesheetPunchableJobs() {
-  return (allJobsData || []).filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  return (allJobsData || []).filter(isActiveJob);
 }
 
 function populateTimesheetJobOptions() {
@@ -3141,7 +3234,7 @@ function writeDashboardState(patch) {
 
 function getTabFromLocationHash() {
   const raw = window.location.hash.replace(/^#/, '').trim();
-  const allowed = new Set(['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas']);
+  const allowed = new Set(['jobs','jobs-records','team','clients','reports','agreements','calendar','timesheets','settings','ideas']);
   return allowed.has(raw) ? raw : null;
 }
 
@@ -3149,8 +3242,8 @@ async function init() {
   const { supabaseUrl, supabaseKey } = await (await fetch('/api/config')).json();
   if (!supabaseClient) supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
   const state = readDashboardState();
-  jobsViewMode = state.jobsViewMode === 'history' ? 'history' : 'active';
   recentOutcomeRangeDays = Number.isFinite(state.recentOutcomeRangeDays) ? Number(state.recentOutcomeRangeDays) : 7;
+  jobsRecordsFilter = ['all','completed','saved_for_later','cancelled','archived'].includes(state.jobsRecordsFilter) ? state.jobsRecordsFilter : 'all';
   await Promise.all([loadDashboard(), loadSupplies(), loadPhotos(), loadOnboardingBanner(), loadClients(), loadAllEmployees(), loadNotificationCapabilities()]);
   if (state.calendarWeekStart) calWeekStart = new Date(state.calendarWeekStart);
   if (state.calendarSelectedDate) calSelectedDate = state.calendarSelectedDate;
@@ -3260,13 +3353,18 @@ function setText(id, value) {
 }
 
 function getJobStatusChip(status) {
-  const normalized = String(status || '').toLowerCase();
+  const normalized = normalizeJobStatus(status);
+  if (normalized === 'quoted') return { cls: 'chip-blue', label: 'Lead / Estimate' };
   if (normalized === 'scheduled') return { cls: 'chip-blue', label: 'Scheduled' };
   if (normalized === 'in_progress') return { cls: 'chip-yellow', label: 'In Progress' };
   if (normalized === 'active') return { cls: 'chip-green', label: 'Active' };
-  if (normalized === 'invoiced') return { cls: 'chip-blue', label: 'Invoiced' };
+  if (normalized === 'on_hold') return { cls: 'chip-yellow', label: 'On Hold' };
   if (normalized === 'completed') return { cls: 'chip-green', label: 'Completed' };
-  return { cls: 'chip-blue', label: status || 'Open' };
+  if (normalized === 'invoiced') return { cls: 'chip-blue', label: 'Invoiced' };
+  if (normalized === 'saved_for_later') return { cls: 'chip-blue', label: 'Saved For Later' };
+  if (normalized === 'cancelled') return { cls: 'chip-red', label: 'Cancelled' };
+  if (normalized === 'archived') return { cls: 'chip-blue', label: 'Archived' };
+  return { cls: 'chip-blue', label: getJobStatusLabel(status) };
 }
 
 function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount, requestCount = 0) {
@@ -3298,35 +3396,38 @@ function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCoun
   setText('jobs-attention-copy', 'Operations are moving cleanly. Use this board to monitor fresh photos, crew presence, and the next job that needs office input.');
 }
 
-function isHistoricalJob(job) {
-  return !['active', 'in_progress', 'scheduled'].includes(String(job?.status || '').toLowerCase());
+function updateJobRecordsFilterUI() {
+  ['all','completed','saved_for_later','cancelled','archived'].forEach((filter) => {
+    const btn = document.getElementById(`job-records-filter-${filter}-btn`);
+    if (!btn) return;
+    const selected = jobsRecordsFilter === filter;
+    btn.style.background = selected ? '#0265dc' : '#fff';
+    btn.style.color = selected ? '#fff' : '#0f172a';
+    btn.style.borderColor = selected ? '#0265dc' : '#dbe4f0';
+  });
+  const headlineMap = {
+    all: 'All non-active jobs',
+    completed: 'Completed jobs',
+    saved_for_later: 'Saved for later',
+    cancelled: 'Cancelled jobs',
+    archived: 'Archived jobs',
+  };
+  const copyMap = {
+    all: 'Choose a lifecycle bucket to review finished, deferred, cancelled, or archived work without cluttering the live operations board.',
+    completed: 'Use this view for finished work, invoice follow-up, callbacks, and closeout review.',
+    saved_for_later: 'Deferred jobs stay visible here until they are ready to reopen and move back into scheduling.',
+    cancelled: 'Cancelled jobs remain searchable here without cluttering active operations.',
+    archived: 'Archived jobs are preserved for records and client history, but hidden from daily workflows.',
+  };
+  setText('job-records-headline', headlineMap[jobsRecordsFilter] || headlineMap.all);
+  setText('job-records-copy', copyMap[jobsRecordsFilter] || copyMap.all);
 }
 
-function updateJobsViewModeUI() {
-  const activeBtn = document.getElementById('jobs-mode-active-btn');
-  const historyBtn = document.getElementById('jobs-mode-history-btn');
-  const activeSelected = jobsViewMode === 'active';
-  if (activeBtn) {
-    activeBtn.style.background = activeSelected ? '#0265dc' : '#fff';
-    activeBtn.style.color = activeSelected ? '#fff' : '#0f172a';
-    activeBtn.style.borderColor = activeSelected ? '#0265dc' : '#dbe4f0';
-  }
-  if (historyBtn) {
-    historyBtn.style.background = !activeSelected ? '#0265dc' : '#fff';
-    historyBtn.style.color = !activeSelected ? '#fff' : '#0f172a';
-    historyBtn.style.borderColor = !activeSelected ? '#0265dc' : '#dbe4f0';
-  }
-  setText('jobs-board-headline', activeSelected ? 'Active jobs' : 'Job history');
-  setText('jobs-board-copy', activeSelected
-    ? 'Each card should answer the owner’s next question fast: status, crew presence, and whether materials are holding up the work.'
-    : 'Review quoted, completed, invoiced, paid, and on-hold work without losing the current-day operations board.');
-}
-
-function setJobsViewMode(mode) {
-  jobsViewMode = mode === 'history' ? 'history' : 'active';
-  writeDashboardState({ jobsViewMode });
-  updateJobsViewModeUI();
-  renderJobsBoard(allJobsData || []);
+function setJobRecordsFilter(filter) {
+  jobsRecordsFilter = ['completed','saved_for_later','cancelled','archived'].includes(filter) ? filter : 'all';
+  writeDashboardState({ jobsRecordsFilter });
+  updateJobRecordsFilterUI();
+  renderJobRecords(allJobsData || []);
 }
 
 function updateRecentOutcomeRangeUI() {
@@ -3345,6 +3446,55 @@ function setRecentOutcomeRange(days) {
   writeDashboardState({ recentOutcomeRangeDays });
   updateRecentOutcomeRangeUI();
   renderRecentOutcomes(allJobsData || []);
+}
+
+function canDeleteJobRecord(job) {
+  return currentRole === 'owner' && !(parseFloat(job?.invoice_amount) > 0) && String(job?.payment_status || '').toLowerCase() !== 'paid';
+}
+
+function getJobLifecycleActions(job) {
+  const normalized = normalizeJobStatus(job?.status);
+  const actions = [];
+  if (['quoted', 'saved_for_later', 'cancelled', 'archived', 'completed', 'invoiced', 'on_hold'].includes(normalized)) {
+    actions.push({ value: 'active', label: 'Reopen' });
+  }
+  if (normalized !== 'completed') actions.push({ value: 'completed', label: 'Mark Completed' });
+  if (normalized !== 'saved_for_later') actions.push({ value: 'saved_for_later', label: 'Save For Later' });
+  if (normalized !== 'cancelled') actions.push({ value: 'cancelled', label: 'Cancel' });
+  if (normalized !== 'archived') actions.push({ value: 'archived', label: 'Archive' });
+  return actions;
+}
+
+async function changeJobLifecycle(jobId, nextStatus, label) {
+  if (!confirm(`${label} this job?`)) return;
+  const statusEl = document.getElementById('detail-job-status-msg');
+  if (statusEl) {
+    statusEl.style.color = '#737475';
+    statusEl.textContent = `${label}...`;
+  }
+  const res = await authFetch(`/api/jobs/${jobId}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (statusEl) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = json.error || 'Could not update status.';
+    }
+    return;
+  }
+  await loadDashboard();
+  await openDetail(jobId, json.name || document.getElementById('detail-title').textContent);
+}
+
+async function deleteJob(jobId, jobName) {
+  if (!confirm(`Delete "${jobName}"? This is only intended for test or cleanup jobs and cannot be undone.`)) return;
+  const res = await authFetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    alert(json.error || 'Could not delete job.');
+    return;
+  }
+  closeDetail();
+  await loadDashboard();
 }
 
 function isPortalRequestJob(job) {
@@ -3380,7 +3530,6 @@ function renderClientRequests(jobs = []) {
 }
 
 function renderJobsBoard(jobs = []) {
-  updateJobsViewModeUI();
   const list = document.getElementById('jobs-list');
   if (!list) return;
 
@@ -3389,40 +3538,7 @@ function renderJobsBoard(jobs = []) {
     return;
   }
 
-  if (jobsViewMode === 'history') {
-    const historyJobs = jobs
-      .filter(isHistoricalJob)
-      .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
-    if (!historyJobs.length) {
-      list.innerHTML = '<div class="empty"><div class="e-icon">🗂️</div>No historical jobs yet.<br><span style="font-size:13px;color:#64748b">Completed, invoiced, paid, and quoted work will appear here.</span></div>';
-      return;
-    }
-    list.innerHTML = historyJobs.map(job => {
-      const status = getJobStatusChip(job.status);
-      const updated = new Date(job.updated_at || job.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const paymentBadge = job.invoice_amount > 0
-        ? `<span class="chip" style="background:${job.payment_status === 'paid' ? '#f0fdf4' : '#fefce8'};color:${job.payment_status === 'paid' ? '#166534' : '#92400e'}">${job.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span>`
-        : '';
-      return `
-        <div class="job-card ${selectedJobId === job.id ? 'selected' : ''}" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
-            <div style="min-width:0">
-              <div class="job-name">${job.name}</div>
-              <div class="job-address">📍 ${job.address || 'No address'}</div>
-            </div>
-            <span class="chip ${status.cls}">${status.label}</span>
-          </div>
-          <div class="job-meta" style="margin-bottom:8px">
-            ${paymentBadge}
-            <span class="chip chip-blue">${job.invoice_amount > 0 ? `$${parseFloat(job.invoice_amount).toFixed(2)}` : 'No invoice'}</span>
-          </div>
-          <div style="font-size:12px;color:#64748b">Last updated ${updated}</div>
-        </div>`;
-    }).join('');
-    return;
-  }
-
-  const activeJobs = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  const activeJobs = jobs.filter(isActiveJob);
   if (!activeJobs.length) {
     list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No active jobs right now.<br><span style="font-size:13px;color:#0265dc;cursor:pointer;font-weight:600" onclick="openAddJob()">+ Add a new job</span></div>';
     return;
@@ -3448,13 +3564,60 @@ function renderJobsBoard(jobs = []) {
   }).join('');
 }
 
+function renderJobRecords(jobs = []) {
+  updateJobRecordsFilterUI();
+  const list = document.getElementById('job-records-list');
+  if (!list) return;
+  const records = (jobs || [])
+    .filter(isJobRecord)
+    .filter(job => jobsRecordsFilter === 'all' ? true : normalizeJobStatus(job.status) === jobsRecordsFilter)
+    .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+
+  const completedCount = (jobs || []).filter(job => normalizeJobStatus(job.status) === 'completed').length;
+  const savedCount = (jobs || []).filter(job => normalizeJobStatus(job.status) === 'saved_for_later').length;
+  const cancelledCount = (jobs || []).filter(job => normalizeJobStatus(job.status) === 'cancelled').length;
+  const archivedCount = (jobs || []).filter(job => normalizeJobStatus(job.status) === 'archived').length;
+  setText('job-records-completed-count', completedCount);
+  setText('job-records-saved-count', savedCount);
+  setText('job-records-cancelled-count', cancelledCount);
+  setText('job-records-archived-count', archivedCount);
+
+  if (!records.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">🗂️</div>No job records match this filter yet.</div>';
+    return;
+  }
+
+  list.innerHTML = records.map(job => {
+    const status = getJobStatusChip(job.status);
+    const updated = new Date(job.updated_at || job.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const paymentBadge = job.invoice_amount > 0
+      ? `<span class="chip" style="background:${job.payment_status === 'paid' ? '#f0fdf4' : '#fefce8'};color:${job.payment_status === 'paid' ? '#166534' : '#92400e'}">${job.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span>`
+      : '';
+    return `
+      <div class="supply-item" style="cursor:pointer" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:700;color:#0f172a">${job.name}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">${job.address || 'No address provided'}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:8px">Updated ${updated}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="chip ${status.cls}">${status.label}</span>
+            ${paymentBadge}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderRecentOutcomes(jobs = []) {
   updateRecentOutcomeRangeUI();
   const list = document.getElementById('recent-outcomes-list');
   if (!list) return;
   const now = Date.now();
   const outcomes = (jobs || [])
-    .filter(job => ['complete', 'invoiced'].includes(String(job?.status || '').toLowerCase()) || String(job?.payment_status || '').toLowerCase() === 'paid')
+    .filter(job => ['completed', 'invoiced', 'archived'].includes(normalizeJobStatus(job?.status)) || String(job?.payment_status || '').toLowerCase() === 'paid')
     .filter(job => {
       if (!recentOutcomeRangeDays) return true;
       const ts = new Date(job.updated_at || job.created_at || 0).getTime();
@@ -3477,7 +3640,7 @@ function renderRecentOutcomes(jobs = []) {
           <div style="font-size:11px;color:#94a3b8;margin-top:6px">${new Date(job.updated_at || job.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-          <span class="chip" style="background:${statusColors[job.status]||'#f5f5f5'};color:${statusTextColors[job.status]||'#737475'}">${String(job.status || 'unknown').replace('_',' ')}</span>
+          <span class="chip" style="background:${statusColors[normalizeJobStatus(job.status)]||'#f5f5f5'};color:${statusTextColors[normalizeJobStatus(job.status)]||'#737475'}">${getJobStatusLabel(job.status)}</span>
           ${job.invoice_amount > 0 ? `<span class="chip" style="background:${job.payment_status === 'paid' ? '#f0fdf4' : '#fefce8'};color:${job.payment_status === 'paid' ? '#166534' : '#92400e'}">${job.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span>` : ''}
         </div>
       </div>
@@ -3489,13 +3652,14 @@ async function loadDashboard() {
   const res = await authFetch('/api/jobs');
   const jobs = await res.json();
   allJobsData = jobs;
-  updateJobsViewModeUI();
   updateRecentOutcomeRangeUI();
+  updateJobRecordsFilterUI();
   renderClientRequests(jobs);
   renderRecentOutcomes(jobs);
+  renderJobRecords(jobs);
   const requestCount = jobs.filter(isPortalRequestJob).length;
 
-  const active = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  const active = jobs.filter(isActiveJob);
   setText('stat-jobs', active.length);
   setText('jobs-active-count', active.length);
 
@@ -3713,6 +3877,7 @@ async function openDetail(jobId, jobName) {
   const overviewEl = document.getElementById('detail-overview');
   const supervisorSelectOptions = buildSupervisorSelectOptions(job?.primary_supervisor_employee_id || '');
   const primarySupervisor = (window._allEmployees || []).find(employee => employee.id === job?.primary_supervisor_employee_id);
+  const lifecycleActions = getJobLifecycleActions(job);
   const financialOverviewField = canManageFinancials()
     ? `<div class="form-group" style="margin-bottom:0"><label>Estimate Amount</label><input type="number" id="detail-job-estimate" value="${job?.estimate_amount || ''}" min="0" step="0.01" placeholder="0.00"></div>`
     : `<div style="display:flex;align-items:flex-end;padding:12px 14px;border:1px solid #e8e8e8;border-radius:10px;background:#f8fafc;font-size:12px;color:#64748b;line-height:1.6">Financial details are hidden for your role.</div>`;
@@ -3732,7 +3897,7 @@ async function openDetail(jobId, jobName) {
         <div class="form-group" style="margin-bottom:0">
           <label>Status</label>
           <select id="detail-job-status">
-            ${['quoted','scheduled','in_progress','active','complete','invoiced','on_hold'].map(status => `<option value="${status}" ${job?.status === status ? 'selected' : ''}>${status.replace('_',' ')}</option>`).join('')}
+            ${JOB_STATUS_OPTIONS.map(option => `<option value="${option.value}" ${normalizeJobStatus(job?.status) === option.value ? 'selected' : ''}>${option.label}</option>`).join('')}
           </select>
         </div>
         ${financialOverviewField}
@@ -3741,9 +3906,15 @@ async function openDetail(jobId, jobName) {
         <label>Scope / Work Being Done</label>
         <textarea id="detail-job-description" rows="5" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit">${job?.description || ''}</textarea>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px">
         <button class="btn-save" onclick="saveJobOverview('${job.id}')">Save Job Details</button>
         <span id="detail-job-status-msg" style="font-size:12px;color:#4ade80"></span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        ${lifecycleActions.map(action => `
+          <button class="owner-mini-btn" onclick="changeJobLifecycle('${job.id}','${action.value}','${action.label.replace(/'/g, "\\'")}')">${action.label}</button>
+        `).join('')}
+        ${canDeleteJobRecord(job) ? `<button class="owner-mini-btn" style="border-color:#fecaca;color:#dc2626" onclick="deleteJob('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')">Delete Job</button>` : ''}
       </div>
     </div>
   `;
@@ -4845,7 +5016,7 @@ function showOverlay(type) {
 
   if (type === 'jobs') {
     title.textContent = '📋 Active Jobs';
-    const active = allJobsData.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+    const active = allJobsData.filter(isActiveJob);
     body.innerHTML = active.map(j => `
       <div class="overlay-row" style="cursor:pointer" onclick="closeOverlay();openDetail('${j.id}','${j.name.replace(/'/g,"\\'")}')">
         <div class="overlay-avatar">🏗️</div>
@@ -4900,11 +5071,10 @@ function switchMainTab(tab) {
   if (!accessibleTabs.includes(tab)) {
     tab = accessibleTabs[0] || 'jobs';
   }
-  const scrollableViews = ['team','settings','timesheets','calendar','reports','ideas'];
   const contentArea = document.querySelector('.content-area');
   writeDashboardState({ mainTab: tab });
   history.replaceState(null, '', `#${tab}`);
-  ['jobs','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
+  ['jobs','jobs-records','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
     const view = document.getElementById(`${t}-view`);
     const tabEl = document.getElementById(`mtab-${t}`);
     if (view) view.style.display = t === tab ? 'block' : 'none';
@@ -4912,7 +5082,7 @@ function switchMainTab(tab) {
   });
   // Let full-height views (crm, ag, jobs) control their own overflow
   if (contentArea) {
-    contentArea.style.overflowY = ['jobs','clients','agreements'].includes(tab) ? 'hidden' : 'auto';
+    contentArea.style.overflowY = ['jobs','jobs-records','clients','agreements'].includes(tab) ? 'hidden' : 'auto';
   }
   // Stats bar only relevant on jobs view
   const statsEl = document.querySelector('.stats');
@@ -5087,7 +5257,7 @@ function getCalendarAgendaMarkup(dayAppts) {
 
 function buildAppointmentJobOptions(selectedJobId = '') {
   const jobs = (allJobsData || [])
-    .filter(job => ['active', 'in_progress', 'scheduled'].includes(String(job.status || '').toLowerCase()))
+    .filter(isActiveJob)
     .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   const options = ['<option value="">No linked job</option>'];
   jobs.forEach(job => {
@@ -6494,12 +6664,28 @@ let selectedClientId = null;
 let editingClientId = null;
 
 const statusColors = {
-  quoted: '#e8f0fd', scheduled: '#e8f0fd', in_progress: '#fefce8',
-  active: '#fefce8', complete: '#f0fdf4', invoiced: '#ede9fe', on_hold: '#f5f5f5'
+  quoted: '#e8f0fd',
+  scheduled: '#e8f0fd',
+  in_progress: '#fefce8',
+  active: '#dcfce7',
+  on_hold: '#fef3c7',
+  completed: '#f0fdf4',
+  invoiced: '#ede9fe',
+  saved_for_later: '#eff6ff',
+  cancelled: '#fef2f2',
+  archived: '#f5f5f5'
 };
 const statusTextColors = {
-  quoted: '#0265dc', scheduled: '#0265dc', in_progress: '#d97706',
-  active: '#d97706', complete: '#16a34a', invoiced: '#7c3aed', on_hold: '#737475'
+  quoted: '#0265dc',
+  scheduled: '#0265dc',
+  in_progress: '#d97706',
+  active: '#15803d',
+  on_hold: '#b45309',
+  completed: '#16a34a',
+  invoiced: '#7c3aed',
+  saved_for_later: '#1d4ed8',
+  cancelled: '#dc2626',
+  archived: '#737475'
 };
 
 async function loadClients() {
@@ -6734,7 +6920,7 @@ async function openClientDetail(clientId) {
               ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>`
               : `<button onclick="event.stopPropagation();openDetail('${j.id}','${String(j.name || '').replace(/'/g,"\\'")}');setTimeout(() => openSetInvoice('${j.id}', ${j.invoice_amount || 0}), 120)" style="background:none;border:none;color:#0265dc;cursor:pointer;font-size:12px;font-weight:700;padding:0">Invoice</button>`)
             : ''}
-          <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
+          <span class="jh-status" style="background:${statusColors[normalizeJobStatus(j.status)]||'#f5f5f5'};color:${statusTextColors[normalizeJobStatus(j.status)]||'#737475'}">${getJobStatusLabel(j.status)}</span>
           </div>
         </div>
       `).join('') : '<div style="font-size:13px;color:#949596;font-style:italic">No jobs linked to this client yet.</div>'}
@@ -6907,7 +7093,7 @@ async function loadReports(days = 30) {
 }
 
 function renderStatusChart(jobsByStatus) {
-  const statusLabels = { quoted:'Quoted', scheduled:'Scheduled', in_progress:'In Progress', active:'Active', complete:'Complete', invoiced:'Invoiced', on_hold:'On Hold' };
+  const statusLabels = { quoted:'Lead / Estimate', scheduled:'Scheduled', in_progress:'In Progress', active:'Active', on_hold:'On Hold', completed:'Completed', invoiced:'Invoiced', saved_for_later:'Saved For Later', cancelled:'Cancelled', archived:'Archived' };
   const colors = ['#0265dc','#3b82f6','#f97316','#4ade80','#16a34a','#a78bfa','#737475'];
   const entries = Object.entries(jobsByStatus).filter(([,v]) => v > 0);
   if (chartStatus) chartStatus.destroy();
@@ -7175,7 +7361,7 @@ async function openAgreementDetail(id) {
             <div class="jh-address">${j.address || 'No address'}</div>
             ${j.invoice_amount > 0 ? `<a href="/invoice?job_id=${j.id}" target="_blank" style="font-size:12px;color:#0265dc;text-decoration:none;font-weight:600">View Invoice →</a>` : ''}
           </div>
-          <span class="jh-status" style="background:${statusColors[j.status]||'#f5f5f5'};color:${statusTextColors[j.status]||'#737475'}">${j.status.replace('_',' ')}</span>
+          <span class="jh-status" style="background:${statusColors[normalizeJobStatus(j.status)]||'#f5f5f5'};color:${statusTextColors[normalizeJobStatus(j.status)]||'#737475'}">${getJobStatusLabel(j.status)}</span>
         </div>
       `).join('') : '<div style="font-size:13px;color:#949596;font-style:italic">No jobs linked yet.</div>'}
     </div>

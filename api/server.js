@@ -784,10 +784,23 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .split(',').map(e => e.trim()).filter(Boolean);
 
 const FINANCIAL_JOB_FIELDS = ['estimate_amount', 'invoice_amount', 'payment_status'];
+const ACTIVE_JOB_STATUSES = ['active', 'in_progress', 'scheduled'];
+const ALLOWED_JOB_STATUSES = ['quoted', 'scheduled', 'in_progress', 'active', 'on_hold', 'completed', 'invoiced', 'saved_for_later', 'cancelled', 'archived'];
 
 function normalizeAppRole(role) {
   const normalized = String(role || '').trim().toLowerCase();
   return ['owner', 'manager', 'supervisor', 'crew', 'client', 'admin'].includes(normalized) ? normalized : 'owner';
+}
+
+function normalizeJobStatus(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) return 'active';
+  if (normalized === 'complete') return 'completed';
+  return ALLOWED_JOB_STATUSES.includes(normalized) ? normalized : 'active';
+}
+
+function isOwnerRole(req) {
+  return !!(req.isAdmin || req.role === 'owner');
 }
 
 function normalizeEmployeeStatus(status) {
@@ -1778,7 +1791,7 @@ app.post('/api/jobs', auth, requireOperationAccess, ensureFinancialFieldsAllowed
       address,
       manager_email,
       description,
-      status: 'active',
+      status: normalizeJobStatus('active'),
       estimate_amount: estimate_amount || null,
       primary_supervisor_employee_id: primary_supervisor_employee_id || null,
       tenant_id: req.tenantId
@@ -1882,6 +1895,10 @@ app.patch('/api/jobs/:id', auth, requireOperationAccess, ensureFinancialFieldsAl
   const updates = {};
   allowed.forEach(f => {
     if (req.body[f] === undefined) return;
+    if (f === 'status') {
+      updates[f] = normalizeJobStatus(req.body[f]);
+      return;
+    }
     if (f === 'estimate_amount') {
       updates[f] = req.body[f] === '' || req.body[f] === null ? null : parseFloat(req.body[f]);
       return;
@@ -1912,6 +1929,26 @@ app.patch('/api/jobs/:id', auth, requireOperationAccess, ensureFinancialFieldsAl
   const { data } = await supabaseAdmin.from('jobs').update(updates).eq('id', id).eq('tenant_id', req.tenantId).select().single();
   if (!data) return res.status(404).json({ error: 'Job not found' });
   res.json(redactJobsForRole(data, req));
+});
+
+app.delete('/api/jobs/:id', auth, async (req, res) => {
+  if (!isOwnerRole(req)) {
+    return res.status(403).json({ error: 'Only the owner can delete jobs.' });
+  }
+  const { id } = req.params;
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('id, invoice_amount, payment_status')
+    .eq('id', id)
+    .eq('tenant_id', req.tenantId)
+    .maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if ((parseFloat(job.invoice_amount) || 0) > 0 || job.payment_status === 'paid') {
+    return res.status(400).json({ error: 'Delete is only available for non-billed jobs. Archive this job instead.' });
+  }
+  const { error } = await supabaseAdmin.from('jobs').delete().eq('id', id).eq('tenant_id', req.tenantId);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ ok: true });
 });
 
 app.post('/api/jobs/:id/updates', auth, async (req, res) => {
@@ -2666,7 +2703,10 @@ app.get('/api/reports', auth, requireFinancialAccess, async (req, res) => {
 
   // Jobs by status
   const jobsByStatus = {};
-  (allJobs || []).forEach(j => { jobsByStatus[j.status] = (jobsByStatus[j.status] || 0) + 1; });
+  (allJobs || []).forEach(j => {
+    const normalizedStatus = normalizeJobStatus(j.status);
+    jobsByStatus[normalizedStatus] = (jobsByStatus[normalizedStatus] || 0) + 1;
+  });
 
   // Completed jobs trend — last 6 months
   const trend = {};
@@ -2674,7 +2714,7 @@ app.get('/api/reports', auth, requireFinancialAccess, async (req, res) => {
     const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
     trend[d.toLocaleString('default', { month: 'short', year: '2-digit' })] = 0;
   }
-  (allJobs || []).filter(j => j.status === 'complete').forEach(j => {
+  (allJobs || []).filter(j => normalizeJobStatus(j.status) === 'completed').forEach(j => {
     const key = new Date(j.created_at).toLocaleString('default', { month: 'short', year: '2-digit' });
     if (trend[key] !== undefined) trend[key]++;
   });
@@ -2703,8 +2743,8 @@ app.get('/api/reports', auth, requireFinancialAccess, async (req, res) => {
     supplyStats,
     bottlenecksCount: (bottlenecks || []).length,
     totalJobs: (allJobs || []).length,
-    completedJobs: (allJobs || []).filter(j => j.status === 'complete').length,
-    activeJobs: (allJobs || []).filter(j => ['active','in_progress','scheduled'].includes(j.status)).length,
+    completedJobs: (allJobs || []).filter(j => normalizeJobStatus(j.status) === 'completed').length,
+    activeJobs: (allJobs || []).filter(j => ACTIVE_JOB_STATUSES.includes(normalizeJobStatus(j.status))).length,
     totalCrewHours,
   });
 });
