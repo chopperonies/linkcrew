@@ -3296,12 +3296,23 @@ function setText(id, value) {
 
 function getJobStatusChip(status) {
   const normalized = String(status || '').toLowerCase();
+  if (!normalized) return { cls: 'chip-green', label: 'Active' };
   if (normalized === 'scheduled') return { cls: 'chip-blue', label: 'Scheduled' };
   if (normalized === 'in_progress') return { cls: 'chip-yellow', label: 'In Progress' };
   if (normalized === 'active') return { cls: 'chip-green', label: 'Active' };
   if (normalized === 'invoiced') return { cls: 'chip-blue', label: 'Invoiced' };
   if (normalized === 'completed') return { cls: 'chip-green', label: 'Completed' };
   return { cls: 'chip-blue', label: status || 'Open' };
+}
+
+function isOperationalJobStatus(status) {
+  const normalized = String(status || '').toLowerCase();
+  return !normalized || ['active', 'in_progress', 'scheduled'].includes(normalized);
+}
+
+function isRemoteControlJobStatus(status) {
+  const normalized = String(status || '').toLowerCase();
+  return !normalized || ['scheduled', 'in_progress', 'active', 'on_hold'].includes(normalized);
 }
 
 function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCount, requestCount = 0) {
@@ -3334,7 +3345,7 @@ function updateJobsAttention(activeCount, crewCount, supplyCount, bottleneckCoun
 }
 
 function isHistoricalJob(job) {
-  return !['active', 'in_progress', 'scheduled'].includes(String(job?.status || '').toLowerCase());
+  return !isOperationalJobStatus(job?.status);
 }
 
 function updateJobsViewModeUI() {
@@ -3432,7 +3443,7 @@ function getJobRemoteControlSignals(job) {
 
 function renderRemoteControlBoard(jobs = []) {
   const scopedJobs = (jobs || [])
-    .filter(job => ['scheduled', 'in_progress', 'active', 'on_hold'].includes(String(job?.status || '').toLowerCase()))
+    .filter(job => isRemoteControlJobStatus(job?.status))
     .map(job => ({ job, signals: getJobRemoteControlSignals(job) }))
     .sort((a, b) => b.signals.riskCount - a.signals.riskCount || new Date(b.job.updated_at || b.job.created_at || 0) - new Date(a.job.updated_at || a.job.created_at || 0))
     .slice(0, 8);
@@ -3686,7 +3697,7 @@ function renderJobsBoard(jobs = []) {
     return;
   }
 
-  const activeJobs = jobs.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  const activeJobs = jobs.filter(j => isOperationalJobStatus(j.status));
   if (!activeJobs.length) {
     list.innerHTML = '<div class="empty"><div class="e-icon">✅</div>No active jobs right now.<br><span style="font-size:13px;color:#0265dc;cursor:pointer;font-weight:600" onclick="openAddJob()">+ Add a new job</span></div>';
     return;
@@ -3768,7 +3779,7 @@ async function loadDashboard() {
   renderRemoteControlBoard(jobsWithDetail);
   const requestCount = jobsWithDetail.filter(isPortalRequestJob).length;
 
-  const active = jobsWithDetail.filter(j => ['active','in_progress','scheduled'].includes(j.status));
+  const active = jobsWithDetail.filter(j => isOperationalJobStatus(j.status));
   setText('stat-jobs', active.length);
   setText('jobs-active-count', active.length);
 

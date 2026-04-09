@@ -1778,6 +1778,7 @@ app.post('/api/jobs', auth, requireOperationAccess, ensureFinancialFieldsAllowed
       address,
       manager_email,
       description,
+      status: 'active',
       estimate_amount: estimate_amount || null,
       primary_supervisor_employee_id: primary_supervisor_employee_id || null,
       tenant_id: req.tenantId
