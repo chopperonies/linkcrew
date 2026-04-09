@@ -2513,13 +2513,10 @@ app.delete('/api/appointments/:id', auth, async (req, res) => {
 // Get timesheet entries — filtered by date range and optionally employee
 app.get('/api/timesheets', auth, requireOperationAccess, async (req, res) => {
   const { start, end, employee_id } = req.query;
-  const { data: jobs } = await supabaseAdmin.from('jobs').select('id').eq('tenant_id', req.tenantId);
-  if (!jobs?.length) return res.json([]);
-
   let query = supabaseAdmin
     .from('job_assignments')
-    .select('id, checked_in_at, checked_out_at, punch_in_lat, punch_in_lng, punch_out_lat, punch_out_lng, manual_punch, job_id, employee_id, jobs(name), employees(id, name, role)')
-    .in('job_id', jobs.map(j => j.id))
+    .select('id, checked_in_at, checked_out_at, punch_in_lat, punch_in_lng, punch_out_lat, punch_out_lng, manual_punch, job_id, employee_id, work_type, jobs(name), employees(id, name, role)')
+    .eq('tenant_id', req.tenantId)
     .not('checked_in_at', 'is', null)
     .order('checked_in_at', { ascending: false });
 
@@ -2533,16 +2530,15 @@ app.get('/api/timesheets', auth, requireOperationAccess, async (req, res) => {
 
 // Manual punch in
 app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, res) => {
-  const { employee_id, job_id, lat, lng } = req.body;
+  const { employee_id, job_id, work_type, lat, lng } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
 
   // Check not already punched in
-  const { data: jobs } = await supabaseAdmin.from('jobs').select('id').eq('tenant_id', req.tenantId);
   const { data: existing } = await supabaseAdmin
     .from('job_assignments')
     .select('id')
+    .eq('tenant_id', req.tenantId)
     .eq('employee_id', employee_id)
-    .in('job_id', (jobs || []).map(j => j.id))
     .not('checked_in_at', 'is', null)
     .is('checked_out_at', null)
     .maybeSingle();
@@ -2558,6 +2554,7 @@ app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, r
       await supabaseAdmin.from('job_assignments').update({
         checked_in_at: new Date().toISOString(),
         checked_out_at: null,
+        work_type: null,
         punch_in_lat: lat || null,
         punch_in_lng: lng || null,
         manual_punch: true,
@@ -2565,6 +2562,7 @@ app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, r
     } else {
       const { data } = await supabaseAdmin.from('job_assignments').insert({
         job_id, employee_id, tenant_id: req.tenantId,
+        work_type: null,
         checked_in_at: new Date().toISOString(),
         punch_in_lat: lat || null, punch_in_lng: lng || null,
         manual_punch: true,
@@ -2575,6 +2573,7 @@ app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, r
     // No job — use a placeholder: create a "No Job" punch
     const { data } = await supabaseAdmin.from('job_assignments').insert({
       employee_id, tenant_id: req.tenantId,
+      work_type: work_type || null,
       checked_in_at: new Date().toISOString(),
       punch_in_lat: lat || null, punch_in_lng: lng || null,
       manual_punch: true,
@@ -2590,12 +2589,11 @@ app.post('/api/timesheets/punch-out', auth, requireOperationAccess, async (req, 
   const { employee_id, lat, lng } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
 
-  const { data: jobs } = await supabaseAdmin.from('jobs').select('id').eq('tenant_id', req.tenantId);
   const { data: entry } = await supabaseAdmin
     .from('job_assignments')
     .select('id')
+    .eq('tenant_id', req.tenantId)
     .eq('employee_id', employee_id)
-    .in('job_id', (jobs || []).map(j => j.id).concat(['00000000-0000-0000-0000-000000000000']))
     .not('checked_in_at', 'is', null)
     .is('checked_out_at', null)
     .order('checked_in_at', { ascending: false })
@@ -2617,7 +2615,7 @@ app.get('/api/timesheets/my-active', auth, requireOperationAccess, async (req, r
   if (!req.employeeId) return res.json({ entry: null });
   const { data: entry, error } = await supabaseAdmin
     .from('job_assignments')
-    .select('id, job_id, checked_in_at, checked_out_at, jobs(name)')
+    .select('id, job_id, work_type, checked_in_at, checked_out_at, jobs(name)')
     .eq('tenant_id', req.tenantId)
     .eq('employee_id', req.employeeId)
     .not('checked_in_at', 'is', null)

@@ -1440,8 +1440,14 @@
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
               <div>
                 <div style="font-size:11px;font-weight:600;color:#737475;margin-bottom:5px">Job (optional)</div>
-                <select id="ts-self-punch-job" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:180px">
+                <select id="ts-self-punch-job" onchange="syncTimesheetWorkTypeState('ts-self-punch-job','ts-self-punch-work-type')" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:180px">
                   <option value="">No specific job</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:#737475;margin-bottom:5px">Work Type</div>
+                <select id="ts-self-punch-work-type" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:180px">
+                  <option value="">No work type</option>
                 </select>
               </div>
               <button id="ts-self-punch-in-btn" onclick="selfPunchIn()" style="background:#166534;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">Punch In</button>
@@ -1467,8 +1473,14 @@
               </div>
               <div>
                 <div style="font-size:11px;font-weight:600;color:#737475;margin-bottom:5px">Job (optional)</div>
-                <select id="ts-punch-job" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:160px">
+                <select id="ts-punch-job" onchange="syncTimesheetWorkTypeState('ts-punch-job','ts-punch-work-type')" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:160px">
                   <option value="">No specific job</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:#737475;margin-bottom:5px">Work Type</div>
+                <select id="ts-punch-work-type" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c;min-width:180px">
+                  <option value="">No work type</option>
                 </select>
               </div>
               <button onclick="manualPunchIn()" style="background:#166534;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">Punch In</button>
@@ -3030,6 +3042,16 @@ const updateIcons = {
   update: { icon: '💬', cls: 'ui-update' }
 };
 
+const TIMESHEET_WORK_TYPES = [
+  { value: 'office_admin', label: 'Office / Admin' },
+  { value: 'shop_warehouse', label: 'Shop / Warehouse' },
+  { value: 'drive_material_run', label: 'Drive / Material Run' },
+  { value: 'training', label: 'Training' },
+  { value: 'completed_job_follow_up', label: 'Completed Job Follow-up' },
+  { value: 'warranty_callback', label: 'Warranty / Callback' },
+  { value: 'field_work_other', label: 'Field Work (Other)' },
+];
+
 function setInvoiceUiState(store, key, patch) {
   store[key] = { ...(store[key] || {}), ...patch };
 }
@@ -3068,10 +3090,40 @@ function populateTimesheetJobOptions() {
       jobSel.value = currentValue;
     }
   });
+  ['ts-punch-work-type', 'ts-self-punch-work-type'].forEach(id => {
+    const typeSel = document.getElementById(id);
+    if (!typeSel) return;
+    const currentValue = typeSel.value || '';
+    typeSel.innerHTML = buildTimesheetWorkTypeOptions();
+    if (currentValue && TIMESHEET_WORK_TYPES.some(option => option.value === currentValue)) {
+      typeSel.value = currentValue;
+    }
+  });
+  syncTimesheetWorkTypeState('ts-punch-job', 'ts-punch-work-type');
+  syncTimesheetWorkTypeState('ts-self-punch-job', 'ts-self-punch-work-type');
 }
 
 function canSelfPunchTimesheets() {
   return !!currentEmployeeId && (currentRole === 'manager' || currentRole === 'supervisor');
+}
+
+function getTimesheetWorkTypeLabel(value) {
+  return TIMESHEET_WORK_TYPES.find(option => option.value === value)?.label || 'Uncategorized';
+}
+
+function buildTimesheetWorkTypeOptions() {
+  return '<option value="">No work type</option>' + TIMESHEET_WORK_TYPES.map(option => (
+    `<option value="${option.value}">${option.label}</option>`
+  )).join('');
+}
+
+function syncTimesheetWorkTypeState(jobSelectId, workTypeSelectId) {
+  const jobSel = document.getElementById(jobSelectId);
+  const typeSel = document.getElementById(workTypeSelectId);
+  if (!jobSel || !typeSel) return;
+  const hasJob = !!jobSel.value;
+  typeSel.disabled = hasJob;
+  if (hasJob) typeSel.value = '';
 }
 
 function readDashboardState() {
@@ -5795,6 +5847,7 @@ function renderTimesheetTable(entries) {
         <tr style="border-bottom:2px solid #e8e8e8;text-align:left">
           <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Crew Member</th>
           <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Job</th>
+          <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Work Type</th>
           <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Punch In</th>
           <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Punch Out</th>
           <th style="padding:12px 16px;font-size:11px;font-weight:700;color:#737475;text-transform:uppercase">Hours</th>
@@ -5816,6 +5869,7 @@ function renderTimesheetTable(entries) {
           <tr style="border-bottom:1px solid #f0f0f0">
             <td style="padding:12px 16px;font-weight:600;color:#17191c">${e.employees?.name || '—'}</td>
             <td style="padding:12px 16px;color:#737475">${e.jobs?.name || '—'}</td>
+            <td style="padding:12px 16px;color:#737475">${e.work_type ? getTimesheetWorkTypeLabel(e.work_type) : '—'}</td>
             <td style="padding:12px 16px;color:#17191c">${inTime ? fmt(inTime) : '—'}${inGps ? '<br>' + gpsTag(e.punch_in_lat, e.punch_in_lng, 'In') : ''}</td>
             <td style="padding:12px 16px;color:#17191c">${outTime ? fmt(outTime) : '<span style="color:#dc2626;font-size:12px">Still in</span>'}${outGps ? '<br>' + gpsTag(e.punch_out_lat, e.punch_out_lng, 'Out') : ''}</td>
             <td style="padding:12px 16px;font-weight:700;color:#17191c">${hrs}</td>
@@ -5838,12 +5892,13 @@ function renderTimesheetTable(entries) {
 async function manualPunchIn() {
   const employee_id = document.getElementById('ts-punch-employee').value;
   const job_id = document.getElementById('ts-punch-job').value;
+  const work_type = job_id ? null : (document.getElementById('ts-punch-work-type').value || null);
   const statusEl = document.getElementById('ts-punch-status');
   if (!employee_id) return alert('Select a crew member first');
   const { lat, lng, warning } = await getPunchLocation();
 
   statusEl.style.color = '#737475'; statusEl.textContent = 'Punching in…';
-  const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id, job_id: job_id || null, lat, lng }) });
+  const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id, job_id: job_id || null, work_type, lat, lng }) });
   const json = await res.json();
   if (!res.ok) { statusEl.style.color = '#dc2626'; statusEl.textContent = json.error; return; }
   statusEl.style.color = warning ? '#92400e' : '#4ade80';
@@ -5880,12 +5935,15 @@ async function loadSelfPunchState() {
     const active = json?.entry || null;
     if (active?.checked_in_at) {
       const started = new Date(active.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      const label = active.jobs?.name || 'No specific job';
+      const label = active.jobs?.name || (active.work_type ? getTimesheetWorkTypeLabel(active.work_type) : 'No specific job');
       summaryEl.textContent = `You are currently clocked in on ${label} since ${started}.`;
       if (punchInBtn) punchInBtn.disabled = true;
       if (punchOutBtn) punchOutBtn.disabled = false;
       const selfJobSel = document.getElementById('ts-self-punch-job');
       if (selfJobSel && active.job_id) selfJobSel.value = active.job_id;
+      const selfTypeSel = document.getElementById('ts-self-punch-work-type');
+      if (selfTypeSel) selfTypeSel.value = active.work_type || '';
+      syncTimesheetWorkTypeState('ts-self-punch-job', 'ts-self-punch-work-type');
       return;
     }
     summaryEl.textContent = 'You are currently clocked out. Choose an optional job, then punch in when work starts.';
@@ -5901,13 +5959,14 @@ async function loadSelfPunchState() {
 async function selfPunchIn() {
   if (!currentEmployeeId) return alert('This dashboard user is not linked to an employee record yet.');
   const job_id = document.getElementById('ts-self-punch-job')?.value || null;
+  const work_type = job_id ? null : (document.getElementById('ts-self-punch-work-type')?.value || null);
   const statusEl = document.getElementById('ts-self-punch-status');
   const button = document.getElementById('ts-self-punch-in-btn');
   const { lat, lng, warning } = await getPunchLocation();
   if (button) button.disabled = true;
   statusEl.style.color = '#737475';
   statusEl.textContent = 'Punching in...';
-  const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id: currentEmployeeId, job_id, lat, lng }) });
+  const res = await authFetch('/api/timesheets/punch-in', { method: 'POST', body: JSON.stringify({ employee_id: currentEmployeeId, job_id, work_type, lat, lng }) });
   const json = await res.json();
   if (!res.ok) {
     statusEl.style.color = '#dc2626';

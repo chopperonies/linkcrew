@@ -39,6 +39,7 @@ create table if not exists job_assignments (
   id uuid default gen_random_uuid() primary key,
   job_id uuid references jobs(id) on delete cascade,
   employee_id uuid references employees(id) on delete cascade,
+  work_type text check (work_type in ('office_admin', 'shop_warehouse', 'drive_material_run', 'training', 'completed_job_follow_up', 'warranty_callback', 'field_work_other')),
   checked_in_at timestamptz,
   checked_out_at timestamptz,
   unique(job_id, employee_id)

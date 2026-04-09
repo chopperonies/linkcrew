@@ -93,6 +93,15 @@
   }
 
   function render(entries, tenant) {
+    const workTypeLabels = {
+      office_admin: 'Office / Admin',
+      shop_warehouse: 'Shop / Warehouse',
+      drive_material_run: 'Drive / Material Run',
+      training: 'Training',
+      completed_job_follow_up: 'Completed Job Follow-up',
+      warranty_callback: 'Warranty / Callback',
+      field_work_other: 'Field Work (Other)',
+    };
     const periodLabel = start && end
       ? `${new Date(start).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})} – ${new Date(end).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`
       : 'All time';
@@ -128,6 +137,7 @@
         <tr>
           <td><strong>${e.employees?.name || '—'}</strong></td>
           <td>${e.jobs?.name || '—'}</td>
+          <td>${e.work_type ? (workTypeLabels[e.work_type] || e.work_type) : '—'}</td>
           <td>${fmt(e.checked_in_at)}</td>
           <td>${fmt(e.checked_out_at)}</td>
           <td><strong>${hrs}</strong></td>
@@ -158,6 +168,7 @@
             <tr>
               <th>Crew Member</th>
               <th>Job</th>
+              <th>Work Type</th>
               <th>Punch In</th>
               <th>Punch Out</th>
               <th>Hours</th>
