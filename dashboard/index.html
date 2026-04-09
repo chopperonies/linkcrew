@@ -3961,6 +3961,11 @@ function toggleTeamActions(employeeId, inline = false) {
   setTeamActionsExpanded(employeeId, !isTeamActionsExpanded(employeeId, inline), inline);
 }
 
+function collapseTeamActions(employeeId) {
+  setTeamActionsExpanded(employeeId, false, false);
+  setTeamActionsExpanded(employeeId, false, true);
+}
+
 function renderTeamRow(employee, inline = false) {
   const employeeStatus = normalizeEmployeeStatus(employee.status);
   const accessCopy = getEmployeeDashboardAccessCopy(employee);
@@ -4192,6 +4197,7 @@ async function updateEmployeeRole(id, name, selectId) {
   const data = await res.json();
   if (!res.ok) return alert(data.error || 'Failed to update role');
   if (role === 'crew') forgetDashboardLink(id);
+  collapseTeamActions(id);
   await loadTeam();
   if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
   alert(`${name} is now ${role}.`);
@@ -4208,6 +4214,7 @@ async function updateEmployeeStatus(id, name, selectId) {
   const data = await res.json();
   if (!res.ok) return alert(data.error || data.message || 'Failed to update status');
   if (status === 'suspended') forgetDashboardLink(id);
+  collapseTeamActions(id);
   if (Array.isArray(window._allEmployees)) {
     window._allEmployees = window._allEmployees.map(employee => (
       employee.id === id ? { ...employee, status } : employee
