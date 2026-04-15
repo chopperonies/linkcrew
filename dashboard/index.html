@@ -210,6 +210,46 @@
       box-shadow: inset 0 0 0 1px rgba(56,189,248,0.18);
     }
     .nav-item i { width: 15px; height: 15px; flex-shrink: 0; stroke-width: 1.8; }
+    .nav-group-trigger { justify-content: space-between; gap: 8px; }
+    .nav-group-main { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+    .nav-group-chevron {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 999px;
+      color: rgba(226,232,240,0.62); font-size: 11px; font-weight: 900; flex-shrink: 0;
+      transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+    }
+    .nav-group-trigger:hover .nav-group-chevron { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.94); }
+    .nav-group-trigger.expanded .nav-group-chevron { transform: rotate(180deg); color: #7dd3fc; }
+    .nav-submenu { display: none; margin: -2px 0 8px 34px; padding-left: 8px; border-left: 1px solid rgba(125,211,252,0.18); }
+    .nav-submenu.visible { display: grid; gap: 4px; }
+    .nav-subitem {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px;
+      font-size: 12px; font-weight: 700; color: rgba(226,232,240,0.62); cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .nav-subitem::before {
+      content: ''; width: 5px; height: 5px; border-radius: 999px; background: rgba(125,211,252,0.38); flex-shrink: 0;
+    }
+    .nav-subitem:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.94); }
+    .nav-subitem.active { background: rgba(14,165,233,0.14); color: #7dd3fc; box-shadow: inset 0 0 0 1px rgba(56,189,248,0.14); }
+    .sidebar-quick-launch {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 4px 2px 10px; padding: 12px 14px;
+      border: 1px solid rgba(74,222,128,0.16); border-radius: 16px;
+      background: linear-gradient(180deg, rgba(16,185,129,0.16) 0%, rgba(34,197,94,0.10) 100%);
+      color: #f8fafc; cursor: pointer; transition: all 0.14s ease;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .sidebar-quick-launch:hover { transform: translateX(1px); border-color: rgba(74,222,128,0.24); background: linear-gradient(180deg, rgba(16,185,129,0.22) 0%, rgba(34,197,94,0.14) 100%); }
+    .sidebar-quick-launch-main { display:flex; align-items:center; gap:10px; min-width:0; }
+    .sidebar-quick-launch-main i { width:16px; height:16px; flex-shrink:0; }
+    .sidebar-quick-launch-label { font-size:14px; font-weight:800; color:#fff; line-height:1.1; }
+    .sidebar-quick-launch-copy { font-size:10px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:rgba(240,253,244,0.64); margin-top:3px; }
+    .sidebar-quick-launch-arrow {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:30px; height:30px; border-radius:999px;
+      background:rgba(255,255,255,0.10); color:#dcfce7; flex-shrink:0;
+    }
     .sidebar-live { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(226,232,240,0.44); padding: 8px 12px 6px; margin: 8px 8px 0; }
     .live-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -246,6 +286,41 @@
       margin-bottom: 18px;
     }
     .owner-page-copy { max-width: 760px; }
+    .owner-page-copy.dashboard-header-copy {
+      max-width: none;
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 18px;
+      align-items: end;
+    }
+    .dashboard-header-search {
+      display: grid;
+      gap: 6px;
+      align-self: end;
+    }
+    .dashboard-header-search-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .dashboard-header-search-input {
+      width: 100%;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow-soft);
+      outline: none;
+    }
+    .dashboard-header-search-input:focus {
+      border-color: rgba(14,165,233,0.3);
+      box-shadow: 0 0 0 4px rgba(14,165,233,0.08);
+    }
     .owner-page-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
       font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
@@ -334,6 +409,126 @@
     }
     .owner-inline-row span:first-child { font-size: 12px; color: var(--text-soft); font-weight: 700; }
     .owner-inline-row strong { font-size: 13px; color: var(--text); }
+    .topbar {
+      background: rgba(255,255,255,0.82); border-bottom: 1px solid var(--border); padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between; min-height: 60px; flex-shrink: 0;
+      backdrop-filter: blur(16px);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 18px; min-width: 0; }
+    .topbar-copy { min-width: 0; }
+    .topbar-kicker {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #0369a1;
+      margin-bottom: 4px;
+    }
+    .topbar-title { font-size: 16px; font-weight: 900; color: var(--text); letter-spacing: -0.02em; }
+    .topbar-subtitle {
+      font-size: 12px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 520px;
+    }
+    .topbar-search {
+      display: flex; align-items: center; gap: 8px; min-width: min(360px, 42vw);
+      background: rgba(248,252,255,0.92); border: 1px solid var(--border); border-radius: 14px; padding: 8px 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .topbar-search input {
+      flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--text);
+      font-size: 13px; font-family: inherit;
+    }
+    .topbar-search span {
+      font-size: 11px; color: var(--muted); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .quick-launch-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+    .quick-launch-btn {
+      display:flex; flex-direction:column; align-items:flex-start; gap:6px; width:100%; text-align:left;
+      border:1px solid #dbe4f0; background:#fff; border-radius:16px; padding:16px 18px; cursor:pointer;
+      box-shadow:0 12px 28px rgba(15,23,42,0.05);
+    }
+    .quick-launch-btn strong { font-size:14px; color:#0f172a; }
+    .quick-launch-btn span { font-size:12px; line-height:1.5; color:#64748b; }
+    .workspace-list { display:grid; gap:12px; }
+    .workspace-row {
+      display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center;
+      padding:14px 16px; border:1px solid #dbe4f0; border-radius:16px; background:#fff;
+      box-shadow:0 12px 24px rgba(15,23,42,0.04);
+    }
+    .workspace-row-main { min-width:0; }
+    .workspace-row-title { font-size:14px; font-weight:800; color:#0f172a; }
+    .workspace-row-sub { font-size:12px; color:#64748b; line-height:1.55; margin-top:4px; }
+    .workspace-row-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .workspace-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+    .workspace-summary-card {
+      padding:16px; border:1px solid #dbe4f0; border-radius:16px; background:#fff;
+      box-shadow:0 12px 28px rgba(15,23,42,0.04);
+    }
+    .workspace-summary-label { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; }
+    .workspace-summary-value { font-size:24px; font-weight:900; color:#0f172a; margin-top:8px; }
+    .workspace-summary-sub { font-size:12px; color:#64748b; margin-top:6px; line-height:1.5; }
+    .composer-layout { display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(280px, 0.95fr); gap:18px; margin-top:18px; }
+    .composer-stack { display:grid; gap:18px; }
+    .composer-panel {
+      padding:26px; border-radius:24px; border:1px solid rgba(205,219,229,0.82);
+      background:rgba(255,255,255,0.92); box-shadow:0 20px 40px rgba(15,23,42,0.05);
+    }
+    .composer-kicker { font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#7d8b74; }
+    .composer-title { font-size:18px; font-weight:900; letter-spacing:-0.03em; color:#0f172a; margin-top:8px; }
+    .composer-copy { font-size:13px; color:#64748b; line-height:1.7; margin-top:8px; }
+    .composer-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+    .composer-field-grid.tight { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .composer-field { display:grid; gap:6px; }
+    .composer-field label { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#83918a; }
+    .composer-field input,
+    .composer-field select,
+    .composer-field textarea {
+      width:100%; background:#f9faf8; border:1px solid #dbe4dc; border-radius:14px;
+      padding:12px 13px; font-size:13px; color:#0f172a; font-family:inherit;
+    }
+    .composer-field textarea { min-height:108px; resize:vertical; }
+    .composer-field.span-2 { grid-column: span 2; }
+    .composer-field.span-4 { grid-column: span 4; }
+    .composer-inline-stats { display:grid; gap:10px; margin-top:18px; }
+    .composer-inline-row {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px 14px; border:1px solid rgba(205,219,229,0.82); border-radius:16px; background:rgba(255,255,255,0.82);
+      font-size:13px; color:#64748b;
+    }
+    .composer-inline-row strong { color:#0f172a; font-size:14px; }
+    .composer-dropzone {
+      margin-top:16px; padding:18px; border:1px dashed #c8d6e5; border-radius:18px;
+      background:linear-gradient(180deg, rgba(248,250,252,0.92) 0%, rgba(255,255,255,0.92) 100%);
+      font-size:13px; color:#64748b; line-height:1.7;
+    }
+    .composer-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:18px; }
+    .referral-banner {
+      display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,0.8fr); gap:24px;
+      padding:24px; border-radius:28px; border:1px solid #dbe4f0;
+      background:linear-gradient(135deg, #eef8f1 0%, #f7fbff 48%, #ffffff 100%);
+      box-shadow:0 24px 48px rgba(15,23,42,0.08);
+    }
+    .referral-art { border-radius:24px; background:linear-gradient(150deg, #1f8f5f 0%, #0f766e 100%); padding:24px; color:#fff; position:relative; overflow:hidden; min-height:280px; }
+    .referral-ribbon { display:inline-flex; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.18); font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; margin-top:14px; }
+    .referral-phone { position:absolute; right:24px; bottom:20px; width:210px; height:230px; border-radius:28px; border:8px solid rgba(255,255,255,0.28); background:rgba(255,255,255,0.15); padding:10px; }
+    .referral-phone-screen { height:100%; border-radius:20px; background:rgba(255,255,255,0.12); padding:14px; display:flex; flex-direction:column; justify-content:flex-end; gap:10px; }
+    .referral-phone-card { border-radius:16px; background:rgba(255,255,255,0.18); padding:12px; font-size:12px; line-height:1.5; }
+    .referral-code-box { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid #dbe4f0; border-radius:14px; background:#fff; margin-top:8px; }
+    .referral-share-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .referral-share-btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px;
+      border-radius:12px; border:1px solid rgba(12,74,110,0.12); background:#fff; color:#0f172a;
+      cursor:pointer; font-size:12px; font-weight:800; font-family:inherit;
+    }
+    .referral-share-btn:hover { border-color:rgba(31,143,95,0.24); background:#f8fbf4; }
+    .referral-summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .referral-footer-links { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
+    @media (max-width: 1080px) {
+      .topbar { flex-direction:column; align-items:stretch; gap:12px; padding:14px 20px; }
+      .topbar-left { flex-direction:column; align-items:stretch; }
+      .topbar-search { min-width:0; width:100%; }
+      .referral-banner { grid-template-columns:1fr; }
+      .composer-layout { grid-template-columns:1fr; }
+      .composer-field-grid.tight { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .composer-field.span-4 { grid-column: span 2; }
+    }
 
     /* legacy compat */
     .hdr-btn {
@@ -794,33 +989,63 @@
 
   <nav class="sidebar-nav">
     <div class="sidebar-section-label">Workspace</div>
-    <div class="nav-item active" id="mtab-jobs" onclick="switchMainTab('jobs')">
+    <div class="nav-item active" id="mtab-dashboard" onclick="switchMainTab('dashboard')">
+      <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
+    </div>
+    <div class="sidebar-quick-launch" onclick="openWorkspaceSection('dashboard', 'dashboard-quick-launch-card')">
+      <div class="sidebar-quick-launch-main">
+        <i data-lucide="plus"></i>
+        <div>
+          <div class="sidebar-quick-launch-label">Quick Launch</div>
+          <div class="sidebar-quick-launch-copy">Open Launcher</div>
+        </div>
+      </div>
+      <span class="sidebar-quick-launch-arrow"><i data-lucide="chevron-right"></i></span>
+    </div>
+    <div class="nav-item" id="mtab-requests" onclick="switchMainTab('requests')">
+      <i data-lucide="inbox"></i><span>Requests</span>
+    </div>
+    <div class="nav-item" id="mtab-quotes" onclick="switchMainTab('quotes')">
+      <i data-lucide="file-signature"></i><span>Quotes</span>
+    </div>
+    <div class="nav-item" id="mtab-jobs" onclick="switchMainTab('jobs')">
       <i data-lucide="briefcase"></i><span>Jobs</span>
     </div>
-    <div class="nav-item" id="mtab-jobs-records" onclick="switchMainTab('jobs-records')">
-      <i data-lucide="archive"></i><span>Job Records</span>
+    <div class="nav-item" id="mtab-schedule" onclick="switchMainTab('schedule')">
+      <i data-lucide="calendar-days"></i><span>Schedule</span>
     </div>
-    <div class="nav-item" id="mtab-team" onclick="switchMainTab('team')">
-      <i data-lucide="users"></i><span>Team</span>
+    <div class="nav-item nav-group-trigger" id="mtab-team">
+      <div class="nav-group-main" onclick="event.stopPropagation();switchMainTab('team');setTeamSidebarExpanded(true);setActiveTeamSection('roster');">
+        <i data-lucide="users"></i><span>Team</span>
+      </div>
+      <span class="nav-group-chevron" id="team-nav-chevron" onclick="event.stopPropagation();toggleTeamSidebarGroup()">⌄</span>
+    </div>
+    <div class="nav-submenu" id="team-nav-submenu">
+      <div class="nav-subitem" id="team-sub-roster" onclick="goToTeamSection('roster')">Crew</div>
+      <div class="nav-subitem" id="team-sub-invite" onclick="goToTeamSection('invite')">Invite Crew</div>
+      <div class="nav-subitem" id="team-sub-links" onclick="goToTeamSection('links')">Saved Links</div>
     </div>
     <div class="nav-item" id="mtab-clients" onclick="switchMainTab('clients')">
       <i data-lucide="building-2"></i><span>Clients</span>
-    </div>
-    <div class="nav-item" id="mtab-calendar" onclick="switchMainTab('calendar')">
-      <i data-lucide="calendar"></i><span>Calendar</span>
     </div>
     <div class="nav-item" id="mtab-timesheets" onclick="switchMainTab('timesheets')">
       <i data-lucide="clock"></i><span>Timesheets</span>
     </div>
     <div class="sidebar-section-label">Business</div>
-    <div class="nav-item" id="mtab-agreements" onclick="switchMainTab('agreements')">
-      <i data-lucide="file-text"></i><span>Agreements</span>
+    <div class="nav-item" id="mtab-invoices" onclick="switchMainTab('invoices')">
+      <i data-lucide="receipt-text"></i><span>Invoices</span>
+    </div>
+    <div class="nav-item" id="mtab-expenses" onclick="switchMainTab('expenses')">
+      <i data-lucide="wallet-cards"></i><span>Expenses</span>
     </div>
     <div class="nav-item" id="mtab-reports" onclick="switchMainTab('reports')">
       <i data-lucide="bar-chart-2"></i><span>Reports</span>
     </div>
     <div class="nav-item" id="mtab-settings" onclick="switchMainTab('settings')">
       <i data-lucide="settings"></i><span>Settings</span>
+    </div>
+    <div class="nav-item" id="mtab-referrals" onclick="switchMainTab('referrals')">
+      <i data-lucide="gift"></i><span>Refer and Save</span>
     </div>
     <div class="nav-item" id="mtab-ideas" onclick="switchMainTab('ideas')" style="display:none">
       <i data-lucide="lightbulb"></i><span>Ideas</span>
@@ -867,6 +1092,24 @@
 <!-- Main nav tabs (hidden, kept for JS compat) -->
 <div class="main-tabs" style="display:none"></div>
 
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-copy">
+      <div class="topbar-kicker" id="topbar-kicker">Owner Workspace</div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-subtitle" id="topbar-subtitle">Run the day without bouncing between jobs, clients, and billing.</div>
+    </div>
+    <label class="topbar-search">
+      <span>Search</span>
+      <input id="global-dashboard-search" type="text" placeholder="Jump to a job or client" onkeydown="if(event.key==='Enter') handleGlobalSearch()">
+    </label>
+  </div>
+  <div class="header-right">
+    <button class="hdr-btn" onclick="handleGlobalSearch()">Go</button>
+    <button class="hdr-btn accent" id="topbar-create-btn" onclick="runPrimaryCreateAction()">+ Create</button>
+  </div>
+</div>
+
 <div class="stats">
   <div class="stat" id="scard-jobs" onclick="showOverlay('jobs')"><div class="num" id="stat-jobs">—</div><div class="label">Active Jobs</div></div>
   <div class="stat" id="scard-crew" onclick="showOverlay('crew')"><div class="num" id="stat-crew">—</div><div class="label">Crew On Site</div></div>
@@ -885,8 +1128,110 @@
   </div>
 </div>
 
+<!-- Dashboard view -->
+<div id="dashboard-view">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Owner Command Center</div>
+            <div class="owner-page-title">Run the day without losing the bigger picture.</div>
+            <div class="owner-page-subtitle">Quick Launch is back, active operations stay visible, and the owner can jump straight into requests, quotes, jobs, schedule, billing, or reports from one landing page.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('jobs')">Open Jobs</button>
+          <button class="owner-btn primary" onclick="runPrimaryCreateAction()">Quick Launch</button>
+        </div>
+      </div>
+
+      <div class="workspace-summary-grid">
+        <div class="workspace-summary-card">
+          <div class="workspace-summary-label">Active Jobs</div>
+          <div class="workspace-summary-value" id="dashboard-active-count">—</div>
+          <div class="workspace-summary-sub">Live work currently in motion.</div>
+        </div>
+        <div class="workspace-summary-card">
+          <div class="workspace-summary-label">Requests</div>
+          <div class="workspace-summary-value" id="dashboard-request-count">—</div>
+          <div class="workspace-summary-sub">Portal intake still waiting on review.</div>
+        </div>
+        <div class="workspace-summary-card">
+          <div class="workspace-summary-label">Quotes</div>
+          <div class="workspace-summary-value" id="dashboard-quote-count">—</div>
+          <div class="workspace-summary-sub">Estimate-stage work not in production yet.</div>
+        </div>
+        <div class="workspace-summary-card">
+          <div class="workspace-summary-label">Billing Queue</div>
+          <div class="workspace-summary-value" id="dashboard-invoice-count">—</div>
+          <div class="workspace-summary-sub">Jobs needing invoice follow-through.</div>
+        </div>
+      </div>
+
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card" id="dashboard-quick-launch-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Quick Launch</div>
+                <div class="owner-card-headline">Jump straight into the next workflow</div>
+                <div class="owner-card-sub">Use this as the owner starting point for new work, client intake, scheduling handoff, or billing cleanup.</div>
+              </div>
+            </div>
+            <div class="quick-launch-grid">
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('job')"><strong>New Job</strong><span>Create work directly on the board.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('request')"><strong>New Request</strong><span>Capture incoming work manually.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('quote')"><strong>New Quote</strong><span>Start estimate-stage work.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('invoice')"><strong>Create Invoice</strong><span>Jump into the billing queue.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('expense')"><strong>New Expense</strong><span>Capture spend before the receipt disappears.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('client')"><strong>Add Client</strong><span>Create a client record fast.</span></button>
+              <button class="quick-launch-btn" onclick="quickLaunchCreate('team')"><strong>Add Team Member</strong><span>Open the crew workspace.</span></button>
+            </div>
+          </div>
+
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Needs Attention</div>
+                <div class="owner-card-headline">Requests and recent outcomes</div>
+                <div class="owner-card-sub">Keep fresh intake and recently closed work visible without leaving the owner landing page.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="dashboard-attention-list"><div class="empty"><div class="e-icon">📌</div>Loading dashboard view...</div></div>
+          </div>
+        </div>
+
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Requests Queue</div>
+                <div class="owner-card-headline">Newest intake</div>
+                <div class="owner-card-sub">The latest request or quote-worthy intake appears here first.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="dashboard-request-list"><div class="empty"><div class="e-icon">✉️</div>Loading requests...</div></div>
+          </div>
+
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Active Jobs Snapshot</div>
+                <div class="owner-card-headline">Work in motion</div>
+                <div class="owner-card-sub">A compact view of the jobs that are already moving.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="dashboard-jobs-list"><div class="empty"><div class="e-icon">📋</div>Loading jobs...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Jobs view -->
-<div id="jobs-view">
+<div id="jobs-view" style="display:none">
 
 <!-- Onboarding banner -->
 <div id="onboarding-banner" style="display:none;background:#fff;border-bottom:1px solid #e8e8e8;padding:24px 28px">
@@ -905,15 +1250,20 @@
 <div class="owner-page">
   <div class="owner-page-shell">
     <div class="owner-page-header">
-      <div class="owner-page-copy">
-        <div class="owner-page-eyebrow">Owner Workspace</div>
-        <div class="owner-page-title">Run the day without chasing the field.</div>
-        <div class="owner-page-subtitle">This becomes the owner operating layer for LinkCrew: active work, open requests, fresh site photos, and the jobs that need attention next.</div>
+      <div class="owner-page-copy dashboard-header-copy">
+        <div>
+          <div class="owner-page-eyebrow">Owner Workspace</div>
+          <div class="owner-page-title">Run the day without chasing the field.</div>
+          <div class="owner-page-subtitle">This becomes the owner operating layer for LinkCrew: active work, open requests, fresh site photos, and the jobs that need attention next.</div>
+        </div>
+        <div class="dashboard-header-search">
+          <div class="dashboard-header-search-label">Search</div>
+          <input id="dashboard-inline-search" class="dashboard-header-search-input" type="text" placeholder="Search jobs, requests, clients, or addresses" onkeydown="if(event.key==='Enter') handleDashboardInlineSearch()">
+        </div>
       </div>
       <div class="owner-page-actions">
         <button class="owner-btn" onclick="switchMainTab('jobs-records')">Open Job Records</button>
         <button class="owner-btn" onclick="switchMainTab('calendar')">Open Calendar</button>
-        <button class="owner-btn primary" onclick="openAddJob()">+ Add Job</button>
       </div>
     </div>
 
@@ -1014,10 +1364,583 @@
           <div id="recent-outcomes-list"><div class="empty"><div class="e-icon">✅</div>Loading recent outcomes...</div></div>
         </div>
       </div>
+</div>
+</div>
+</div>
+</div><!-- end jobs-view -->
+
+<!-- Requests view -->
+<div id="requests-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Requests</div>
+            <div class="owner-page-title">Review intake before it turns into active work.</div>
+            <div class="owner-page-subtitle">Client portal submissions and fresh inbound work belong in a clean request queue so the office can qualify, estimate, and schedule them deliberately.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('quotes')">Open Quotes</button>
+          <button class="owner-btn primary" onclick="quickLaunchCreate('request')">+ Add Request</button>
+        </div>
+      </div>
+      <div class="workspace-summary-grid" id="requests-summary-grid"></div>
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Request Queue</div>
+                <div class="owner-card-headline">Incoming work waiting on review</div>
+                <div class="owner-card-sub">Keep intake separate from production so scope review and estimating do not get buried under active jobs.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="requests-queue-list"><div class="empty"><div class="e-icon">✉️</div>Loading requests...</div></div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Intake Focus</div>
+            <div class="owner-signal-title">Protect the front door so new work does not disappear into the day.</div>
+            <div class="owner-signal-copy">This page should feel like the owner’s intake desk: what just came in, what needs a response first, and what should turn into a quote instead of getting lost inside active operations.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Start here</span><strong>Newest portal and manual requests</strong></div>
+              <div class="owner-inline-row"><span>Turn into</span><strong>Quoted work with clear next step</strong></div>
+              <div class="owner-inline-row"><span>Watch for</span><strong>Requests sitting without owner review</strong></div>
+            </div>
+          </div>
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Review Rhythm</div>
+                <div class="owner-card-headline">Qualify quickly before the trail gets cold.</div>
+                <div class="owner-card-sub">The office should be able to move from request to quote without hunting for context. Keep this lane short, clear, and deliberate.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>1</span><strong>Confirm client, address, and scope</strong></div>
+              <div class="owner-inline-row"><span>2</span><strong>Decide quote, schedule, or follow-up</strong></div>
+              <div class="owner-inline-row"><span>3</span><strong>Move it out of intake the same day</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-</div><!-- end jobs-view -->
+
+<!-- Quotes view -->
+<div id="quotes-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Quotes</div>
+            <div class="owner-page-title">Keep estimate-stage work out of the live job board.</div>
+            <div class="owner-page-subtitle">Quoted work needs its own queue for follow-up, revisions, and approval before it reaches scheduling or active production.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('requests')">Back to Requests</button>
+          <button class="owner-btn primary" onclick="quickLaunchCreate('quote')">+ Add Quote</button>
+        </div>
+      </div>
+      <div class="workspace-summary-grid" id="quotes-summary-grid"></div>
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Quotes Queue</div>
+                <div class="owner-card-headline">Open estimates and proposal-stage jobs</div>
+                <div class="owner-card-sub">Review quoted work here, then move approved jobs into scheduling when the client is ready.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="quotes-queue-list"><div class="empty"><div class="e-icon">🧾</div>Loading quotes...</div></div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Quote Focus</div>
+            <div class="owner-signal-title">Keep the estimate lane moving before leads go cold.</div>
+            <div class="owner-signal-copy">Use this page to separate scoping, pricing, and approval follow-up from live field production. When a quote stalls, the owner should know whether the blocker is price, timing, or unanswered scope questions.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>First move</span><strong>Review newest quote requests</strong></div>
+              <div class="owner-inline-row"><span>Best trigger</span><strong>Approved quotes move into scheduling</strong></div>
+              <div class="owner-inline-row"><span>Watch for</span><strong>Old quotes with no next step</strong></div>
+            </div>
+          </div>
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Quote Workflow</div>
+                <div class="owner-card-headline">Treat estimating like a real lane, not a note pile.</div>
+                <div class="owner-card-sub">The redesign goal here is simple: every quote should either be getting refined, followed up, or moved forward.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>1</span><strong>Confirm scope and site details</strong></div>
+              <div class="owner-inline-row"><span>2</span><strong>Send estimate or revision quickly</strong></div>
+              <div class="owner-inline-row"><span>3</span><strong>Push approved work into the week</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule view -->
+<div id="schedule-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Schedule</div>
+            <div class="owner-page-title">Line up the next jobs without losing the week.</div>
+            <div class="owner-page-subtitle">This workspace gives the owner a compact schedule lens and a direct handoff into the full calendar when they need to move appointments around.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('calendar')">Open Full Calendar</button>
+          <button class="owner-btn primary" onclick="quickLaunchCreate('job')">+ Add Scheduled Work</button>
+        </div>
+      </div>
+      <div class="workspace-summary-grid" id="schedule-summary-grid"></div>
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Upcoming Work</div>
+                <div class="owner-card-headline">The next jobs ready to place on the week</div>
+                <div class="owner-card-sub">Use this as the owner-friendly schedule queue, then jump into the calendar when you need full placement controls.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="schedule-queue-list"><div class="empty"><div class="e-icon">📆</div>Loading schedule...</div></div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Schedule Snapshot</div>
+            <div class="owner-signal-title">Build the week around crew availability, then lock the fragile spots.</div>
+            <div class="owner-signal-copy">This view should help the owner stage the next few jobs quickly before jumping into the full planner. The queue matters less than knowing what must be placed first and what can float.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Priority one</span><strong>Jobs already promised to clients</strong></div>
+              <div class="owner-inline-row"><span>Priority two</span><strong>Work with materials already on hand</strong></div>
+              <div class="owner-inline-row"><span>Risk</span><strong>Overbooking one crew while another sits idle</strong></div>
+            </div>
+          </div>
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Placement Checklist</div>
+                <div class="owner-card-headline">A quick owner lens before opening the full calendar.</div>
+                <div class="owner-card-sub">Keep this page compact and decisive: what needs scheduled now, what can slide, and what should wait on client confirmation.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Confirm</span><strong>Crew, client, and address</strong></div>
+              <div class="owner-inline-row"><span>Check</span><strong>Material readiness and access window</strong></div>
+              <div class="owner-inline-row"><span>Decide</span><strong>Place now or move to follow-up</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoices view -->
+<div id="invoices-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Invoices</div>
+            <div class="owner-page-title">Keep billing visible without leaving the owner workspace.</div>
+            <div class="owner-page-subtitle">Review completed work, unpaid balances, and invoice-ready jobs in a dedicated billing queue instead of hiding that work behind the jobs board.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('reports')">Open Reports</button>
+          <button class="owner-btn primary" onclick="quickLaunchCreate('invoice')">Create Invoice</button>
+        </div>
+      </div>
+      <div class="workspace-summary-grid" id="invoices-summary-grid"></div>
+      <div class="owner-ops-layout">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Invoice Queue</div>
+                <div class="owner-card-headline">Sent, unpaid, and missing invoice work</div>
+                <div class="owner-card-sub">Keep the next billing move obvious: invoice completed work, follow up on unpaid jobs, and close out finished records.</div>
+              </div>
+            </div>
+            <div class="workspace-list" id="invoices-queue-list"><div class="empty"><div class="e-icon">💳</div>Loading invoices...</div></div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Billing Snapshot</div>
+            <div class="owner-signal-title">Keep cash movement visible while jobs are still fresh in memory.</div>
+            <div class="owner-signal-copy">The billing lane should tell the owner what can be invoiced today, what needs a client follow-up, and what should already be marked paid instead of hiding those answers in completed jobs.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Send fast</span><strong>Completed jobs with ready totals</strong></div>
+              <div class="owner-inline-row"><span>Review next</span><strong>Unpaid work older than expected</strong></div>
+              <div class="owner-inline-row"><span>Close out</span><strong>Paid jobs still sitting in the queue</strong></div>
+            </div>
+          </div>
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Collections Rhythm</div>
+                <div class="owner-card-headline">Make the next billing action obvious.</div>
+                <div class="owner-card-sub">This page should support a simple billing cadence: issue invoices quickly, watch unpaid balances, and keep follow-up clean instead of reactive.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>1</span><strong>Invoice finished work immediately</strong></div>
+              <div class="owner-inline-row"><span>2</span><strong>Follow up on aging unpaid balances</strong></div>
+              <div class="owner-inline-row"><span>3</span><strong>Mark paid and remove billing drag</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-layout" id="invoice-worksheet-section">
+        <div class="composer-stack">
+          <div class="composer-panel">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+              <div>
+                <div class="composer-kicker">New Invoice</div>
+                <div class="composer-title">Build the invoice from one working sheet</div>
+                <div class="composer-copy">Set the client, lock the terms, add the billable work, and review totals without bouncing between cards.</div>
+              </div>
+              <button class="owner-mini-btn" onclick="flashSectionCard(document.getElementById('invoice-worksheet-section'))">Close</button>
+            </div>
+            <div class="composer-layout" style="margin-top:18px">
+              <div class="composer-stack">
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Invoice Worksheet</div>
+                  <div class="composer-title" style="font-size:17px">For Services Rendered</div>
+                  <div class="composer-copy">Start with the customer and invoice terms, then move straight into the services being billed.</div>
+                  <div class="composer-field-grid">
+                    <div class="composer-field span-2">
+                      <label>Subject</label>
+                      <input type="text" value="For Services Rendered">
+                    </div>
+                    <div class="composer-field">
+                      <label>Invoice #</label>
+                      <input type="text" value="1">
+                    </div>
+                    <div class="composer-field">
+                      <label>Issued Date</label>
+                      <input type="date">
+                    </div>
+                    <div class="composer-field">
+                      <label>Select A Client</label>
+                      <select>
+                        <option>Choose a client</option>
+                        <option selected>Aaron Dexter</option>
+                      </select>
+                    </div>
+                    <div class="composer-field">
+                      <label>Salesperson</label>
+                      <select>
+                        <option selected>Owner</option>
+                      </select>
+                    </div>
+                    <div class="composer-field span-2">
+                      <label>Client View</label>
+                      <textarea>Keep the invoice clean and readable. Add reminders, discounts, and tax handling after the billing lines are in place.</textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Product / Service</div>
+                  <div class="composer-title" style="font-size:17px">Line Items</div>
+                  <div class="composer-copy">Start with one service line, then keep stacking items as the invoice grows.</div>
+                  <div class="composer-field-grid tight">
+                    <div class="composer-field span-4">
+                      <label>Name</label>
+                      <input type="text" placeholder="Service or product name">
+                    </div>
+                    <div class="composer-field span-4">
+                      <label>Description</label>
+                      <textarea placeholder="Describe the service, the date, or the scope billed."></textarea>
+                    </div>
+                    <div class="composer-field">
+                      <label>Quantity</label>
+                      <input type="number" value="1">
+                    </div>
+                    <div class="composer-field">
+                      <label>Unit Price</label>
+                      <input type="number" value="0">
+                    </div>
+                    <div class="composer-field">
+                      <label>Tax</label>
+                      <select><option>None</option></select>
+                    </div>
+                    <div class="composer-field">
+                      <label>Total</label>
+                      <input type="text" value="$0.00">
+                    </div>
+                  </div>
+                  <div class="composer-actions">
+                    <button class="owner-btn">Cancel</button>
+                    <button class="owner-btn primary">Save Invoice</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="composer-stack">
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Invoice Summary</div>
+                  <div class="composer-inline-stats">
+                    <div class="composer-inline-row"><span>Subtotal</span><strong id="invoice-composer-subtotal">$0.00</strong></div>
+                    <div class="composer-inline-row"><span>Outstanding</span><strong id="invoice-composer-balance">$0.00</strong></div>
+                    <div class="composer-inline-row"><span>Paid This Cycle</span><strong id="invoice-composer-paid">$0.00</strong></div>
+                  </div>
+                </div>
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Get Paid Fast</div>
+                  <div class="composer-title" style="font-size:17px">Keep the next billing move obvious</div>
+                  <div class="composer-copy">Invoice completed work, follow up on unpaid balances, then close out records that are already settled.</div>
+                  <div class="composer-inline-stats">
+                    <div class="composer-inline-row"><span>Best next move</span><strong>Follow up on unpaid invoices</strong></div>
+                    <div class="composer-inline-row"><span>Missing invoices</span><strong id="invoice-composer-missing">0</strong></div>
+                    <div class="composer-inline-row"><span>Paid this cycle</span><strong id="invoice-composer-paid-cycle">$0.00</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Expenses view -->
+<div id="expenses-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Expenses</div>
+            <div class="owner-page-title">Track purchases, reimbursements, and receipt capture in one owner workspace.</div>
+            <div class="owner-page-subtitle">Keep the office accounting path obvious while the purchase is still fresh instead of rebuilding spend from memory later.</div>
+          </div>
+        </div>
+        <div class="owner-page-actions">
+          <button class="owner-btn" onclick="switchMainTab('invoices')">Review Invoices</button>
+          <button class="owner-btn primary" onclick="openWorkspaceSection('expenses', 'expense-composer-section')">New Expense</button>
+        </div>
+      </div>
+
+      <div class="workspace-summary-grid">
+        <div class="workspace-summary-card"><div class="workspace-summary-label">Logged This View</div><div class="workspace-summary-value">0</div><div class="workspace-summary-sub">Expenses logged in the current workspace view.</div></div>
+        <div class="workspace-summary-card"><div class="workspace-summary-label">Needs Review</div><div class="workspace-summary-value">0</div><div class="workspace-summary-sub">Purchases waiting on reimbursement or categorization.</div></div>
+        <div class="workspace-summary-card"><div class="workspace-summary-label">Receipts Attached</div><div class="workspace-summary-value">0</div><div class="workspace-summary-sub">Proof of spend captured before the paperwork disappears.</div></div>
+      </div>
+
+      <div class="composer-layout" id="expense-composer-section">
+        <div class="composer-stack">
+          <div class="composer-panel">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+              <div>
+                <div class="composer-kicker">New Expense</div>
+                <div class="composer-title">Capture spend while it is fresh</div>
+                <div class="composer-copy">Record the date, amount, reimbursement path, and receipt so payroll and reporting are easier later.</div>
+              </div>
+              <button class="owner-mini-btn" onclick="flashSectionCard(document.getElementById('expense-composer-section'))">Close</button>
+            </div>
+
+            <div class="composer-layout" style="margin-top:18px">
+              <div class="composer-stack">
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Spend Snapshot</div>
+                  <div class="composer-title" style="font-size:17px">Capture the purchase before the paper trail disappears.</div>
+                  <div class="composer-copy">Start with the accounting fact, then attach the receipt and tag where it belongs.</div>
+                  <div class="composer-field-grid">
+                    <div class="composer-field">
+                      <label>Date</label>
+                      <input type="date">
+                    </div>
+                    <div class="composer-field">
+                      <label>Total $</label>
+                      <input type="number" value="0">
+                    </div>
+                    <div class="composer-field span-2">
+                      <label>Item Name</label>
+                      <input type="text" placeholder="Mulch delivery, fuel top-up, safety gloves">
+                    </div>
+                    <div class="composer-field span-2">
+                      <label>Details</label>
+                      <textarea placeholder="Vendor, reason for purchase, or office notes tied to the record."></textarea>
+                    </div>
+                    <div class="composer-field">
+                      <label>Reimburse To</label>
+                      <select>
+                        <option selected>Not reimbursable</option>
+                        <option>Payroll reimbursement</option>
+                        <option>Owner reimbursement</option>
+                      </select>
+                    </div>
+                    <div class="composer-field">
+                      <label>Job</label>
+                      <select>
+                        <option selected>No active jobs</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Receipt</div>
+                  <div class="composer-title" style="font-size:17px">Attach the supporting file while the purchase is still in front of you.</div>
+                  <div class="composer-dropzone">Drop a receipt here or choose a file once upload handling is wired. The workspace is ready for the attachment step and keeps that path visible instead of hiding it in a later modal.</div>
+                  <div class="composer-actions">
+                    <button class="owner-btn">Cancel</button>
+                    <button class="owner-btn primary">Save</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="composer-stack">
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Review</div>
+                  <div class="composer-title" style="font-size:17px">Make the accounting path obvious before you save it.</div>
+                  <div class="composer-inline-stats">
+                    <div class="composer-inline-row"><span>Amount entered</span><strong>$0.00</strong></div>
+                    <div class="composer-inline-row"><span>Reimbursement path</span><strong>Not reimbursable</strong></div>
+                    <div class="composer-inline-row"><span>Job assignment</span><strong>No active jobs</strong></div>
+                  </div>
+                  <div class="composer-copy" style="margin-top:14px">This keeps the capture step light, but still leaves enough structure for payroll cleanup, reporting, and future upload handling.</div>
+                </div>
+                <div class="composer-panel" style="padding:22px">
+                  <div class="composer-kicker">Help and Documentation</div>
+                  <div class="composer-title" style="font-size:17px">Expense rules</div>
+                  <div class="composer-copy">Keep expense capture consistent so it can roll into payroll, job costing, or reporting later without manual cleanup.</div>
+                  <div class="composer-dropzone" style="margin-top:14px">
+                    You can quickly add and generate highlights for the expense report once purchases are logged consistently.
+                    <br><br>
+                    Any reimbursable expense should be tagged clearly so it can flow into payroll and time review.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Refer and Save view -->
+<div id="referrals-view" style="display:none">
+  <div class="owner-page">
+    <div class="owner-page-shell">
+      <div class="owner-page-header">
+        <div class="owner-page-copy">
+          <div>
+            <div class="owner-page-eyebrow">Referral Program</div>
+            <div class="owner-page-title">Refer other crews to LinkCrew and save on your subscription.</div>
+            <div class="owner-page-subtitle">This should feel like a dedicated promo hub with your reward, your code, your share link, and simple actions to send it out without digging through settings.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="referral-banner">
+        <div class="referral-art">
+          <div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-0.03em">Refer a Friend</div>
+          <div class="referral-ribbon">Give 2 months free</div>
+          <div class="referral-phone">
+            <div class="referral-phone-screen">
+              <div class="referral-phone-card"><strong style="display:block;color:#fff;margin-bottom:4px">LinkCrew Invite</strong>Share your code with another service business and let them start with a stronger field ops system.</div>
+              <div class="referral-phone-card">Reward unlocks when they activate a paid plan.</div>
+              <div class="referral-phone-card">Use email, Facebook, X, or LinkedIn to share faster.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:34px;line-height:1.02;font-weight:900;color:var(--text);letter-spacing:-0.05em;max-width:520px">Invite another crew and earn savings when they become a customer.</div>
+          <div style="margin-top:14px;font-size:14px;line-height:1.75;color:var(--text-soft)">Lead with the reward, copy the link, and share it. The page stays simple on purpose so referrals are easy to send from the office or the field.</div>
+          <div style="margin-top:22px;font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Your Referral Code</div>
+          <div class="referral-code-box">
+            <strong id="referral-code" style="font-size:14px;color:var(--text);letter-spacing:0.04em">LINKCREW-269</strong>
+            <button class="owner-mini-btn" onclick="copyReferralCode()">Copy</button>
+          </div>
+          <div style="margin-top:18px;font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Share This Link</div>
+          <div class="referral-code-box">
+            <span id="referral-link" style="font-size:12px;color:var(--text-soft);word-break:break-all">https://linkcrew.io/signup?ref=LINKCREW-269</span>
+            <button class="owner-mini-btn" onclick="copyReferralLink()">Copy</button>
+          </div>
+          <div class="referral-share-grid">
+            <button class="referral-share-btn" onclick="shareReferral('email')">Email</button>
+            <button class="referral-share-btn" onclick="shareReferral('facebook')">Facebook</button>
+            <button class="referral-share-btn" onclick="shareReferral('x')">X</button>
+            <button class="referral-share-btn" onclick="shareReferral('linkedin')">LinkedIn</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="owner-ops-layout" style="margin-top:18px">
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Your Referrals</div>
+                <div class="owner-card-headline">Track reward progress here</div>
+                <div class="owner-card-sub">Once referrals start converting, this becomes the place to see who signed up and what savings you have unlocked.</div>
+              </div>
+            </div>
+            <div class="referral-summary-grid">
+              <div class="workspace-summary-card">
+                <div class="workspace-summary-label">Referrals</div>
+                <div class="workspace-summary-value">0</div>
+                <div class="workspace-summary-sub">No referrals yet.</div>
+              </div>
+              <div class="workspace-summary-card">
+                <div class="workspace-summary-label">Saved So Far</div>
+                <div class="workspace-summary-value">$0</div>
+                <div class="workspace-summary-sub">Savings apply when referrals convert.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Share Checklist</div>
+                <div class="owner-card-headline">Keep the message short</div>
+                <div class="owner-card-sub">Lead with the reward, send the link, and let LinkCrew do the onboarding once they sign up.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>Offer</span><strong>2 months free</strong></div>
+              <div class="owner-inline-row"><span>Code</span><strong>LINKCREW-269</strong></div>
+              <div class="owner-inline-row"><span>Best use</span><strong>Text, email, or social</strong></div>
+            </div>
+            <div class="referral-footer-links">
+              <button class="owner-btn" onclick="copyReferralCode()">Copy Code</button>
+              <button class="owner-btn primary" onclick="copyReferralLink()">Copy Link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Job records view -->
 <div id="jobs-records-view" style="display:none">
@@ -1120,15 +2043,21 @@
 
       <div class="owner-ops-layout">
         <div class="owner-section-stack">
-          <div class="owner-card">
+          <div class="owner-card" id="team-roster-section">
             <div class="owner-card-header">
               <div>
                 <div class="owner-card-title">Roster</div>
                 <div class="owner-card-headline">Team members</div>
                 <div class="owner-card-sub">Keep the roster clean and role-aware so jobs, check-ins, and supply requests always tie back to the right person.</div>
               </div>
+              <div class="owner-card-actions">
+                <button id="team-list-toggle" class="owner-mini-btn" onclick="toggleTeamList()">Show Team Members</button>
+              </div>
             </div>
-            <div id="team-list-inline"><div class="empty" style="padding:12px">Loading...</div></div>
+            <div id="team-summary-copy" style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:14px">Loading team summary...</div>
+            <div id="team-list-wrap" style="display:none">
+              <div id="team-list-inline"><div class="empty" style="padding:12px">Loading...</div></div>
+            </div>
           </div>
         </div>
 
@@ -1153,9 +2082,52 @@
               </div>
             </div>
             <div class="owner-inline-list">
-              <div class="owner-inline-row"><span>Invite link</span><strong>Share from settings</strong></div>
+              <div class="owner-inline-row"><span>Invite link</span><strong>Share from the Team page</strong></div>
               <div class="owner-inline-row"><span>App setup</span><strong>Mobile sign-in after invite</strong></div>
               <div class="owner-inline-row"><span>Next step</span><strong>Assign crew to live jobs</strong></div>
+            </div>
+          </div>
+
+          <div class="owner-card" id="team-invite-section">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Crew Invite</div>
+                <div class="owner-card-headline">Keep self-serve onboarding close to the roster.</div>
+                <div class="owner-card-sub">Share this link with field crew so they can register directly to your team. Generating a new link immediately invalidates the old one.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="text" id="team-crew-invite-url" readonly
+                style="flex:1;background:#f8fafc;border:1px solid #dbe4f0;border-radius:10px;padding:10px 12px;font-size:12px;color:#17191c;font-family:monospace;min-width:0"
+                placeholder="No link generated yet">
+              <button onclick="copyCrewInviteUrl('team-crew-invite-url','team-crew-invite-copy-btn')" id="team-crew-invite-copy-btn"
+                style="background:#0265dc;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
+                Copy
+              </button>
+            </div>
+            <button id="team-crew-invite-gen-btn" onclick="generateCrewInviteUrl()"
+              style="background:#f8fafc;color:#0f172a;border:1px solid #dbe4f0;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer">
+              Generate New Link
+            </button>
+            <div style="margin-top:12px;font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;line-height:1.55">
+              Crew members should use the mobile app only. Supervisors, managers, and owners can still get dashboard access links from the roster.
+            </div>
+          </div>
+
+          <div class="owner-card" id="team-link-panel" style="display:none">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Saved Setup Links</div>
+                <div class="owner-card-headline">Quick access to recent manager setup links</div>
+                <div class="owner-card-sub">Stored only in this browser so owners can reopen or copy a recently generated dashboard setup link.</div>
+              </div>
+              <div class="owner-card-actions">
+                <button id="team-link-toggle" class="owner-mini-btn" onclick="toggleStoredDashboardLinks()">Show Saved Links</button>
+                <button class="owner-mini-btn" onclick="clearStoredDashboardLinks()">Clear</button>
+              </div>
+            </div>
+            <div id="team-link-content" style="display:none;margin-top:10px">
+              <div id="team-link-list"></div>
             </div>
           </div>
         </div>
@@ -1200,6 +2172,37 @@
           <div class="owner-kpi-label">Recurring Invoice Plans</div>
           <div class="owner-kpi-value" id="clients-recurring-count">—</div>
           <div class="owner-kpi-meta">Active recurring billing relationships tied to clients.</div>
+        </div>
+      </div>
+
+      <div class="owner-ops-layout" style="margin-bottom:18px">
+        <div class="owner-section-stack">
+          <div class="owner-signal-card">
+            <div class="owner-signal-label">Client Snapshot</div>
+            <div class="owner-signal-title">Use this page like a relationship desk, not just a contact database.</div>
+            <div class="owner-signal-copy">The owner should be able to see which clients need a callback, which accounts have active work attached, and where billing or recurring service follow-through is slipping before it becomes reactive.</div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>First review</span><strong>Overdue and due-soon follow-ups</strong></div>
+              <div class="owner-inline-row"><span>Then check</span><strong>Clients tied to active jobs or unpaid work</strong></div>
+              <div class="owner-inline-row"><span>Keep moving</span><strong>Recurring accounts before they lapse</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="owner-section-stack">
+          <div class="owner-card">
+            <div class="owner-card-header">
+              <div>
+                <div class="owner-card-title">Owner Workflow</div>
+                <div class="owner-card-headline">Move from client context to next action fast.</div>
+                <div class="owner-card-sub">This page is strongest when the office can go from “who is this client?” to “what do we do next?” in one screen.</div>
+              </div>
+            </div>
+            <div class="owner-inline-list">
+              <div class="owner-inline-row"><span>1</span><strong>Search or import the account</strong></div>
+              <div class="owner-inline-row"><span>2</span><strong>Review jobs, notes, and invoice status</strong></div>
+              <div class="owner-inline-row"><span>3</span><strong>Create a follow-up or recurring plan</strong></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2375,30 +3378,6 @@
       <h3 style="margin:0">👥 Team</h3>
       <button class="btn-cancel" onclick="closeTeam()" style="padding:4px 10px">✕</button>
     </div>
-    <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Team Members</div>
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
-      <div id="team-summary-copy" style="font-size:12px;color:#64748b;line-height:1.5">Loading team summary...</div>
-      <button id="team-list-toggle" class="btn-cancel" onclick="toggleTeamList()" style="padding:6px 10px;font-size:12px;flex-shrink:0">Show Team Members</button>
-    </div>
-    <div id="team-list-wrap" style="display:none">
-      <div id="team-list"><div class="empty" style="padding:12px">Loading...</div></div>
-    </div>
-    <div id="team-link-panel" style="display:none;margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-        <div style="min-width:0">
-          <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em">Recent Setup Links</div>
-          <div style="margin-top:4px;font-size:12px;color:#64748b">Saved only in this browser so owners can quickly copy or open a manager setup link again.</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <button id="team-link-toggle" class="btn-cancel" onclick="toggleStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Show Saved Links</button>
-          <button class="btn-cancel" onclick="clearStoredDashboardLinks()" style="padding:6px 10px;font-size:12px">Clear</button>
-        </div>
-      </div>
-      <div id="team-link-content" style="display:none;margin-top:10px">
-        <div id="team-link-list"></div>
-      </div>
-    </div>
-    <hr class="section-divider">
     <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
     <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
     <div class="form-group"><label>Phone Number (WhatsApp)</label><input type="tel" id="emp-phone" placeholder="+1 (555) 000-0000"></div>
@@ -2458,6 +3437,7 @@ let currentExtraUsers = 0;
 let currentRole = 'owner';
 let currentEmployeeId = null;
 let currentUserEmail = '';
+let currentTeamSection = 'roster';
 let apptReturnToDay = false;
 let currentCapabilities = {
   can_access_dashboard: true,
@@ -2542,9 +3522,9 @@ function updateSignedInAccountUI() {
 }
 
 function getAccessibleTabs() {
-  const tabs = ['jobs', 'jobs-records', 'team', 'clients', 'calendar', 'timesheets'];
+  const tabs = ['dashboard', 'requests', 'quotes', 'jobs', 'schedule', 'team', 'clients', 'invoices', 'timesheets', 'calendar', 'jobs-records', 'referrals'];
   if (canViewFinancials()) {
-    tabs.push('agreements', 'reports');
+    tabs.push('agreements', 'reports', 'expenses');
   }
   if (canAccessSettingsTab()) {
     tabs.push('settings');
@@ -2557,7 +3537,7 @@ function getAccessibleTabs() {
 
 function applyCapabilityUI() {
   const accessibleTabs = new Set(getAccessibleTabs());
-  ['jobs','jobs-records','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(tab => {
+  ['dashboard','requests','quotes','jobs','schedule','team','clients','invoices','expenses','reports','agreements','calendar','timesheets','settings','referrals','ideas','jobs-records'].forEach(tab => {
     const tabEl = document.getElementById(`mtab-${tab}`);
     if (tabEl) tabEl.style.display = accessibleTabs.has(tab) ? '' : 'none';
   });
@@ -2566,6 +3546,10 @@ function applyCapabilityUI() {
   document.querySelectorAll('[onclick="goToCrewInvite()"]').forEach(el => {
     el.style.display = canManageSettings() ? '' : 'none';
   });
+  const teamInviteSection = document.getElementById('team-invite-section');
+  if (teamInviteSection) teamInviteSection.style.display = canManageSettings() ? '' : 'none';
+  const teamInviteSub = document.getElementById('team-sub-invite');
+  if (teamInviteSub) teamInviteSub.style.display = canManageSettings() ? '' : 'none';
   const recurringTab = document.getElementById('ctab-recurring');
   if (recurringTab) recurringTab.style.display = canViewFinancials() ? '' : 'none';
   const settingsButtons = document.querySelectorAll('#settings-view .owner-page-actions button');
@@ -2927,30 +3911,106 @@ async function doSignup() {
 
 function goToCrewInvite() {
   if (!canManageSettings()) return;
-  switchMainTab('settings');
+  goToTeamSection('invite');
+}
+
+function isTeamSidebarExpanded() {
+  return window._teamSidebarExpanded !== false;
+}
+
+function setTeamSidebarExpanded(expanded) {
+  window._teamSidebarExpanded = expanded === true;
+  const submenu = document.getElementById('team-nav-submenu');
+  const trigger = document.getElementById('mtab-team');
+  if (submenu) submenu.classList.toggle('visible', window._teamSidebarExpanded);
+  if (trigger) trigger.classList.toggle('expanded', window._teamSidebarExpanded);
+}
+
+function toggleTeamSidebarGroup() {
+  setTeamSidebarExpanded(!isTeamSidebarExpanded());
+}
+
+function setActiveTeamSection(section = 'roster') {
+  currentTeamSection = section || 'roster';
+  [['roster', 'team-sub-roster'], ['invite', 'team-sub-invite'], ['links', 'team-sub-links']].forEach(([name, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', currentTeamSection === name);
+  });
+}
+
+function flashSectionCard(element) {
+  if (!element) return;
+  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  element.style.outline = '2px solid #0ea5e9';
+  element.style.outlineOffset = '4px';
   setTimeout(() => {
-    const card = document.getElementById('crew-invite-card');
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      card.style.outline = '2px solid #0265dc';
-      card.style.outlineOffset = '3px';
-      setTimeout(() => { card.style.outline = ''; card.style.outlineOffset = ''; }, 1800);
-    }
+    element.style.outline = '';
+    element.style.outlineOffset = '';
+  }, 1600);
+}
+
+function goToTeamSection(section = 'roster') {
+  switchMainTab('team');
+  setTeamSidebarExpanded(true);
+  setActiveTeamSection(section);
+  const targetMap = {
+    roster: document.getElementById('team-roster-section'),
+    invite: document.getElementById('team-invite-section'),
+    links: document.getElementById('team-link-panel')
+  };
+  setTimeout(() => flashSectionCard(targetMap[section] || targetMap.roster), 120);
+}
+
+function openWorkspaceSection(tab, targetId) {
+  switchMainTab(tab);
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  setTimeout(() => {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    flashSectionCard(target);
   }, 120);
+}
+
+function getCrewInviteBindings() {
+  return [
+    {
+      input: document.getElementById('crew-invite-url'),
+      copyBtn: document.getElementById('crew-invite-copy-btn'),
+      genBtn: document.getElementById('crew-invite-gen-btn')
+    },
+    {
+      input: document.getElementById('team-crew-invite-url'),
+      copyBtn: document.getElementById('team-crew-invite-copy-btn'),
+      genBtn: document.getElementById('team-crew-invite-gen-btn')
+    }
+  ];
+}
+
+function setCrewInviteUi(url = '') {
+  getCrewInviteBindings().forEach(binding => {
+    if (!binding.input) return;
+    binding.input.value = url || '';
+    binding.input.placeholder = url ? '' : 'No link generated yet';
+  });
+}
+
+function setCrewInviteGeneratingState(isGenerating) {
+  getCrewInviteBindings().forEach(binding => {
+    if (!binding.genBtn) return;
+    binding.genBtn.disabled = isGenerating;
+    binding.genBtn.textContent = isGenerating ? 'Generating...' : 'Generate New Link';
+  });
 }
 
 async function loadCrewInviteUrl() {
   if (!canManageSettings()) return;
-  const input = document.getElementById('crew-invite-url');
-  input.value = '';
-  input.placeholder = 'No link generated yet';
+  setCrewInviteUi('');
   setText('settings-invite-card', 'Missing');
   try {
     const res = await authFetch('/api/crew-invite');
     const data = await res.json();
     if (data.url) {
-      input.value = data.url;
-      input.placeholder = '';
+      setCrewInviteUi(data.url);
       setText('settings-invite-card', 'Ready');
     }
   } catch {
@@ -2960,34 +4020,32 @@ async function loadCrewInviteUrl() {
 
 async function generateCrewInviteUrl() {
   if (!canManageSettings()) return;
-  const input = document.getElementById('crew-invite-url');
-  const genBtn = document.getElementById('crew-invite-gen-btn');
-  genBtn.disabled = true;
-  genBtn.textContent = 'Generating...';
+  setCrewInviteGeneratingState(true);
   try {
     const res = await authFetch('/api/crew-invite', { method: 'POST' });
     const data = await res.json();
     if (data.url) {
-      input.value = data.url;
+      setCrewInviteUi(data.url);
       setText('settings-invite-card', 'Ready');
-      genBtn.textContent = '✓ Generated';
-      setTimeout(() => { genBtn.textContent = 'Generate New Link'; genBtn.disabled = false; }, 2000);
+      getCrewInviteBindings().forEach(binding => {
+        if (binding.genBtn) binding.genBtn.textContent = '✓ Generated';
+      });
+      setTimeout(() => setCrewInviteGeneratingState(false), 2000);
     } else {
-      genBtn.textContent = 'Generate New Link';
-      genBtn.disabled = false;
+      setCrewInviteGeneratingState(false);
       alert(data.error || 'Failed to generate link');
     }
   } catch {
-    genBtn.textContent = 'Generate New Link';
-    genBtn.disabled = false;
+    setCrewInviteGeneratingState(false);
   }
 }
 
-async function copyCrewInviteUrl() {
-  const url = document.getElementById('crew-invite-url').value;
+async function copyCrewInviteUrl(inputId = 'crew-invite-url', buttonId = 'crew-invite-copy-btn') {
+  const url = document.getElementById(inputId)?.value;
   if (!url) return;
   await navigator.clipboard.writeText(url);
-  const btn = document.getElementById('crew-invite-copy-btn');
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
   btn.textContent = '✓ Copied!';
   setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
 }
@@ -3248,8 +4306,8 @@ async function init() {
   if (state.calendarWeekStart) calWeekStart = new Date(state.calendarWeekStart);
   if (state.calendarSelectedDate) calSelectedDate = state.calendarSelectedDate;
   const accessibleTabs = getAccessibleTabs();
-  const requestedTab = getTabFromLocationHash() || state.mainTab || 'jobs';
-  const restoredTab = accessibleTabs.includes(requestedTab) ? requestedTab : (accessibleTabs[0] || 'jobs');
+  const requestedTab = getTabFromLocationHash() || state.mainTab || 'dashboard';
+  const restoredTab = accessibleTabs.includes(requestedTab) ? requestedTab : (accessibleTabs[0] || 'dashboard');
   switchMainTab(restoredTab);
   if (restoredTab === 'clients') {
     const requestedClientsSubtab = state.clientsSubtab || 'all';
@@ -3710,6 +4768,184 @@ async function loadDashboard() {
   setText('jobs-supplies-count', totalSupplies);
   setText('jobs-bottlenecks-count', totalBottlenecks);
   updateJobsAttention(active.length, totalCrew, totalSupplies, totalBottlenecks, requestCount);
+  renderDashboardOverview(jobs);
+  renderRequestsWorkspace(jobs);
+  renderQuotesWorkspace(jobs);
+  renderScheduleWorkspace(jobs);
+  renderInvoicesWorkspace(jobs);
+}
+
+function renderWorkspaceRows(targetId, rows, emptyIcon, emptyText) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty"><div class="e-icon">${emptyIcon}</div>${emptyText}</div>`;
+    return;
+  }
+  el.innerHTML = rows.join('');
+}
+
+function renderDashboardOverview(jobs = []) {
+  const activeJobs = (jobs || []).filter(isActiveJob);
+  const requests = (jobs || []).filter(isPortalRequestJob);
+  const quotes = (jobs || []).filter(job => normalizeJobStatus(job?.status) === 'quoted');
+  const invoiceJobs = (jobs || []).filter(job => normalizeJobStatus(job?.status) === 'completed' || normalizeJobStatus(job?.status) === 'invoiced' || String(job?.payment_status || '').toLowerCase() === 'paid');
+
+  setText('dashboard-active-count', activeJobs.length);
+  setText('dashboard-request-count', requests.length);
+  setText('dashboard-quote-count', quotes.length);
+  setText('dashboard-invoice-count', invoiceJobs.length);
+
+  renderWorkspaceRows('dashboard-request-list', requests.slice(0, 4).map(job => `
+    <div class="workspace-row" onclick="switchMainTab('requests')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">${(job.name || '').replace(/^Request –\s*/, '') || 'Portal request'}</div>
+        <div class="workspace-row-sub">${job.address || 'No address provided'}${job.created_at ? ` • ${new Date(job.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}` : ''}</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-blue">Quoted</span></div>
+    </div>
+  `), '✉️', 'No new requests are waiting right now.');
+
+  renderWorkspaceRows('dashboard-jobs-list', activeJobs.slice(0, 4).map(job => {
+    const status = getJobStatusChip(job.status);
+    return `
+      <div class="workspace-row" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')" style="cursor:pointer">
+        <div class="workspace-row-main">
+          <div class="workspace-row-title">${job.name || 'Untitled job'}</div>
+          <div class="workspace-row-sub">${job.address || 'No address provided'}</div>
+        </div>
+        <div class="workspace-row-meta"><span class="chip ${status.cls}">${status.label}</span></div>
+      </div>
+    `;
+  }), '📋', 'No active jobs are in motion.');
+
+  const attentionRows = [];
+  if (requests[0]) attentionRows.push(`
+    <div class="workspace-row" onclick="switchMainTab('requests')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">Review newest request</div>
+        <div class="workspace-row-sub">${(requests[0].name || '').replace(/^Request –\s*/, '') || 'Portal request'} is waiting for office review.</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-blue">Requests</span></div>
+    </div>
+  `);
+  if (invoiceJobs[0]) attentionRows.push(`
+    <div class="workspace-row" onclick="switchMainTab('invoices')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">Billing queue is active</div>
+        <div class="workspace-row-sub">${invoiceJobs.length} job${invoiceJobs.length === 1 ? '' : 's'} are sitting in the billing lane.</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-green">Invoices</span></div>
+    </div>
+  `);
+  if (activeJobs[0]) attentionRows.push(`
+    <div class="workspace-row" onclick="switchMainTab('jobs')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">Active work is moving</div>
+        <div class="workspace-row-sub">${activeJobs.length} job${activeJobs.length === 1 ? '' : 's'} are already on the board.</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-yellow">Jobs</span></div>
+    </div>
+  `);
+  renderWorkspaceRows('dashboard-attention-list', attentionRows, '📌', 'Nothing urgent needs owner attention right now.');
+}
+
+function renderRequestsWorkspace(jobs = []) {
+  const requests = (jobs || []).filter(isPortalRequestJob).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  const weekAgo = Date.now() - (7 * 86400000);
+  const recent = requests.filter(job => new Date(job.created_at || 0).getTime() >= weekAgo).length;
+  const quoted = requests.filter(job => normalizeJobStatus(job?.status) === 'quoted').length;
+  const summary = document.getElementById('requests-summary-grid');
+  if (summary) summary.innerHTML = `
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Open Requests</div><div class="workspace-summary-value">${requests.length}</div><div class="workspace-summary-sub">Portal or manually captured intake.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">New This Week</div><div class="workspace-summary-value">${recent}</div><div class="workspace-summary-sub">Fresh requests that still need review.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Quoted</div><div class="workspace-summary-value">${quoted}</div><div class="workspace-summary-sub">Requests already at estimate stage.</div></div>
+  `;
+  renderWorkspaceRows('requests-queue-list', requests.map(job => `
+    <div class="workspace-row" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">${(job.name || '').replace(/^Request –\s*/, '') || 'Portal request'}</div>
+        <div class="workspace-row-sub">${job.address || 'No address provided'}${job.created_at ? ` • ${new Date(job.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}` : ''}</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-blue">Quoted</span></div>
+    </div>
+  `), '✉️', 'No request intake is waiting right now.');
+}
+
+function renderQuotesWorkspace(jobs = []) {
+  const quotes = (jobs || []).filter(job => normalizeJobStatus(job?.status) === 'quoted').sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  const requestOrigin = quotes.filter(isPortalRequestJob).length;
+  const estimateCount = quotes.filter(job => Number(job?.invoice_amount || 0) > 0).length;
+  const summary = document.getElementById('quotes-summary-grid');
+  if (summary) summary.innerHTML = `
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Quotes Open</div><div class="workspace-summary-value">${quotes.length}</div><div class="workspace-summary-sub">Jobs still in estimate mode.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Request-Origin Quotes</div><div class="workspace-summary-value">${requestOrigin}</div><div class="workspace-summary-sub">Quotes that started as portal intake.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">With Estimate Amount</div><div class="workspace-summary-value">${estimateCount}</div><div class="workspace-summary-sub">Quotes already carrying a working amount.</div></div>
+  `;
+  renderWorkspaceRows('quotes-queue-list', quotes.map(job => `
+    <div class="workspace-row" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">${job.name || 'Untitled quote'}</div>
+        <div class="workspace-row-sub">${job.address || 'No address provided'}${Number(job?.invoice_amount || 0) > 0 ? ` • Estimate $${Number(job.invoice_amount).toLocaleString()}` : ''}</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip chip-blue">Lead / Estimate</span></div>
+    </div>
+  `), '🧾', 'No quote-stage work is open.');
+}
+
+function renderScheduleWorkspace(jobs = []) {
+  const schedulable = (jobs || []).filter(job => ['quoted', 'scheduled', 'active', 'in_progress'].includes(normalizeJobStatus(job?.status)));
+  const scheduled = schedulable.filter(job => ['scheduled', 'active', 'in_progress'].includes(normalizeJobStatus(job?.status)));
+  const unslotted = schedulable.filter(job => normalizeJobStatus(job?.status) === 'quoted');
+  const summary = document.getElementById('schedule-summary-grid');
+  if (summary) summary.innerHTML = `
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Ready To Place</div><div class="workspace-summary-value">${unslotted.length}</div><div class="workspace-summary-sub">Estimate-stage jobs that still need placement.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Scheduled / Active</div><div class="workspace-summary-value">${scheduled.length}</div><div class="workspace-summary-sub">Work already on this week’s board.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Next Step</div><div class="workspace-summary-value">${schedulable.length ? 'Plan' : 'Clear'}</div><div class="workspace-summary-sub">Use the full calendar for placement details.</div></div>
+  `;
+  renderWorkspaceRows('schedule-queue-list', schedulable.slice(0, 8).map(job => {
+    const status = getJobStatusChip(job.status);
+    return `
+      <div class="workspace-row" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')" style="cursor:pointer">
+        <div class="workspace-row-main">
+          <div class="workspace-row-title">${job.name || 'Untitled job'}</div>
+          <div class="workspace-row-sub">${job.address || 'No address provided'}</div>
+        </div>
+        <div class="workspace-row-meta"><span class="chip ${status.cls}">${status.label}</span></div>
+      </div>
+    `;
+  }), '📆', 'No schedule-stage work is waiting right now.');
+}
+
+function renderInvoicesWorkspace(jobs = []) {
+  const invoiceJobs = (jobs || []).filter(job => normalizeJobStatus(job?.status) === 'completed' || normalizeJobStatus(job?.status) === 'invoiced' || String(job?.payment_status || '').toLowerCase() === 'paid');
+  const unpaid = invoiceJobs.filter(job => String(job?.payment_status || '').toLowerCase() !== 'paid').length;
+  const paid = invoiceJobs.filter(job => String(job?.payment_status || '').toLowerCase() === 'paid').length;
+  const totalAmount = invoiceJobs.reduce((sum, job) => sum + (parseFloat(job?.invoice_amount) || 0), 0);
+  const paidAmount = invoiceJobs
+    .filter(job => String(job?.payment_status || '').toLowerCase() === 'paid')
+    .reduce((sum, job) => sum + (parseFloat(job?.invoice_amount) || 0), 0);
+  const unpaidAmount = Math.max(totalAmount - paidAmount, 0);
+  const summary = document.getElementById('invoices-summary-grid');
+  if (summary) summary.innerHTML = `
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Billing Queue</div><div class="workspace-summary-value">${invoiceJobs.length}</div><div class="workspace-summary-sub">Completed, invoiced, or paid jobs.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Unpaid</div><div class="workspace-summary-value">${unpaid}</div><div class="workspace-summary-sub">Jobs still waiting for payment.</div></div>
+    <div class="workspace-summary-card"><div class="workspace-summary-label">Paid</div><div class="workspace-summary-value">${paid}</div><div class="workspace-summary-sub">Closed billing items already settled.</div></div>
+  `;
+  setText('invoice-composer-subtotal', `$${totalAmount.toFixed(2)}`);
+  setText('invoice-composer-balance', `$${unpaidAmount.toFixed(2)}`);
+  setText('invoice-composer-paid', `$${paidAmount.toFixed(2)}`);
+  setText('invoice-composer-missing', String(invoiceJobs.filter(job => !(parseFloat(job?.invoice_amount) > 0)).length));
+  setText('invoice-composer-paid-cycle', `$${paidAmount.toFixed(2)}`);
+  renderWorkspaceRows('invoices-queue-list', invoiceJobs.map(job => `
+    <div class="workspace-row" onclick="openDetail('${job.id}','${String(job.name || '').replace(/'/g,"\\'")}')" style="cursor:pointer">
+      <div class="workspace-row-main">
+        <div class="workspace-row-title">${job.name || 'Untitled invoice item'}</div>
+        <div class="workspace-row-sub">${job.address || 'No address provided'}${Number(job?.invoice_amount || 0) > 0 ? ` • $${Number(job.invoice_amount).toLocaleString()}` : ''}</div>
+      </div>
+      <div class="workspace-row-meta"><span class="chip ${String(job?.payment_status || '').toLowerCase() === 'paid' ? 'chip-green' : 'chip-yellow'}">${String(job?.payment_status || '').toLowerCase() === 'paid' ? 'Paid' : 'Unpaid'}</span></div>
+    </div>
+  `), '💳', 'No billing items are queued right now.');
 }
 
 async function loadSupplies() {
@@ -3779,6 +5015,28 @@ async function deletePhoto(id) {
     const j = await res.json();
     alert('Error: ' + (j.error || 'Failed to delete'));
   }
+}
+
+function handleDashboardInlineSearch() {
+  const input = document.getElementById('dashboard-inline-search');
+  const query = String(input?.value || '').trim().toLowerCase();
+  if (!query) return;
+  const match = (allJobsData || []).find(job => {
+    const haystack = [
+      job?.name,
+      job?.client_name,
+      job?.address,
+      job?.status
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(query);
+  });
+  if (!match) {
+    if (input) input.value = '';
+    alert('No matching jobs or requests found.');
+    return;
+  }
+  if (input) input.value = '';
+  openDetail(match.id, match.name || 'Job Detail');
 }
 
 async function updateSupply(id, status) {
@@ -5065,16 +6323,116 @@ function closeOverlay(e) {
   document.querySelectorAll('.stat').forEach(s => s.classList.remove('active'));
 }
 
+function updateWorkspaceHeader(tab) {
+  const header = {
+    dashboard: ['Owner Workspace', 'Dashboard', 'Run the day without bouncing between jobs, clients, and billing.'],
+    requests: ['Owner Workspace', 'Requests', 'Review inbound work before it turns into active production.'],
+    quotes: ['Owner Workspace', 'Quotes', 'Estimate-stage work stays separate from scheduled jobs.'],
+    jobs: ['Owner Workspace', 'Jobs', 'Track active work, field updates, and operational blockers.'],
+    schedule: ['Owner Workspace', 'Schedule', 'Line up the week and hand off to the full calendar when needed.'],
+    team: ['Owner Workspace', 'Team', 'Manage crew capacity, roles, and invites.'],
+    clients: ['Owner Workspace', 'Clients', 'Keep customer records and recurring work close at hand.'],
+    invoices: ['Business Workspace', 'Invoices', 'Keep billing visible inside the owner workflow.'],
+    expenses: ['Business Workspace', 'Expenses', 'Capture spend, receipts, and reimbursement paths before they get messy.'],
+    reports: ['Business Workspace', 'Reports', 'Check revenue, job activity, and performance trends.'],
+    settings: ['Business Workspace', 'Settings', 'Plan, billing, and company-level controls.'],
+    referrals: ['Growth Workspace', 'Refer and Save', 'Share LinkCrew and track referral rewards.'],
+    timesheets: ['Owner Workspace', 'Timesheets', 'Review labor records and open punches.'],
+    calendar: ['Owner Workspace', 'Calendar', 'Use the full planning board for schedule placement.'],
+    'jobs-records': ['Owner Workspace', 'Job Records', 'Review completed, deferred, cancelled, and archived work.'],
+    agreements: ['Business Workspace', 'Agreements', 'Recurring client agreements and contract history.'],
+    ideas: ['Workspace', 'Ideas', 'Send product feedback and workflow ideas.']
+  }[tab] || ['Owner Workspace', 'Dashboard', 'Run the day without bouncing between jobs, clients, and billing.'];
+  setText('topbar-kicker', header[0]);
+  setText('topbar-title', header[1]);
+  setText('topbar-subtitle', header[2]);
+}
+
+function handleGlobalSearch() {
+  const input = document.getElementById('global-dashboard-search');
+  const query = String(input?.value || '').trim().toLowerCase();
+  if (!query) return;
+  const match = (allJobsData || []).find(job => [job.name, job.address, job.status].some(value => String(value || '').toLowerCase().includes(query)));
+  if (match) {
+    switchMainTab(['quoted'].includes(normalizeJobStatus(match.status)) ? 'quotes' : 'jobs');
+    openDetail(match.id, match.name || 'Job');
+    return;
+  }
+  alert('No matching job or client was found in the current workspace.');
+}
+
+function runPrimaryCreateAction() {
+  quickLaunchCreate('job');
+}
+
+function quickLaunchCreate(type) {
+  if (type === 'client') {
+    switchMainTab('clients');
+    openAddClient();
+    return;
+  }
+  if (type === 'team') {
+    switchMainTab('team');
+    openTeam();
+    return;
+  }
+  if (type === 'request') {
+    openWorkspaceSection('requests', 'requests-summary-grid');
+    return;
+  }
+  if (type === 'quote') {
+    openWorkspaceSection('quotes', 'quotes-summary-grid');
+    return;
+  }
+  if (type === 'job') {
+    switchMainTab('jobs');
+    openAddJob();
+    return;
+  }
+  if (type === 'invoice') {
+    openWorkspaceSection('invoices', 'invoice-worksheet-section');
+    return;
+  }
+  if (type === 'expense') {
+    openWorkspaceSection('expenses', 'expense-composer-section');
+    return;
+  }
+  openAddJob();
+}
+
+function copyReferralCode() {
+  const text = document.getElementById('referral-code')?.textContent || 'LINKCREW-269';
+  navigator.clipboard?.writeText(text);
+}
+
+function copyReferralLink() {
+  const text = document.getElementById('referral-link')?.textContent || 'https://linkcrew.io/signup?ref=LINKCREW-269';
+  navigator.clipboard?.writeText(text);
+}
+
+function shareReferral(channel) {
+  const link = encodeURIComponent(document.getElementById('referral-link')?.textContent || 'https://linkcrew.io/signup?ref=LINKCREW-269');
+  const text = encodeURIComponent('Try LinkCrew and use my referral link.');
+  const urls = {
+    email: `mailto:?subject=Try%20LinkCrew&body=${text}%20${link}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${link}`,
+    x: `https://x.com/intent/tweet?text=${text}&url=${link}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${link}`
+  };
+  window.open(urls[channel] || urls.email, '_blank', 'noopener,noreferrer');
+}
+
 // ── Main Tab Navigation ───────────────────────────────────────────────────────
 function switchMainTab(tab) {
   const accessibleTabs = getAccessibleTabs();
   if (!accessibleTabs.includes(tab)) {
-    tab = accessibleTabs[0] || 'jobs';
+    tab = accessibleTabs[0] || 'dashboard';
   }
   const contentArea = document.querySelector('.content-area');
   writeDashboardState({ mainTab: tab });
   history.replaceState(null, '', `#${tab}`);
-  ['jobs','jobs-records','team','clients','reports','agreements','calendar','timesheets','settings','ideas'].forEach(t => {
+  updateWorkspaceHeader(tab);
+  ['dashboard','requests','quotes','jobs','schedule','jobs-records','team','clients','invoices','expenses','reports','agreements','calendar','timesheets','settings','referrals','ideas'].forEach(t => {
     const view = document.getElementById(`${t}-view`);
     const tabEl = document.getElementById(`mtab-${t}`);
     if (view) view.style.display = t === tab ? 'block' : 'none';
@@ -5082,12 +6440,17 @@ function switchMainTab(tab) {
   });
   // Let full-height views (crm, ag, jobs) control their own overflow
   if (contentArea) {
-    contentArea.style.overflowY = ['jobs','jobs-records','clients','agreements'].includes(tab) ? 'hidden' : 'auto';
+    contentArea.style.overflowY = ['dashboard','jobs','jobs-records','clients','agreements','calendar'].includes(tab) ? 'hidden' : 'auto';
   }
-  // Stats bar only relevant on jobs view
+  // Stats bar only relevant on dashboard and jobs views
   const statsEl = document.querySelector('.stats');
-  if (statsEl) statsEl.style.display = tab === 'jobs' ? 'flex' : 'none';
-  if (tab === 'team') loadTeamInline();
+  if (statsEl) statsEl.style.display = ['dashboard', 'jobs'].includes(tab) ? 'flex' : 'none';
+  if (tab === 'team') {
+    loadTeamInline();
+    setTeamSidebarExpanded(true);
+    setActiveTeamSection(currentTeamSection || 'roster');
+    if (canManageSettings()) loadCrewInviteUrl();
+  }
   if (tab === 'clients' && !allClientsData.length) loadClients();
   if (tab === 'reports' && canViewFinancials()) loadReports(30);
   if (tab === 'agreements' && canViewFinancials()) { selectedAgreementId = null; loadAgreements(); }
