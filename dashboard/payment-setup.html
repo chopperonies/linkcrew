@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Setup Guide — LinkCrew</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f5f5f5; color: #17191c; line-height: 1.6; }
+    .wrap { max-width: 780px; margin: 40px auto; padding: 0 20px; }
+    .page { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 48px; }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .sub { color: #737475; font-size: 14px; margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 800; margin: 32px 0 12px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+    p { font-size: 14px; color: #374151; margin-bottom: 12px; }
+    ul, ol { margin: 0 0 12px 24px; }
+    li { font-size: 14px; color: #374151; margin-bottom: 6px; }
+    code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    .step {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 18px; border: 1px solid #e8e8e8; border-radius: 10px;
+      background: #fafafa; margin-bottom: 12px;
+    }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%; background: #0265dc; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-weight: 800;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .step-body { flex: 1; }
+    .step h3 { margin: 0 0 6px; }
+    .step p { margin: 0; font-size: 13px; color: #4b5563; }
+    .method-card {
+      border: 1px solid #e8e8e8; border-radius: 10px; padding: 18px;
+      margin-bottom: 12px; background: #fff;
+    }
+    .method-card h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; }
+    .icon { font-size: 20px; }
+    .back { display: inline-block; margin-bottom: 16px; color: #0265dc; text-decoration: none; font-size: 13px; font-weight: 700; }
+    .back:hover { text-decoration: underline; }
+    .callout {
+      background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px;
+      padding: 14px 16px; margin: 16px 0; font-size: 13px; color: #78350f;
+    }
+    @media (max-width: 600px) {
+      .page { padding: 28px 20px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="/app" class="back">← Back to dashboard</a>
+    <div class="page">
+      <h1>Payment Setup Guide</h1>
+      <div class="sub">Everything you need to start collecting payments from your clients on LinkCrew invoices.</div>
+
+      <h2>How payments work on LinkCrew</h2>
+      <p>LinkCrew does <strong>not</strong> process or hold your clients' money. Instead, you get two ways to collect:</p>
+      <ul>
+        <li><strong>Stripe (card payments)</strong> — connect your own Stripe account. Clients pay by card on your invoices, and funds land in your bank account the same as any other Stripe charge.</li>
+        <li><strong>Your own payment methods</strong> — upload QR codes and account details for Zelle, Venmo, PayPal, Cash App, ACH, or check. These show up directly on every invoice you send.</li>
+      </ul>
+      <div class="callout">
+        <strong>Your money, your account.</strong> LinkCrew never touches your payments. Stripe fees, disputes, chargebacks, and 1099s are between you and Stripe. We're just the invoice layer.
+      </div>
+
+      <h2>Part 1 — Connect Stripe (card payments)</h2>
+      <p>Takes about 3 minutes if you already have a Stripe account. ~10 minutes if you're new to Stripe.</p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Go to Settings → Payments</h3>
+          <p>In your LinkCrew dashboard, open <strong>Settings</strong> from the sidebar, then scroll to the <strong>Payments</strong> card.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Click "Connect Stripe"</h3>
+          <p>You'll be redirected to Stripe. If you already have a Stripe account, sign in — we'll use that one. Otherwise, create a new account (free, takes ~5 minutes).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Finish Stripe's short verification</h3>
+          <p>Stripe will ask for your legal name, business info, and bank account (for payouts). Standard Stripe signup — nothing LinkCrew-specific.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>You're back in LinkCrew — done</h3>
+          <p>Once Stripe sends you back, the Payments card will show <strong>Connected ✓</strong>. Your next invoice will include a "Pay with card" button.</p>
+        </div>
+      </div>
+
+      <h2>Part 2 — Add other payment methods</h2>
+      <p>You can add any combination of the methods below. Each one shows as a card on your invoice with its QR code and instructions.</p>
+
+      <div class="method-card">
+        <h3><span class="icon">💸</span> Zelle</h3>
+        <p>Most banks support Zelle. Open your bank's mobile app, find "Zelle" (usually under Transfers or Payments), and look for <strong>"My QR code"</strong> or <strong>"Receive"</strong>. Screenshot or download the QR image, then upload it in the Payments card. Detail to enter: your Zelle email or phone number.</p>
+      </div>
+      <div class="method-card">
+        <h3><span class="icon">💠</span> Venmo</h3>
+        <p>Open Venmo app → tap your profile → tap the QR icon at the top right. Screenshot the code, crop to the QR, and upload. Detail to enter: your <code>@venmo-handle</code>.</p>
+      </div>
+      <div class="method-card">
+        <h3><span class="icon">🅿️</span> PayPal</h3>
+        <p>Open PayPal app → tap "PayPal.Me" or go to paypal.me, create/copy your link. For a QR: paypal.com → Wallet → "PayPal QR code". Detail to enter: <code>paypal.me/your-name</code>.</p>
+      </div>
+      <div class="method-card">
+        <h3><span class="icon">💵</span> Cash App</h3>
+        <p>Open Cash App → tap your profile icon → tap the QR code at the top right. Screenshot and upload. Detail to enter: your <code>$cashtag</code>.</p>
+      </div>
+      <div class="method-card">
+        <h3><span class="icon">🏦</span> ACH / Bank Transfer</h3>
+        <p>No QR code for this one — just enter your routing and account numbers in the detail field (or the instructions you want clients to follow, like "Email me for wire instructions").</p>
+      </div>
+      <div class="method-card">
+        <h3><span class="icon">✉️</span> Check</h3>
+        <p>Enter the mailing address where clients should send the check. Keep it short — the payee name and address only.</p>
+      </div>
+
+      <h2>Tips</h2>
+      <ul>
+        <li>You can enable or disable any method without deleting it — toggle "Show on invoices" off to hide it temporarily.</li>
+        <li>The "Label" field is what shows on the invoice. Keep it short and recognizable ("Zelle", "Venmo @me").</li>
+        <li>QR codes render best when cropped tight with no background. Most phone QR screenshots work fine as-is.</li>
+        <li>If a client pays you outside of LinkCrew (cash, check, Zelle, etc.), open the invoice in your dashboard and click <strong>Mark as paid</strong> so your records stay accurate.</li>
+      </ul>
+
+      <h2>Need help?</h2>
+      <p>Email <a href="mailto:support@linkcrew.io">support@linkcrew.io</a> and we'll help you get set up.</p>
+    </div>
+  </div>
+</body>
+</html>

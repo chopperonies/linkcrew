@@ -99,6 +99,7 @@
   <div class="actions" id="actions">
     <button class="btn btn-back" onclick="history.back()">← Back</button>
     <button class="btn btn-pay" id="pay-btn" onclick="payInvoice()" style="display:none">Pay Now</button>
+    <button class="btn btn-pay" id="mark-paid-btn" onclick="markAsPaid()" style="display:none;background:#17191c">Mark as paid</button>
     <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
   </div>
 
@@ -201,8 +202,16 @@
       const isPaid = job.payment_status === 'paid';
       const client = job.clients || {};
       const invDate = job.updated_at || job.created_at;
+      const stripeConnected = tenant?.stripe_connect_status === 'active';
+      const canPayCard = isPortal && !isPaid && stripeConnected && parseFloat(job.invoice_amount || 0) > 0;
       const payBtn = document.getElementById('pay-btn');
-      if (payBtn) payBtn.style.display = isPortal && !isPaid && parseFloat(job.invoice_amount || 0) > 0 ? 'inline-block' : 'none';
+      if (payBtn) {
+        payBtn.style.display = canPayCard ? 'inline-block' : 'none';
+        payBtn.textContent = 'Pay with card';
+      }
+      const markPaidBtn = document.getElementById('mark-paid-btn');
+      if (markPaidBtn) markPaidBtn.style.display = !isPortal && !isPaid ? 'inline-block' : 'none';
+      window.__invoiceJob = job;
 
       document.title = `Invoice ${invNumber(job.id, invDate)} — LinkCrew`;
 
@@ -264,6 +273,8 @@
           <span class="total-amount">${fmt(job.invoice_amount)}</span>
         </div>
 
+        ${!isPaid ? renderPaymentOptions(tenant, canPayCard) : ''}
+
         <!-- Footer -->
         <div class="inv-footer">
           ${isPaid
@@ -271,6 +282,57 @@
             : 'Please arrange payment at your earliest convenience. Thank you for your business.'}
         </div>
       `;
+    }
+
+    function renderPaymentOptions(tenant, canPayCard) {
+      const methods = Array.isArray(tenant?.payment_methods)
+        ? tenant.payment_methods.filter(m => m && m.enabled !== false)
+        : [];
+      if (!canPayCard && !methods.length) return '';
+      const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const iconFor = t => ({
+        zelle: '💸', venmo: '💠', paypal: '🅿️', cashapp: '💵',
+        ach: '🏦', check: '✉️', other: '💳',
+      }[t] || '💳');
+      const cardBlock = canPayCard
+        ? `<div style="padding:20px;border:1px solid #e8e8e8;border-radius:10px;background:#fafafa;margin-bottom:12px">
+             <div style="font-size:13px;font-weight:700;color:#17191c;margin-bottom:10px">Pay by card</div>
+             <button class="btn btn-pay" onclick="payInvoice()" style="background:#635bff">Pay with card securely</button>
+             <div style="font-size:11px;color:#737475;margin-top:8px">Powered by Stripe. Funds go directly to ${esc(window.__invoiceJob?.company_name || 'the contractor')}.</div>
+           </div>` : '';
+      const methodsBlock = methods.length
+        ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+             ${methods.map(m => `
+               <div style="padding:14px;border:1px solid #e8e8e8;border-radius:10px;background:#fff">
+                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                   <span style="font-size:18px">${iconFor(m.type)}</span>
+                   <span style="font-size:13px;font-weight:700;color:#17191c">${esc(m.label || m.type)}</span>
+                 </div>
+                 ${m.qr_url ? `<img src="${esc(m.qr_url)}" alt="${esc(m.label)} QR" style="width:100%;max-width:160px;aspect-ratio:1;object-fit:contain;border:1px solid #e8e8e8;border-radius:6px;background:#fff;display:block;margin-bottom:8px">` : ''}
+                 ${m.detail ? `<div style="font-size:12px;color:#17191c;word-break:break-word"><span style="color:#737475">Send to:</span> ${esc(m.detail)}</div>` : ''}
+               </div>`).join('')}
+           </div>` : '';
+      return `
+        <div style="margin-top:40px;padding-top:24px;border-top:1px solid #e8e8e8">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#737475;margin-bottom:14px">Payment Options</div>
+          ${cardBlock}
+          ${methodsBlock}
+        </div>`;
+    }
+
+    async function markAsPaid() {
+      if (!confirm('Mark this invoice as paid? The client will be notified.')) return;
+      const token = await getDashboardToken();
+      const res = await fetch(`/api/jobs/${jobId}/mark-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ notify: 'email' }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        return alert('Error: ' + (j.error || 'unable to mark paid'));
+      }
+      loadInvoice();
     }
   </script>
 </body>

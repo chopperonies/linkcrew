@@ -1221,6 +1221,18 @@ function statusChip(label) {
   return `<span class="status-chip ${cls}">${label || 'free'}</span>`;
 }
 
+function connectChip(t) {
+  const status = t?.stripe_connect_status;
+  const acctId = t?.stripe_connect_account_id;
+  if (status === 'active' && acctId) {
+    return `<span class="soft-chip" title="${escapeHtml(acctId)}" style="background:#dcfce7;color:#166534;border-color:#bbf7d0">Stripe ✓</span>`;
+  }
+  if (status === 'restricted') {
+    return `<span class="soft-chip" title="${escapeHtml(acctId || '')}" style="background:#fef3c7;color:#92400e;border-color:#fde68a">Stripe restricted</span>`;
+  }
+  return '<span class="soft-chip" style="opacity:0.6">No Stripe</span>';
+}
+
 function trialLabel(t) {
   if (isCompedTenant(t)) return 'Comped access';
   if (t.subscription_status === 'active') return 'Paying';
@@ -1326,6 +1338,7 @@ function renderTenantDetail(tenant) {
           ${statusChip(displayStatus)}
           <span class="soft-chip">Plan ${(tenant.plan || 'free').toUpperCase()}</span>
           <span class="soft-chip">Trial ${escapeHtml(trialLabel(tenant))}</span>
+          ${connectChip(tenant)}
           <span class="soft-chip">Last seen ${escapeHtml(timeSince(tenant.last_seen_at))}</span>
         </div>
       </div>

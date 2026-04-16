@@ -1076,16 +1076,39 @@
 
     /* ── Mobile / Responsive ── */
     @media (max-width: 900px) {
-      /* Sidebar collapses to bottom nav */
-      .sidebar { width: 100%; height: auto; flex-direction: row; position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; border-top: 1px solid rgba(255,255,255,0.08); overflow: visible; }
+      /* Sidebar collapses to a compact bottom nav */
+      .app-layout { flex-direction: column; height: auto; overflow: visible; }
+      .sidebar {
+        width: 100%; height: 60px; flex-direction: row;
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+        border-right: none; border-top: 1px solid var(--border);
+        background: #fff; overflow: hidden;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+      }
       .sidebar-brand { display: none; }
-      .sidebar-nav { display: flex; flex-direction: row; padding: 6px 4px; overflow-x: auto; flex: 1; }
-      .sidebar-section-label { display: none; }
-      .nav-item { flex-direction: column; gap: 3px; padding: 6px 10px; font-size: 10px; min-width: 56px; align-items: center; margin-bottom: 0; border-radius: 8px; }
+      .sidebar-nav {
+        display: flex; flex-direction: row; align-items: center;
+        padding: 6px 4px; overflow-x: auto; overflow-y: hidden;
+        flex: 1; gap: 2px;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      }
+      .sidebar-nav::-webkit-scrollbar { display: none; }
+      .sidebar-section-label,
+      .sidebar-chrome,
+      .sidebar-action-btn,
+      .nav-submenu,
+      .nav-group-chevron { display: none !important; }
+      .nav-item {
+        flex-direction: column; gap: 2px; padding: 6px 10px;
+        font-size: 10px; min-width: 56px; align-items: center;
+        margin-bottom: 0; border-radius: 8px; flex-shrink: 0;
+      }
       .nav-item i { width: 18px; height: 18px; }
-      .sidebar-bottom { display: none; }
-      .content-area { height: calc(100vh - 72px); margin-bottom: 72px; }
-      .app-layout { flex-direction: column; }
+      .nav-item > span { white-space: nowrap; }
+      .nav-group-trigger .nav-group-main { flex-direction: column; gap: 2px; align-items: center; }
+      .content-area { height: auto; min-height: calc(100vh - 60px); margin-bottom: 60px; overflow-y: auto; }
+      body { overflow-y: auto; }
+      #mobile-user-menu-btn { display: flex !important; }
     }
 
     @media (max-width: 768px) {
@@ -1302,10 +1325,10 @@
     <div class="nav-item" id="mtab-referrals" onclick="switchMainTab('referrals')">
       <i data-lucide="gift"></i><span>Refer and Save</span>
     </div>
-    <div style="height:1px;background:rgba(255,255,255,0.07);margin:10px 8px 8px"></div>
+    <div class="sidebar-chrome" style="height:1px;background:rgba(255,255,255,0.07);margin:10px 8px 8px"></div>
 
-    <div class="sidebar-live"><div class="live-dot"></div> Live updates on</div>
-    <div style="margin:10px 8px 8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);border-radius:12px;background:rgba(255,255,255,0.04)">
+    <div class="sidebar-live sidebar-chrome"><div class="live-dot"></div> Live updates on</div>
+    <div class="sidebar-chrome" style="margin:10px 8px 8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);border-radius:12px;background:rgba(255,255,255,0.04)">
       <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.48);margin-bottom:4px">Signed In As</div>
       <div id="sidebar-account-email" style="font-size:12px;font-weight:700;color:#fff;word-break:break-word;line-height:1.5">—</div>
       <div id="sidebar-account-role" style="font-size:11px;color:rgba(255,255,255,0.62);margin-top:2px">—</div>
@@ -1391,10 +1414,28 @@
       <button onclick="handleGlobalSearch()" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap;font-family:inherit" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">↵</button>
     </label>
   </div>
-  <div class="header-right" style="position:relative">
+  <div class="header-right" style="position:relative;display:flex;align-items:center;gap:8px">
     <button id="quick-add-btn" onclick="toggleQuickAdd(event)"
       style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#0284c7;color:#fff;border:none;cursor:pointer;font-size:20px;font-weight:300;line-height:1;transition:background 0.12s;flex-shrink:0"
       title="Quick create" onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'">+</button>
+    <button id="mobile-user-menu-btn" onclick="toggleMobileUserMenu(event)"
+      style="display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8;cursor:pointer;flex-shrink:0"
+      title="Account">
+      <i data-lucide="user" style="width:16px;height:16px"></i>
+    </button>
+    <div id="mobile-user-menu" style="display:none;position:absolute;top:40px;right:0;background:#fff;border:1px solid #e8e8e8;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:10px;min-width:220px;z-index:50">
+      <div style="padding:8px 10px;border-bottom:1px solid #e8e8e8;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Signed in as</div>
+        <div id="mobile-user-email" style="font-size:13px;font-weight:700;color:#17191c;word-break:break-word;margin-top:2px">—</div>
+        <div id="mobile-user-role" style="font-size:11px;color:#737475;margin-top:2px">—</div>
+      </div>
+      <button onclick="switchMainTab('settings');closeMobileUserMenu()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;font-size:13px;color:#17191c;font-weight:600;cursor:pointer;border-radius:6px;text-align:left;font-family:inherit">
+        <i data-lucide="settings" style="width:14px;height:14px"></i> Settings
+      </button>
+      <button onclick="doLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;font-size:13px;color:#dc2626;font-weight:600;cursor:pointer;border-radius:6px;text-align:left;font-family:inherit">
+        <i data-lucide="log-out" style="width:14px;height:14px"></i> Sign Out
+      </button>
+    </div>
   </div>
 </div>
 
@@ -3421,6 +3462,44 @@
       </div>
     </div>
 
+    <!-- Payments — Stripe Connect + custom payment methods -->
+    <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:6px">Payments</div>
+          <div style="font-size:13px;color:#737475;line-height:1.7;max-width:680px">Connect your own Stripe account — your clients pay by card, funds go straight to your bank. Or add Zelle, Venmo, PayPal, Cash App, or other methods with QR codes shown on your invoices.</div>
+        </div>
+        <a href="/payment-setup" target="_blank" style="font-size:12px;font-weight:700;color:#0265dc;text-decoration:none;white-space:nowrap">Setup guide →</a>
+      </div>
+
+      <div id="stripe-connect-box" style="padding:16px;border:1px solid #e8e8e8;border-radius:10px;background:#fafafa;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#17191c">Stripe (card payments)</div>
+            <div id="stripe-connect-status" style="font-size:12px;color:#737475;margin-top:4px">Checking status…</div>
+          </div>
+          <button id="stripe-connect-btn" onclick="handleStripeConnect()"
+            style="background:#635bff;color:#fff;border:none;border-radius:7px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer">
+            Connect Stripe
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:#17191c">Other payment methods</div>
+        <button onclick="addPaymentMethodRow()"
+          style="background:#17191c;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">+ Add method</button>
+      </div>
+      <div id="payment-methods-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+        <button onclick="savePaymentMethods()"
+          style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
+          Save payment methods
+        </button>
+        <span id="payment-methods-status" style="font-size:12px;color:#64748b"></span>
+      </div>
+    </div>
+
     <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div>
@@ -4016,10 +4095,30 @@ function updateSignedInAccountUI() {
   const sidebarRole = document.getElementById('sidebar-account-role');
   const settingsEmail = document.getElementById('settings-account-email');
   const settingsRole = document.getElementById('settings-account-role');
+  const mobileEmail = document.getElementById('mobile-user-email');
+  const mobileRole = document.getElementById('mobile-user-role');
   if (sidebarEmail) sidebarEmail.textContent = email;
   if (sidebarRole) sidebarRole.textContent = roleLabel;
   if (settingsEmail) settingsEmail.textContent = email;
   if (settingsRole) settingsRole.textContent = roleLabel;
+  if (mobileEmail) mobileEmail.textContent = email;
+  if (mobileRole) mobileRole.textContent = roleLabel;
+}
+
+function toggleMobileUserMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('mobile-user-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    setTimeout(() => document.addEventListener('click', closeMobileUserMenu, { once: true }), 0);
+  }
+}
+
+function closeMobileUserMenu() {
+  const menu = document.getElementById('mobile-user-menu');
+  if (menu) menu.style.display = 'none';
 }
 
 function getAccessibleTabs() {
@@ -9289,6 +9388,7 @@ async function loadSettings() {
   document.getElementById('priority-support-section').style.display =
     currentPlan === 'business' ? 'block' : 'none';
   updateSettingsUsageCard();
+  loadPaymentsSettings();
   settingsLoaded = true;
 }
 
@@ -9435,6 +9535,197 @@ async function uploadLogo(input) {
   statusEl.style.color = '#4ade80';
   statusEl.textContent = '✓ Logo updated';
   setTimeout(() => statusEl.textContent = '', 3000);
+}
+
+// ── Payments (Stripe Connect + custom methods) ───────────────────────────────
+let paymentMethodsDraft = [];
+
+async function loadPaymentsSettings() {
+  try {
+    const [statusRes, methodsRes] = await Promise.all([
+      authFetch('/api/stripe/connect/status'),
+      authFetch('/api/payment-methods'),
+    ]);
+    const s = await statusRes.json();
+    const m = await methodsRes.json();
+    renderStripeConnectBox(s);
+    paymentMethodsDraft = Array.isArray(m.payment_methods) ? m.payment_methods : [];
+    renderPaymentMethodsList();
+    checkStripeConnectQuery();
+  } catch (err) {
+    console.error('[payments] load error', err);
+  }
+}
+
+function renderStripeConnectBox(s) {
+  const statusEl = document.getElementById('stripe-connect-status');
+  const btn = document.getElementById('stripe-connect-btn');
+  if (!statusEl || !btn) return;
+  if (s.connected) {
+    statusEl.innerHTML = '<span style="color:#16a34a;font-weight:700">✓ Connected</span> — clients can pay by card on invoices. Funds go to your Stripe account.';
+    btn.textContent = 'Disconnect';
+    btn.style.background = '#fff';
+    btn.style.color = '#17191c';
+    btn.style.border = '1px solid #e8e8e8';
+    btn.dataset.action = 'disconnect';
+  } else {
+    statusEl.textContent = 'Not connected — add card payments in about 3 minutes.';
+    btn.textContent = 'Connect Stripe';
+    btn.style.background = '#635bff';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.dataset.action = 'connect';
+  }
+}
+
+async function handleStripeConnect() {
+  const btn = document.getElementById('stripe-connect-btn');
+  if (btn?.dataset.action === 'disconnect') {
+    if (!confirm('Disconnect your Stripe account? Your clients will no longer be able to pay invoices by card through LinkCrew until you reconnect.')) return;
+    const res = await authFetch('/api/stripe/connect/disconnect', { method: 'POST' });
+    if (res.ok) loadPaymentsSettings();
+    else alert('Disconnect failed');
+    return;
+  }
+  const res = await authFetch('/api/stripe/connect/start');
+  const json = await res.json();
+  if (json.url) window.location.href = json.url;
+  else alert('Error: ' + (json.error || 'unable to start Stripe connect'));
+}
+
+function checkStripeConnectQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('stripe_connect') === 'success') {
+    alert('Stripe connected! Clients can now pay invoices by card.');
+    history.replaceState({}, '', window.location.pathname);
+  } else if (params.get('stripe_connect') === 'error') {
+    alert('Stripe connection failed: ' + (params.get('msg') || 'unknown error'));
+    history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+const PAYMENT_METHOD_PRESETS = [
+  { type: 'zelle',   label: 'Zelle',    detail_hint: 'email or phone' },
+  { type: 'venmo',   label: 'Venmo',    detail_hint: '@username' },
+  { type: 'paypal',  label: 'PayPal',   detail_hint: 'paypal.me/you' },
+  { type: 'cashapp', label: 'Cash App', detail_hint: '$cashtag' },
+  { type: 'ach',     label: 'ACH / Bank Transfer', detail_hint: 'routing + account' },
+  { type: 'check',   label: 'Check',    detail_hint: 'mail to address' },
+  { type: 'other',   label: 'Other',    detail_hint: 'payment details' },
+];
+
+function addPaymentMethodRow() {
+  paymentMethodsDraft.push({ type: 'zelle', label: 'Zelle', detail: '', qr_url: null, enabled: true });
+  renderPaymentMethodsList();
+}
+
+function removePaymentMethodRow(idx) {
+  paymentMethodsDraft.splice(idx, 1);
+  renderPaymentMethodsList();
+}
+
+function updatePaymentMethodField(idx, field, value) {
+  if (!paymentMethodsDraft[idx]) return;
+  paymentMethodsDraft[idx][field] = value;
+  if (field === 'type') {
+    const preset = PAYMENT_METHOD_PRESETS.find(p => p.type === value);
+    if (preset && !paymentMethodsDraft[idx].label) paymentMethodsDraft[idx].label = preset.label;
+  }
+}
+
+function renderPaymentMethodsList() {
+  const wrap = document.getElementById('payment-methods-list');
+  if (!wrap) return;
+  if (!paymentMethodsDraft.length) {
+    wrap.innerHTML = '<div style="padding:18px;border:1px dashed #e8e8e8;border-radius:10px;text-align:center;color:#737475;font-size:13px">No payment methods yet. Click "+ Add method" to add Zelle, Venmo, PayPal, Cash App, etc.</div>';
+    return;
+  }
+  const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  wrap.innerHTML = paymentMethodsDraft.map((m, i) => {
+    const preset = PAYMENT_METHOD_PRESETS.find(p => p.type === m.type) || PAYMENT_METHOD_PRESETS[6];
+    const typeOpts = PAYMENT_METHOD_PRESETS.map(p => `<option value="${p.type}" ${p.type===m.type?'selected':''}>${p.label}</option>`).join('');
+    return `
+      <div style="padding:14px;border:1px solid #e8e8e8;border-radius:10px;background:#fff">
+        <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+          <div style="width:150px;flex-shrink:0">
+            ${m.qr_url
+              ? `<img src="${esc(m.qr_url)}" style="width:140px;height:140px;object-fit:contain;border:1px solid #e8e8e8;border-radius:8px;background:#fff">`
+              : `<div style="width:140px;height:140px;border:2px dashed #e8e8e8;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#737475;font-size:11px;text-align:center;padding:8px">No QR</div>`}
+            <label style="display:block;margin-top:8px">
+              <input type="file" accept="image/*" style="display:none" onchange="uploadPaymentQR(${i}, this)">
+              <span style="display:block;text-align:center;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#17191c;cursor:pointer">${m.qr_url ? 'Replace QR' : 'Upload QR'}</span>
+            </label>
+          </div>
+          <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select onchange="updatePaymentMethodField(${i}, 'type', this.value)"
+                style="padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;font-size:13px;background:#fff">${typeOpts}</select>
+              <input type="text" value="${esc(m.label)}" placeholder="Label shown on invoice"
+                oninput="updatePaymentMethodField(${i}, 'label', this.value)"
+                style="flex:1;min-width:120px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;font-size:13px">
+            </div>
+            <input type="text" value="${esc(m.detail)}" placeholder="${esc(preset.detail_hint)}"
+              oninput="updatePaymentMethodField(${i}, 'detail', this.value)"
+              style="padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;font-size:13px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#17191c">
+                <input type="checkbox" ${m.enabled !== false ? 'checked' : ''}
+                  onchange="updatePaymentMethodField(${i}, 'enabled', this.checked)">
+                Show on invoices
+              </label>
+              <button onclick="removePaymentMethodRow(${i})"
+                style="background:transparent;border:none;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;padding:4px 8px">Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function uploadPaymentQR(idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('qr', file);
+  const statusEl = document.getElementById('payment-methods-status');
+  statusEl.style.color = '#64748b';
+  statusEl.textContent = 'Uploading QR…';
+  const res = await fetch('/api/payment-methods/qr', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${currentToken}` },
+    body: formData,
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = 'QR upload error: ' + json.error;
+    return;
+  }
+  paymentMethodsDraft[idx].qr_url = json.qr_url;
+  renderPaymentMethodsList();
+  statusEl.style.color = '#4ade80';
+  statusEl.textContent = '✓ QR uploaded (remember to save)';
+}
+
+async function savePaymentMethods() {
+  const statusEl = document.getElementById('payment-methods-status');
+  statusEl.style.color = '#64748b';
+  statusEl.textContent = 'Saving…';
+  const res = await authFetch('/api/payment-methods', {
+    method: 'PUT',
+    body: JSON.stringify({ payment_methods: paymentMethodsDraft }),
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = 'Save error: ' + json.error;
+    return;
+  }
+  paymentMethodsDraft = json.payment_methods || [];
+  renderPaymentMethodsList();
+  statusEl.style.color = '#4ade80';
+  statusEl.textContent = '✓ Saved';
+  setTimeout(() => { statusEl.textContent = ''; }, 3000);
 }
 
 // ── CRM ───────────────────────────────────────────────────────────────────────

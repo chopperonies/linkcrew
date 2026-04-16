@@ -347,6 +347,31 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     }
   }
 
+  // ── Stripe Connect account lifecycle ────────────────────────────────────────
+  if (event.type === 'account.application.deauthorized') {
+    const accountId = event.account || event.data?.object?.id;
+    if (accountId) {
+      await supabaseAdmin.from('tenants')
+        .update({ stripe_connect_account_id: null, stripe_connect_status: null })
+        .eq('stripe_connect_account_id', accountId);
+      console.log('[stripe connect] deauthorized:', accountId);
+    }
+  }
+
+  if (event.type === 'account.updated') {
+    const acct = event.data?.object;
+    if (acct?.id) {
+      const chargesOk = !!acct.charges_enabled;
+      const payoutsOk = !!acct.payouts_enabled;
+      const requirementsPastDue = Array.isArray(acct.requirements?.past_due) && acct.requirements.past_due.length > 0;
+      let status = 'active';
+      if (!chargesOk || !payoutsOk || requirementsPastDue) status = 'restricted';
+      await supabaseAdmin.from('tenants')
+        .update({ stripe_connect_status: status })
+        .eq('stripe_connect_account_id', acct.id);
+    }
+  }
+
   res.json({ received: true });
 });
 
@@ -371,6 +396,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landi
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
 app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/portal.html')));
 app.get('/invoice', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/invoice.html')));
+app.get('/payment-setup', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/payment-setup.html')));
 app.get('/workorder', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/workorder.html')));
 app.get('/timesheet', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/timesheet-print.html')));
 app.get('/pricing', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/pricing.html')));
@@ -3363,36 +3389,195 @@ app.post('/api/jobs/:id/mark-paid', auth, requireFinancialAccess, async (req, re
 app.post('/portal/api/checkout', portalAuth, async (req, res) => {
   const { job_id } = req.body;
   const { data: job } = await supabaseAdmin.from('jobs')
-    .select('id, name, invoice_amount, payment_status, client_id')
+    .select('id, name, invoice_amount, payment_status, client_id, tenant_id')
     .eq('id', job_id).eq('client_id', req.clientId).single();
 
   if (!job) return res.status(404).json({ error: 'Job not found' });
   if (job.payment_status === 'paid') return res.status(400).json({ error: 'Already paid' });
   if (!job.invoice_amount) return res.status(400).json({ error: 'No invoice amount set' });
 
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_connect_account_id, stripe_connect_status')
+    .eq('id', job.tenant_id).single();
+
+  if (tenant?.stripe_connect_status !== 'active' || !tenant.stripe_connect_account_id) {
+    return res.status(400).json({ error: 'This contractor has not connected a payment processor. Please use one of the other payment methods shown on your invoice.' });
+  }
+
   const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const sessionParams = {
+    payment_method_types: ['card'],
+    line_items: [{
+      price_data: {
+        currency: 'usd',
+        product_data: { name: job.name },
+        unit_amount: Math.round(job.invoice_amount * 100),
+      },
+      quantity: 1,
+    }],
+    mode: 'payment',
+    success_url: `${req.protocol}://${req.get('host')}/portal?payment=success`,
+    cancel_url: `${req.protocol}://${req.get('host')}/portal?payment=cancelled`,
+    metadata: { job_id: job.id, tenant_id: job.tenant_id },
+    payment_intent_data: { application_fee_amount: 0 },
+  };
+
   let session;
   try {
-    session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: { name: job.name },
-          unit_amount: Math.round(job.invoice_amount * 100),
-        },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      success_url: `${req.protocol}://${req.get('host')}/portal?payment=success`,
-      cancel_url: `${req.protocol}://${req.get('host')}/portal?payment=cancelled`,
-      metadata: { job_id: job.id },
-    });
+    session = await stripe.checkout.sessions.create(sessionParams, { stripeAccount: tenant.stripe_connect_account_id });
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
 
   res.json({ url: session.url });
+});
+
+// ── Stripe Connect (Standard accounts — contractors connect their own Stripe) ─
+
+function signConnectState(tenantId) {
+  const secret = process.env.STRIPE_CONNECT_STATE_SECRET || process.env.SUPABASE_SERVICE_KEY || 'dev';
+  const payload = `${tenantId}.${Date.now()}`;
+  const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex').slice(0, 16);
+  return Buffer.from(`${payload}.${sig}`).toString('base64url');
+}
+
+function verifyConnectState(state) {
+  try {
+    const secret = process.env.STRIPE_CONNECT_STATE_SECRET || process.env.SUPABASE_SERVICE_KEY || 'dev';
+    const decoded = Buffer.from(String(state || ''), 'base64url').toString();
+    const parts = decoded.split('.');
+    if (parts.length !== 3) return null;
+    const [tenantId, ts, sig] = parts;
+    const expected = crypto.createHmac('sha256', secret).update(`${tenantId}.${ts}`).digest('hex').slice(0, 16);
+    if (sig !== expected) return null;
+    if (Date.now() - parseInt(ts, 10) > 15 * 60 * 1000) return null;
+    return tenantId;
+  } catch { return null; }
+}
+
+app.get('/api/stripe/connect/start', auth, requireSettingsAccess, requireFinancialAccess, async (req, res) => {
+  const clientId = process.env.STRIPE_CONNECT_CLIENT_ID;
+  if (!clientId) return res.status(500).json({ error: 'Stripe Connect is not configured' });
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const host = `${req.protocol}://${req.get('host')}`;
+  const redirectUri = `${host}/api/stripe/connect/callback`;
+  const state = signConnectState(tenantId);
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('owner_email, company_name').eq('id', tenantId).single();
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    scope: 'read_write',
+    state,
+    redirect_uri: redirectUri,
+    'stripe_user[email]': tenant?.owner_email || '',
+    'stripe_user[business_name]': tenant?.company_name || '',
+  });
+  res.json({ url: `https://connect.stripe.com/oauth/authorize?${params.toString()}` });
+});
+
+app.get('/api/stripe/connect/callback', async (req, res) => {
+  const { code, state, error: oauthError, error_description } = req.query;
+  if (oauthError) {
+    return res.redirect(`/app?stripe_connect=error&msg=${encodeURIComponent(error_description || oauthError)}`);
+  }
+  const tenantId = verifyConnectState(state);
+  if (!tenantId || !code) {
+    return res.redirect('/app?stripe_connect=error&msg=invalid_state');
+  }
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  try {
+    const resp = await stripe.oauth.token({ grant_type: 'authorization_code', code });
+    await supabaseAdmin.from('tenants').update({
+      stripe_connect_account_id: resp.stripe_user_id,
+      stripe_connect_status: 'active',
+    }).eq('id', tenantId);
+    return res.redirect('/app?stripe_connect=success');
+  } catch (err) {
+    console.error('[stripe connect] oauth token error:', err.message);
+    return res.redirect(`/app?stripe_connect=error&msg=${encodeURIComponent(err.message)}`);
+  }
+});
+
+app.post('/api/stripe/connect/disconnect', auth, requireSettingsAccess, requireFinancialAccess, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_connect_account_id').eq('id', tenantId).single();
+  if (tenant?.stripe_connect_account_id && process.env.STRIPE_CONNECT_CLIENT_ID) {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    try {
+      await stripe.oauth.deauthorize({
+        client_id: process.env.STRIPE_CONNECT_CLIENT_ID,
+        stripe_user_id: tenant.stripe_connect_account_id,
+      });
+    } catch (err) {
+      console.error('[stripe connect] deauthorize error:', err.message);
+    }
+  }
+  await supabaseAdmin.from('tenants').update({
+    stripe_connect_account_id: null,
+    stripe_connect_status: null,
+  }).eq('id', tenantId);
+  res.json({ ok: true });
+});
+
+app.get('/api/stripe/connect/status', auth, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.json({ connected: false });
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_connect_account_id, stripe_connect_status').eq('id', tenantId).single();
+  res.json({
+    connected: tenant?.stripe_connect_status === 'active' && !!tenant.stripe_connect_account_id,
+    status: tenant?.stripe_connect_status || null,
+  });
+});
+
+// Payment methods (Zelle/Venmo/etc. with QR codes rendered on invoices)
+const PAYMENT_METHOD_TYPES = new Set(['zelle', 'venmo', 'paypal', 'cashapp', 'ach', 'check', 'other']);
+
+function sanitizePaymentMethods(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.slice(0, 12).map(m => ({
+    type: PAYMENT_METHOD_TYPES.has(m?.type) ? m.type : 'other',
+    label: String(m?.label || '').slice(0, 60),
+    detail: String(m?.detail || '').slice(0, 200),
+    qr_url: m?.qr_url ? String(m.qr_url).slice(0, 500) : null,
+    enabled: m?.enabled !== false,
+  })).filter(m => m.label || m.detail || m.qr_url);
+}
+
+app.get('/api/payment-methods', auth, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const { data } = await supabaseAdmin.from('tenants')
+    .select('payment_methods').eq('id', tenantId).single();
+  res.json({ payment_methods: data?.payment_methods || [] });
+});
+
+app.put('/api/payment-methods', auth, requireSettingsAccess, requireFinancialAccess, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const cleaned = sanitizePaymentMethods(req.body?.payment_methods);
+  const { error } = await supabaseAdmin.from('tenants')
+    .update({ payment_methods: cleaned }).eq('id', tenantId);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ payment_methods: cleaned });
+});
+
+app.post('/api/payment-methods/qr', auth, requireSettingsAccess, requireFinancialAccess, upload.single('qr'), async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  if (!/^image\//.test(req.file.mimetype)) return res.status(400).json({ error: 'File must be an image' });
+  const ext = (req.file.originalname.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+  const filePath = `${tenantId}/${crypto.randomBytes(8).toString('hex')}.${ext}`;
+  const { error: uploadError } = await supabaseAdmin.storage.from('payment-qrs')
+    .upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(400).json({ error: uploadError.message });
+  const { data: { publicUrl } } = supabaseAdmin.storage.from('payment-qrs').getPublicUrl(filePath);
+  res.json({ qr_url: publicUrl });
 });
 
 // ── Billing ───────────────────────────────────────────────────────────────────
@@ -4244,7 +4429,7 @@ app.get('/api/invoice/:jobId', auth, async (req, res) => {
   const { data: job, error } = await query.single();
   if (!job || error) return res.status(404).json({ error: error?.message || 'Not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name, owner_email')
+    .select('company_name, owner_email, logo_url, address, phone, payment_methods, stripe_connect_status')
     .eq('id', job.tenant_id)
     .single();
   res.json({ job, tenant });
@@ -4259,7 +4444,7 @@ app.get('/portal/api/invoice/:jobId', portalAuth, async (req, res) => {
     .single();
   if (!job || error) return res.status(404).json({ error: 'Not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name, owner_email')
+    .select('company_name, owner_email, logo_url, address, phone, payment_methods, stripe_connect_status')
     .eq('id', job.tenant_id)
     .single();
   res.json({ job, tenant });
