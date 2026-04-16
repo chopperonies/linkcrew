@@ -51,6 +51,9 @@ Never make up information. If unsure, direct them to linkcrew.io.`;
 
 const app = express();
 
+// Trust Render/Cloudflare's proxy so req.protocol reflects the real scheme (https) via X-Forwarded-Proto
+app.set('trust proxy', true);
+
 // CORS — allow linkcrew.io and kingstondatagroup.com
 app.use((req, res, next) => {
   const allowed = ['https://www.linkcrew.io', 'https://linkcrew.io', 'https://www.kingstondatagroup.com', 'https://kingstondatagroup.com', 'https://kdg-site.onrender.com'];
@@ -3467,8 +3470,10 @@ app.get('/api/stripe/connect/start', auth, requireSettingsAccess, requireFinanci
   if (!clientId) return res.status(500).json({ error: 'Stripe Connect is not configured' });
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
-  const host = `${req.protocol}://${req.get('host')}`;
-  const redirectUri = `${host}/api/stripe/connect/callback`;
+  const hostHeader = req.get('host') || 'linkcrew.io';
+  const isLocal = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(hostHeader);
+  const scheme = isLocal ? (req.protocol || 'http') : 'https';
+  const redirectUri = `${scheme}://${hostHeader}/api/stripe/connect/callback`;
   const state = signConnectState(tenantId);
   const { data: tenant } = await supabaseAdmin.from('tenants')
     .select('owner_email, company_name').eq('id', tenantId).single();
