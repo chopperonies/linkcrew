@@ -1109,6 +1109,25 @@
       .content-area { height: auto; min-height: calc(100vh - 60px); margin-bottom: 60px; overflow-y: auto; }
       body { overflow-y: auto; }
       #mobile-user-menu-btn { display: flex !important; }
+      .mobile-brand { display: flex !important; }
+    }
+
+    .mobile-brand {
+      display: none;
+      align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 8px;
+      text-decoration: none; color: var(--text);
+      flex-shrink: 0;
+    }
+    .mobile-brand:hover { background: var(--bg); }
+    .mobile-brand img {
+      width: 22px; height: 22px;
+      object-fit: contain; flex-shrink: 0;
+    }
+    .mobile-brand span {
+      font-size: 14px; font-weight: 800; letter-spacing: -0.01em;
+      color: var(--text); max-width: 140px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     @media (max-width: 768px) {
@@ -1403,6 +1422,10 @@
 
 <div class="topbar">
   <div class="topbar-left">
+    <a href="/app" id="mobile-brand" class="mobile-brand" title="Go to dashboard home">
+      <img id="mobile-brand-logo" src="/logo.svg" alt="">
+      <span id="mobile-brand-name">LinkCrew</span>
+    </a>
     <div class="topbar-copy">
       <div class="topbar-kicker" id="topbar-kicker">Owner Workspace</div>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
@@ -4204,6 +4227,21 @@ async function loadCurrentUserContext() {
     can_manage_financials: !!me.capabilities?.can_manage_financials,
   };
   updateSignedInAccountUI();
+  updateMobileBrand(me.tenant);
+}
+
+function updateMobileBrand(tenant) {
+  const logoEl = document.getElementById('mobile-brand-logo');
+  const nameEl = document.getElementById('mobile-brand-name');
+  if (!logoEl || !nameEl) return;
+  if (tenant?.logo_url) {
+    logoEl.src = tenant.logo_url;
+    logoEl.alt = tenant.company_name || '';
+  } else {
+    logoEl.src = '/logo.svg';
+    logoEl.alt = '';
+  }
+  nameEl.textContent = tenant?.company_name || 'LinkCrew';
 }
 
 async function authFetch(url, opts = {}) {

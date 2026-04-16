@@ -1526,6 +1526,12 @@ app.get('/api/config', (req, res) => {
 });
 
 app.get('/api/me', auth, async (req, res) => {
+  let tenantBrand = null;
+  if (req.tenantId) {
+    const { data } = await supabaseAdmin.from('tenants')
+      .select('company_name, logo_url').eq('id', req.tenantId).single();
+    if (data) tenantBrand = { company_name: data.company_name || null, logo_url: data.logo_url || null };
+  }
   res.json({
     user_id: req.userId || null,
     email: req.userEmail || null,
@@ -1534,6 +1540,7 @@ app.get('/api/me', auth, async (req, res) => {
     is_admin: !!req.isAdmin,
     employee_id: req.employeeId || null,
     capabilities: req.capabilities || buildCapabilities(req.role || 'owner'),
+    tenant: tenantBrand,
   });
 });
 
