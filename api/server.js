@@ -4643,7 +4643,7 @@ app.post('/api/voice/incoming', async (req, res) => {
     language: 'en-US',
   });
   gather.say({ voice: 'Polly.Joanna' },
-    'Hi! Thanks for calling LinkCrew. I\'m Choppy, your AI assistant. How can I help you today?');
+    'Hi! Thanks for calling LinkCrew. I\'m your AI assistant. How can I help you today?');
   twiml.say({ voice: 'Polly.Joanna' }, 'I didn\'t catch that. Please call back and try again. Goodbye!');
 
   res.type('text/xml');

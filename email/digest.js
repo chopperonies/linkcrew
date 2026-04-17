@@ -480,7 +480,7 @@ async function sendCallTranscriptToOwner({ ownerEmail, companyName, callerNumber
 
   const rows = transcript.map(m => `
     <tr>
-      <td style="padding:6px 12px;font-size:12px;color:#6b7280;width:80px;vertical-align:top">${m.role === 'user' ? 'Caller' : 'Choppy'}</td>
+      <td style="padding:6px 12px;font-size:12px;color:#6b7280;width:80px;vertical-align:top">${m.role === 'user' ? 'Caller' : 'Assistant'}</td>
       <td style="padding:6px 12px;font-size:13px;color:#111827">${m.content}</td>
     </tr>
   `).join('');
@@ -507,7 +507,7 @@ async function sendCallTranscriptToOwner({ ownerEmail, companyName, callerNumber
   </div>
   <div style="padding:24px">
     ${callbackBanner}
-    <p style="font-size:14px;color:#374151;margin:0 0 16px">Choppy handled a call on your behalf. Here's the full transcript:</p>
+    <p style="font-size:14px;color:#374151;margin:0 0 16px">Your AI Assistant handled a call on your behalf. Here's the full transcript:</p>
     ${transcript.length > 0 ? `
     <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
       ${rows}
