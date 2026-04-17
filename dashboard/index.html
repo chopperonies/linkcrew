@@ -2655,21 +2655,7 @@
               <div class="owner-inline-row"><span>Owners, supervisors, and managers</span><strong id="team-inline-leads">—</strong></div>
               <div class="owner-inline-row"><span>Field crew</span><strong id="team-inline-crew">—</strong></div>
               <div class="owner-inline-row"><span>Seats remaining</span><strong id="team-inline-capacity">—</strong></div>
-            </div>
-          </div>
-
-          <div class="owner-card">
-            <div class="owner-card-header">
-              <div>
-                <div class="owner-card-title">Workflow</div>
-                <div class="owner-card-headline">Crew onboarding</div>
-                <div class="owner-card-sub">New crew should get invited, installed on the mobile app, and assigned to work without forcing the owner through multiple screens.</div>
-              </div>
-            </div>
-            <div class="owner-inline-list">
-              <div class="owner-inline-row"><span>Invite link</span><strong>Share from the Team page</strong></div>
-              <div class="owner-inline-row"><span>App setup</span><strong>Mobile sign-in after invite</strong></div>
-              <div class="owner-inline-row"><span>Next step</span><strong>Assign crew to live jobs</strong></div>
+              <div class="owner-inline-row" title="Crew who have signed into the LinkCrew mobile app at least once"><span>Onboarded on mobile app</span><strong id="team-inline-onboarded">—</strong></div>
             </div>
           </div>
 
@@ -7176,6 +7162,19 @@ async function loadTeamInline() {
     setText('team-inline-leads', managerCount);
     setText('team-inline-crew', crewCount);
     setText('team-inline-capacity', currentMaxUsers ? capacityLeft : '—');
+    const crewEmployees = employees.filter(e => e.role === 'crew');
+    const onboardedCount = crewEmployees.filter(e => !!e.push_token).length;
+    const onboardEl = document.getElementById('team-inline-onboarded');
+    if (onboardEl) {
+      if (!crewEmployees.length) {
+        onboardEl.textContent = '—';
+      } else {
+        const allIn = onboardedCount === crewEmployees.length;
+        const icon = allIn ? '✅' : (onboardedCount > 0 ? '🟢' : '⚪️');
+        const color = allIn ? '#16a34a' : (onboardedCount > 0 ? '#16a34a' : '#94a3b8');
+        onboardEl.innerHTML = `<span style="color:${color}">${icon} ${onboardedCount} of ${crewEmployees.length}</span>`;
+      }
+    }
     updateSettingsUsageCard();
     window._allEmployees = employees;
     renderStoredDashboardLinks(employees);
