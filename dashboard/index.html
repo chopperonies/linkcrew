@@ -3958,6 +3958,13 @@
 <div class="modal-overlay" id="add-job-modal">
   <div class="modal">
     <h3>Add New Job</h3>
+    <div class="form-group">
+      <label>Client</label>
+      <select id="new-job-client" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c">
+        <option value="">— No client linked —</option>
+      </select>
+      <div style="margin-top:6px;font-size:12px;color:#64748b">Optional. Link a client now so invoices and portal access flow automatically. You can also attach one later.</div>
+    </div>
     <div class="form-group"><label>Job Name</label><input type="text" id="new-job-name" placeholder="e.g. Downtown Office Renovation"></div>
     <div class="form-group"><label>Address</label><input type="text" id="new-job-address" placeholder="e.g. 123 Main St, Miami FL"></div>
     <div class="form-group"><label>Scope of Work / Description</label><textarea id="new-job-desc" placeholder="Describe the work to be done, materials, timeline..." rows="3" style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit"></textarea></div>
@@ -3969,7 +3976,16 @@
     </div>
     <div class="form-group">
       <label>Initial Crew</label>
-      <div id="new-job-crew-list" style="display:flex;flex-direction:column;gap:8px;max-height:180px;overflow:auto;padding:10px;border:1px solid #e8e8e8;border-radius:10px;background:#f8fafc"></div>
+      <div style="position:relative">
+        <button type="button" id="new-job-crew-toggle" onclick="toggleNewJobCrewPicker()"
+          style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c;text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-family:inherit">
+          <span id="new-job-crew-label">Select crew…</span>
+          <span style="color:#64748b;font-size:11px">▾</span>
+        </button>
+        <div id="new-job-crew-panel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:10;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);max-height:220px;overflow-y:auto;padding:8px">
+          <div id="new-job-crew-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
       <div style="margin-top:6px;font-size:12px;color:#64748b">Optional. Pick crew members who should already be assigned when the job is created.</div>
     </div>
     <div class="modal-actions">
@@ -6395,10 +6411,11 @@ function getJobCreateModeConfig(mode = 'job') {
   };
 }
 
-function openAddJob(mode = 'job') {
+function openAddJob(mode = 'job', presetClientId = '') {
   currentJobCreateMode = mode || 'job';
   const config = getJobCreateModeConfig(currentJobCreateMode);
   const supervisorSelect = document.getElementById('new-job-supervisor');
+  const clientSelect = document.getElementById('new-job-client');
   const modal = document.getElementById('add-job-modal');
   const title = modal?.querySelector('h3');
   const saveBtn = modal?.querySelector('.btn-save');
@@ -6411,8 +6428,35 @@ function openAddJob(mode = 'job') {
   if (addressInput) addressInput.placeholder = config.addressPlaceholder;
   if (descInput) descInput.placeholder = config.descPlaceholder;
   if (supervisorSelect) supervisorSelect.innerHTML = buildSupervisorSelectOptions();
+  if (clientSelect) {
+    const clientOptions = ['<option value="">— No client linked —</option>']
+      .concat((allClientsData || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+        .map(c => `<option value="${c.id}" ${c.id === presetClientId ? 'selected' : ''}>${c.name}</option>`));
+    clientSelect.innerHTML = clientOptions.join('');
+  }
   renderNewJobCrewChecklist();
+  updateNewJobCrewLabel();
+  document.getElementById('new-job-crew-panel').style.display = 'none';
   modal.classList.add('visible');
+}
+
+function toggleNewJobCrewPicker() {
+  const panel = document.getElementById('new-job-crew-panel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateNewJobCrewLabel() {
+  const ids = getSelectedNewJobCrewIds();
+  const label = document.getElementById('new-job-crew-label');
+  if (!label) return;
+  if (!ids.length) { label.textContent = 'Select crew…'; return; }
+  const names = ids
+    .map(id => (window._allEmployees || []).find(e => e.id === id)?.name)
+    .filter(Boolean);
+  label.textContent = names.length <= 2
+    ? names.join(', ')
+    : `${names.length} crew selected`;
 }
 function closeAddJob() { document.getElementById('add-job-modal').classList.remove('visible'); }
 async function saveJob() {
@@ -6424,9 +6468,11 @@ async function saveJob() {
   const estimate_amount = canManageFinancials() ? (parseFloat(estimateInput?.value) || null) : undefined;
   const primary_supervisor_employee_id = getSelectedSupervisorId('new-job-supervisor');
   const initial_employee_ids = getSelectedNewJobCrewIds();
+  const client_id = document.getElementById('new-job-client')?.value || null;
   if (!name) return alert('Job name is required');
   if (config.prefix && !name.startsWith(config.prefix)) name = `${config.prefix}${name}`;
   const payload = { name, address, description, status: config.status, primary_supervisor_employee_id, initial_employee_ids };
+  if (client_id) payload.client_id = client_id;
   if (canManageFinancials()) payload.estimate_amount = estimate_amount;
   await authFetch('/api/jobs', { method: 'POST', body: JSON.stringify(payload) });
   closeAddJob();
@@ -6434,9 +6480,12 @@ async function saveJob() {
   document.getElementById('new-job-address').value = '';
   document.getElementById('new-job-desc').value = '';
   if (estimateInput) estimateInput.value = '';
+  const clientSelect = document.getElementById('new-job-client');
+  if (clientSelect) clientSelect.value = '';
   const supervisorSelect = document.getElementById('new-job-supervisor');
   if (supervisorSelect) supervisorSelect.innerHTML = buildSupervisorSelectOptions();
   renderNewJobCrewChecklist();
+  updateNewJobCrewLabel();
   currentJobCreateMode = 'job';
   await loadDashboard();
 }
@@ -6673,8 +6722,8 @@ function buildInitialCrewChecklist(selectedIds = []) {
   }
 
   return crew.map(employee => `
-    <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer">
-      <input type="checkbox" class="new-job-crew-checkbox" value="${employee.id}" ${selected.has(employee.id) ? 'checked' : ''} style="margin-top:2px">
+    <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer">
+      <input type="checkbox" class="new-job-crew-checkbox" value="${employee.id}" onchange="updateNewJobCrewLabel()" ${selected.has(employee.id) ? 'checked' : ''} style="margin-top:2px">
       <span style="min-width:0">
         <span style="display:block;font-size:13px;font-weight:700;color:#0f172a">${employee.name || 'Crew member'}</span>
         <span style="display:block;margin-top:2px;font-size:12px;color:#64748b">${employee.phone || 'No phone'}</span>

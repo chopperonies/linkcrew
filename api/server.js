@@ -1903,8 +1903,15 @@ app.post('/api/jobs', auth, requireOperationAccess, ensureFinancialFieldsAllowed
     estimate_amount,
     status,
     primary_supervisor_employee_id,
-    initial_employee_ids = []
+    initial_employee_ids = [],
+    client_id,
   } = req.body;
+
+  if (client_id) {
+    const { data: client } = await supabaseAdmin.from('clients')
+      .select('id').eq('id', client_id).eq('tenant_id', req.tenantId).maybeSingle();
+    if (!client) return res.status(400).json({ error: 'Selected client is invalid.' });
+  }
   const normalizedStatus = normalizeJobStatus(status || 'active');
   const requestedEmployeeIds = Array.isArray(initial_employee_ids)
     ? [...new Set(initial_employee_ids.filter(id => typeof id === 'string' && id.trim()))]
@@ -1951,6 +1958,7 @@ app.post('/api/jobs', auth, requireOperationAccess, ensureFinancialFieldsAllowed
       status: normalizedStatus,
       estimate_amount: estimate_amount || null,
       primary_supervisor_employee_id: primary_supervisor_employee_id || null,
+      client_id: client_id || null,
       tenant_id: req.tenantId
     }).select().single();
   if (error) return res.status(400).json({ error: error.message });
