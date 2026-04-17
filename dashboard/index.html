@@ -10273,14 +10273,19 @@ async function openClientDetail(clientId) {
 
   panel.innerHTML = `
     <div class="cd-header">
-      <div>
+      <div style="min-width:0">
         <div class="cd-name">${client.name}</div>
         ${client.company ? `<div style="font-size:13px;font-weight:600;color:#17191c;margin-top:2px">${client.company}</div>` : ''}
-        <div class="cd-contact">${[client.phone, client.email, client.address].filter(Boolean).join(' · ') || 'No contact info'}</div>
+        <div class="cd-contact" style="display:flex;flex-direction:column;gap:3px;margin-top:8px;font-size:13px">
+          ${client.phone ? `<div><span style="color:#94a3b8;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;display:inline-block;min-width:58px">Phone</span> <a href="tel:${client.phone}" style="color:#17191c;text-decoration:none;font-weight:600">${client.phone}</a></div>` : ''}
+          ${client.email ? `<div><span style="color:#94a3b8;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;display:inline-block;min-width:58px">Email</span> <a href="mailto:${client.email}" style="color:#17191c;text-decoration:none;font-weight:600">${client.email}</a></div>` : ''}
+          ${client.address ? `<div style="display:flex;gap:6px"><span style="color:#94a3b8;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;display:inline-block;min-width:58px;flex-shrink:0;padding-top:2px">Address</span> <a href="https://maps.google.com/?q=${encodeURIComponent(client.address)}" target="_blank" style="color:#17191c;text-decoration:none;font-weight:600;line-height:1.4">${client.address}</a></div>` : ''}
+          ${!client.phone && !client.email && !client.address ? '<div style="color:#94a3b8;font-style:italic">No contact info on file</div>' : ''}
+        </div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
         <button class="btn-edit-client" onclick="openEditClient('${client.id}')">✏️ Edit</button>
-        <button class="btn-edit-client" style="background:#e8f0fd;color:#0265dc;border-color:#0265dc22" onclick="inviteToPortal('${client.id}')">🔗 Invite</button>
+        <button class="btn-edit-client" style="background:#e8f0fd;color:#0265dc;border-color:#0265dc22" onclick="inviteToPortal('${client.id}')" title="Send the client a link to their portal — view invoices, pay online, request new jobs, see job photos">🔗 Send Portal Access</button>
       </div>
     </div>
 
@@ -10312,9 +10317,12 @@ async function openClientDetail(clientId) {
 
     ${canViewFinancials() ? `
     <div class="cd-section">
-      <div class="cd-section-title">Create Invoice</div>
+      <div class="cd-section-title">Quick Invoice</div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:10px">
+        Fill in a short description + amount, click <strong>Send Invoice</strong>, and we'll generate a clean LinkCrew invoice and email it straight to ${client.email ? `<strong>${client.email}</strong>` : 'the client'}. No job or file upload needed — this is a one-off invoice for small work, add-ons, or deposits.
+      </div>
       <div style="display:grid;grid-template-columns:1.2fr 0.8fr auto;gap:8px;align-items:center">
-        <input type="text" id="client-invoice-desc-${client.id}" placeholder="Invoice description (optional)"
+        <input type="text" id="client-invoice-desc-${client.id}" placeholder="e.g. Deposit for March service · Gutter repair · Trip charge"
           style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:13px;color:#17191c">
         <input type="text" inputmode="decimal" id="client-invoice-amount-${client.id}" placeholder="$0.00"
           onfocus="unformatMoneyInput(this)" onblur="formatMoneyInput(this)"
@@ -10322,7 +10330,7 @@ async function openClientDetail(clientId) {
         <button class="btn-save" id="client-invoice-btn-${client.id}" onclick="createClientInvoice('${client.id}')">Send Invoice</button>
       </div>
       ${clientInvoiceStatusMarkup}
-      <div style="margin-top:8px;font-size:12px;color:#64748b">Creates a standalone invoice for this client without requiring an existing job.</div>
+      <div style="margin-top:8px;font-size:11px;color:#94a3b8">Tip: for invoices tied to an existing job, use the job's invoice panel instead — it'll include the job name and address automatically.</div>
     </div>` : ''}
 
     <!-- Follow-ups -->
