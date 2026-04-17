@@ -364,11 +364,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   if (event.type === 'account.updated') {
     const acct = event.data?.object;
     if (acct?.id) {
-      const chargesOk = !!acct.charges_enabled;
-      const payoutsOk = !!acct.payouts_enabled;
-      const requirementsPastDue = Array.isArray(acct.requirements?.past_due) && acct.requirements.past_due.length > 0;
-      let status = 'active';
-      if (!chargesOk || !payoutsOk || requirementsPastDue) status = 'restricted';
+      // Only flag restricted when the account literally can't take cards.
+      // Payouts + open requirements can lag in sandbox and early onboarding
+      // without blocking charges, so they shouldn't freeze the Pay button.
+      const status = acct.charges_enabled ? 'active' : 'restricted';
       await supabaseAdmin.from('tenants')
         .update({ stripe_connect_status: status })
         .eq('stripe_connect_account_id', acct.id);
