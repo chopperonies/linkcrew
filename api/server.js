@@ -2332,6 +2332,113 @@ app.get('/api/clients', auth, async (req, res) => {
   res.json(data || []);
 });
 
+function csvEscape(value) {
+  if (value === null || value === undefined) return '';
+  const s = String(value);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function rowsToCsv(header, rows) {
+  const lines = [header.map(csvEscape).join(',')];
+  for (const row of rows) lines.push(row.map(csvEscape).join(','));
+  return lines.join('\r\n') + '\r\n';
+}
+
+app.get('/api/clients/export', auth, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const { data: clients, error } = await supabaseAdmin.from('clients')
+    .select('name, company, phone, email, address, notes, created_at')
+    .eq('tenant_id', tenantId)
+    .order('name');
+  if (error) return res.status(400).json({ error: error.message });
+  const header = ['Name', 'Company', 'Phone', 'Email', 'Address', 'Notes', 'Created'];
+  const rows = (clients || []).map(c => [
+    c.name || '',
+    c.company || '',
+    c.phone || '',
+    c.email || '',
+    c.address || '',
+    c.notes || '',
+    c.created_at ? new Date(c.created_at).toISOString().slice(0, 10) : '',
+  ]);
+  const csv = rowsToCsv(header, rows);
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="linkcrew-clients-${stamp}.csv"`);
+  res.send(csv);
+});
+
+app.get('/api/invoices/export', auth, requireFinancialAccess, async (req, res) => {
+  const tenantId = await getEffectiveTenantId(req);
+  if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
+  const start = String(req.query.start || '').trim();
+  const end = String(req.query.end || '').trim();
+  const statusFilter = String(req.query.status || 'all').toLowerCase();
+
+  let q = supabaseAdmin.from('jobs')
+    .select('id, name, address, description, invoice_amount, payment_status, status, created_at, updated_at, clients(name, email)')
+    .eq('tenant_id', tenantId)
+    .gt('invoice_amount', 0);
+  if (start) q = q.gte('updated_at', `${start}T00:00:00Z`);
+  if (end) q = q.lte('updated_at', `${end}T23:59:59Z`);
+  q = q.order('updated_at', { ascending: false });
+  const { data: jobs, error } = await q;
+  if (error) return res.status(400).json({ error: error.message });
+
+  const filtered = (jobs || []).filter(j => {
+    const isPaid = String(j.payment_status || '').toLowerCase() === 'paid';
+    if (statusFilter === 'paid') return isPaid;
+    if (statusFilter === 'unpaid') return !isPaid;
+    return true;
+  });
+
+  const invoiceNumber = (id, iso) => {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `INV-${y}${m}${day}-${String(id).slice(0, 6).toUpperCase()}`;
+  };
+
+  const header = [
+    'Invoice #', 'Date', 'Client', 'Client Email',
+    'Job', 'Address', 'Description',
+    'Amount', 'Status', 'Paid Date', 'Payment Method',
+  ];
+  const rows = filtered.map(j => {
+    const isPaid = String(j.payment_status || '').toLowerCase() === 'paid';
+    const invDate = j.updated_at || j.created_at;
+    return [
+      invoiceNumber(j.id, invDate),
+      invDate ? new Date(invDate).toISOString().slice(0, 10) : '',
+      j.clients?.name || '',
+      j.clients?.email || '',
+      j.name || '',
+      j.address || '',
+      j.description || '',
+      Number(j.invoice_amount || 0).toFixed(2),
+      isPaid ? 'Paid' : 'Unpaid',
+      isPaid && j.updated_at ? new Date(j.updated_at).toISOString().slice(0, 10) : '',
+      isPaid ? 'Stripe (card)' : '',
+    ];
+  });
+  const totalAmount = filtered.reduce((s, j) => s + (parseFloat(j.invoice_amount) || 0), 0);
+  const totalPaid = filtered
+    .filter(j => String(j.payment_status || '').toLowerCase() === 'paid')
+    .reduce((s, j) => s + (parseFloat(j.invoice_amount) || 0), 0);
+  rows.push(['', '', '', '', '', '', 'Total invoiced', totalAmount.toFixed(2), '', '', '']);
+  rows.push(['', '', '', '', '', '', 'Total paid',     totalPaid.toFixed(2),     '', '', '']);
+
+  const csv = rowsToCsv(header, rows);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const range = start && end ? `${start}_to_${end}` : start ? `from-${start}` : end ? `to-${end}` : 'all';
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="linkcrew-invoices-${range}-${stamp}.csv"`);
+  res.send(csv);
+});
+
 app.post('/api/clients', auth, async (req, res) => {
   const { name, company, phone, email, address, notes } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
