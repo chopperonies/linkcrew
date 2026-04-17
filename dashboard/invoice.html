@@ -241,6 +241,7 @@
           <div>
             <div class="party-label">From</div>
             <div class="party-name">${tenant?.company_name || 'LinkCrew'}</div>
+            ${tenant?.license_number ? `<div style="font-size:11px;color:#737475;font-weight:600;margin-top:2px">Lic. #${tenant.license_number}</div>` : ''}
             <div class="party-detail">
               ${[tenant?.address, tenant?.phone, tenant?.owner_email].filter(Boolean).join('<br>')}
             </div>

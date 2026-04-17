@@ -3522,6 +3522,11 @@
           <div style="font-size:12px;font-weight:600;color:#737475;margin-bottom:6px">Business Address</div>
           <input type="text" id="set-address" placeholder="123 Main St, City, State ZIP" class="auth-input" style="margin-bottom:0">
         </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#737475;margin-bottom:6px">Contractor License # <span style="font-weight:500;color:#94a3b8">(optional)</span></div>
+          <input type="text" id="set-license" placeholder="e.g. CCC1234567 · CSLB 123456 · leave blank if not licensed" class="auth-input" style="margin-bottom:0">
+          <div style="margin-top:6px;font-size:11px;color:#94a3b8;line-height:1.6">Shown on invoices, estimates, and work orders. Many states require licensed trades to display this on client-facing documents. Handymen and unlicensed services can leave it blank — nothing shows if empty.</div>
+        </div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
           <button onclick="saveSettings()"
             style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
@@ -9873,6 +9878,8 @@ async function loadSettings() {
   document.getElementById('set-company-name').value = data.company_name || '';
   document.getElementById('set-phone').value = data.phone || '';
   document.getElementById('set-address').value = data.address || '';
+  const licEl = document.getElementById('set-license');
+  if (licEl) licEl.value = data.license_number || '';
   document.getElementById('set-manager-financials').checked = !!data.manager_financials_enabled;
   setLogoUi(data.logo_url || null);
   // Voicebot state
@@ -9996,9 +10003,10 @@ async function saveSettings() {
   const company_name = document.getElementById('set-company-name').value.trim();
   const phone = document.getElementById('set-phone').value.trim();
   const address = document.getElementById('set-address').value.trim();
+  const license_number = document.getElementById('set-license')?.value.trim() || '';
   const res = await authFetch('/api/settings', {
     method: 'PATCH',
-    body: JSON.stringify({ company_name, phone, address })
+    body: JSON.stringify({ company_name, phone, address, license_number })
   });
   const statusEl = document.getElementById('settings-save-status');
   if (res.ok) {

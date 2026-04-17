@@ -1995,7 +1995,7 @@ app.get('/api/workorder/:jobId', async (req, res) => {
     .eq('id', req.params.jobId).single();
   if (error || !job) return res.status(404).json({ error: 'Work order not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name, logo_url, address, phone, owner_email')
+    .select('company_name, logo_url, address, phone, owner_email, license_number')
     .eq('id', job.tenant_id).single();
   res.json({ job, tenant });
 });
@@ -3879,7 +3879,7 @@ app.get('/api/settings', auth, async (req, res) => {
 app.patch('/api/settings', auth, requireSettingsAccess, async (req, res) => {
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
-  const { company_name, phone, address, voicebot_knowledge, photo_expiry_days, appt_reminder_minutes, manager_financials_enabled } = req.body;
+  const { company_name, phone, address, license_number, voicebot_knowledge, photo_expiry_days, appt_reminder_minutes, manager_financials_enabled } = req.body;
   const syncManagerFinancialAccess = async enabled => {
     const syncResult = await supabaseAdmin
       .from('tenant_users')
@@ -3894,6 +3894,7 @@ app.patch('/api/settings', auth, requireSettingsAccess, async (req, res) => {
   if (company_name !== undefined) updates.company_name = company_name;
   if (phone !== undefined) updates.phone = phone;
   if (address !== undefined) updates.address = address;
+  if (license_number !== undefined) updates.license_number = (typeof license_number === 'string' ? license_number.trim() : license_number) || null;
   if (voicebot_knowledge !== undefined) updates.voicebot_knowledge = voicebot_knowledge;
   if (photo_expiry_days !== undefined) updates.photo_expiry_days = photo_expiry_days || null;
   if (appt_reminder_minutes !== undefined) updates.appt_reminder_minutes = appt_reminder_minutes;
@@ -4603,7 +4604,7 @@ app.get('/api/invoice/:jobId', auth, async (req, res) => {
   const { data: job, error } = await query.single();
   if (!job || error) return res.status(404).json({ error: error?.message || 'Not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name, owner_email, logo_url, address, phone, payment_methods, stripe_connect_status')
+    .select('company_name, owner_email, logo_url, address, phone, license_number, payment_methods, stripe_connect_status')
     .eq('id', job.tenant_id)
     .single();
   res.json({ job, tenant });
@@ -4618,7 +4619,7 @@ app.get('/portal/api/invoice/:jobId', portalAuth, async (req, res) => {
     .single();
   if (!job || error) return res.status(404).json({ error: 'Not found' });
   const { data: tenant } = await supabaseAdmin.from('tenants')
-    .select('company_name, owner_email, logo_url, address, phone, payment_methods, stripe_connect_status')
+    .select('company_name, owner_email, logo_url, address, phone, license_number, payment_methods, stripe_connect_status')
     .eq('id', job.tenant_id)
     .single();
   res.json({ job, tenant });
