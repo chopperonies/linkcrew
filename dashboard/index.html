@@ -9784,13 +9784,18 @@ async function handleStripeConnect() {
 
 function checkStripeConnectQuery() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('stripe_connect') === 'success') {
-    alert('Stripe connected! Clients can now pay invoices by card.');
-    history.replaceState({}, '', window.location.pathname);
-  } else if (params.get('stripe_connect') === 'error') {
-    alert('Stripe connection failed: ' + (params.get('msg') || 'unknown error'));
-    history.replaceState({}, '', window.location.pathname);
+  const status = params.get('stripe_connect');
+  if (!status) return;
+  const msg = params.get('msg') || '';
+  const box = document.getElementById('stripe-connect-status');
+  if (box) {
+    if (status === 'success') {
+      box.innerHTML = '<span style="color:#16a34a;font-weight:700">✓ Stripe connected.</span> Clients can now pay invoices by card. Funds go to your Stripe account.';
+    } else {
+      box.innerHTML = `<span style="color:#dc2626;font-weight:700">Stripe connection failed.</span> <span style="color:#737475">${msg ? 'Reason: ' + msg.replace(/</g,'&lt;') + ' — ' : ''}click "Connect Stripe" to try again.</span>`;
+    }
   }
+  history.replaceState({}, '', window.location.pathname);
 }
 
 const PAYMENT_METHOD_PRESETS = [

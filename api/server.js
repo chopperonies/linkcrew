@@ -3460,7 +3460,7 @@ function verifyConnectState(state) {
     const [tenantId, ts, sig] = parts;
     const expected = crypto.createHmac('sha256', secret).update(`${tenantId}.${ts}`).digest('hex').slice(0, 16);
     if (sig !== expected) return null;
-    if (Date.now() - parseInt(ts, 10) > 15 * 60 * 1000) return null;
+    if (Date.now() - parseInt(ts, 10) > 60 * 60 * 1000) return null;
     return tenantId;
   } catch { return null; }
 }
