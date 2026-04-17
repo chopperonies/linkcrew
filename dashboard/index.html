@@ -3421,10 +3421,7 @@
         <div class="owner-page-title">Configure the business, not just the account.</div>
         <div class="owner-page-subtitle">This page should work like an owner admin center: branding, automations, crew onboarding, and account-level controls in one organized place.</div>
       </div>
-      <div class="owner-page-actions">
-        <button class="owner-btn" onclick="loadCrewInviteUrl()">Refresh Invite</button>
-        <button class="owner-btn primary" onclick="saveSettings()">Save Company Info</button>
-      </div>
+      <div class="owner-page-actions"></div>
     </div>
 
     <div class="owner-kpi-grid">
@@ -3441,7 +3438,7 @@
       <div class="owner-kpi-card">
         <div class="owner-kpi-label">Photo Retention</div>
         <div class="owner-kpi-value" id="settings-photo-card">—</div>
-        <div class="owner-kpi-meta">How long uploaded site photos are kept before cleanup.</div>
+        <div class="owner-kpi-meta" id="settings-photo-meta">Retained per your plan's storage limits. Set a custom cleanup period below to auto-delete older photos.</div>
       </div>
       <div class="owner-kpi-card">
         <div class="owner-kpi-label">Crew Invite</div>
@@ -9874,7 +9871,7 @@ async function loadSettings() {
   ownerTwilioConfigured = !!(data.twilio_account_sid && data.twilio_phone);
   setText('settings-plan-card', String(currentPlan || 'beta').toUpperCase());
   setText('settings-voice-card', data.voicebot_enabled ? 'Active' : 'Off');
-  setText('settings-photo-card', data.photo_expiry_days ? `${data.photo_expiry_days}d` : 'Forever');
+  setText('settings-photo-card', data.photo_expiry_days ? `${data.photo_expiry_days}d` : 'Default');
   document.getElementById('set-company-name').value = data.company_name || '';
   document.getElementById('set-phone').value = data.phone || '';
   document.getElementById('set-address').value = data.address || '';
@@ -9941,7 +9938,7 @@ async function savePhotoExpiry() {
   statusEl.style.color = '#737475'; statusEl.textContent = 'Saving…';
   const res = await authFetch('/api/settings', { method: 'PATCH', body: JSON.stringify({ photo_expiry_days: photo_expiry_days ? parseInt(photo_expiry_days) : null }) });
   if (res.ok) {
-    setText('settings-photo-card', photo_expiry_days ? `${photo_expiry_days}d` : 'Forever');
+    setText('settings-photo-card', photo_expiry_days ? `${photo_expiry_days}d` : 'Default');
     statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ Saved';
     setTimeout(() => statusEl.textContent = '', 3000);
     settingsLoaded = false;
