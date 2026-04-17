@@ -2759,42 +2759,19 @@
         </div>
       </div>
 
-      <div class="owner-ops-layout" style="margin-bottom:18px">
-        <div class="owner-section-stack">
-          <div class="owner-signal-card">
-            <div class="owner-signal-label">Client Snapshot</div>
-            <div class="owner-signal-title">Use this page like a relationship desk, not just a contact database.</div>
-            <div class="owner-signal-copy">The owner should be able to see which clients need a callback, which accounts have active work attached, and where billing or recurring service follow-through is slipping before it becomes reactive.</div>
-            <div class="owner-inline-list">
-              <div class="owner-inline-row"><span>First review</span><strong>Overdue and due-soon follow-ups</strong></div>
-              <div class="owner-inline-row"><span>Then check</span><strong>Clients tied to active jobs or unpaid work</strong></div>
-              <div class="owner-inline-row"><span>Keep moving</span><strong>Recurring accounts before they lapse</strong></div>
-            </div>
-          </div>
-        </div>
-        <div class="owner-section-stack">
-          <div class="owner-card">
-            <div class="owner-card-header">
-              <div>
-                <div class="owner-card-title">Owner Workflow</div>
-                <div class="owner-card-headline">Move from client context to next action fast.</div>
-                <div class="owner-card-sub">This page is strongest when the office can go from “who is this client?” to “what do we do next?” in one screen.</div>
-              </div>
-            </div>
-            <div class="owner-inline-list">
-              <div class="owner-inline-row"><span>1</span><strong>Search or import the account</strong></div>
-              <div class="owner-inline-row"><span>2</span><strong>Review jobs, notes, and invoice status</strong></div>
-              <div class="owner-inline-row"><span>3</span><strong>Create a follow-up or recurring plan</strong></div>
-            </div>
-          </div>
-        </div>
+      <!-- Prominent segmented control so Recurring Invoices isn't buried -->
+      <div style="display:inline-flex;gap:4px;padding:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px">
+        <button id="ctab-all" type="button" onclick="switchClientsTab('all')"
+          style="padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;border:none;border-radius:9px;background:#fff;color:#0265dc;box-shadow:0 1px 2px rgba(0,0,0,0.04);font-family:inherit">
+          👥 All Clients
+        </button>
+        <button id="ctab-recurring" type="button" onclick="switchClientsTab('recurring')"
+          style="padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;border:none;border-radius:9px;background:transparent;color:#64748b;font-family:inherit">
+          🔁 Recurring Invoices
+        </button>
       </div>
 
       <div class="owner-card" style="padding:0;overflow:hidden">
-        <div style="display:flex;gap:0;border-bottom:1px solid #e8eef3;padding:0 18px;background:rgba(255,255,255,0.8)">
-          <div id="ctab-all" onclick="switchClientsTab('all')" style="padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#0265dc;border-bottom:2px solid #0265dc;margin-bottom:-1px">All Clients</div>
-          <div id="ctab-recurring" onclick="switchClientsTab('recurring')" style="padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#737475;border-bottom:2px solid transparent;margin-bottom:-1px">🔁 Recurring Invoices</div>
-        </div>
 
         <!-- All Clients sub-view -->
         <div id="clients-sub-all">
@@ -2802,8 +2779,6 @@
             <div class="crm-list-panel">
               <div class="crm-search-bar">
                 <input class="crm-search" type="text" placeholder="Search clients..." oninput="filterClients(this.value)">
-                <button class="btn-add-client" onclick="openAddClient()">+ Add</button>
-                <button class="btn-add-client" onclick="openImportModal()" style="background:#f5f5f5;color:#17191c;border:1px solid #e8e8e8">↑ Import</button>
               </div>
               <div id="clients-list"><div class="empty"><div class="e-icon">👤</div>Loading...</div></div>
             </div>
@@ -8243,10 +8218,18 @@ function switchClientsTab(sub) {
   document.getElementById('clients-sub-recurring').style.display = sub === 'recurring' ? 'block' : 'none';
   const allTab = document.getElementById('ctab-all');
   const recTab = document.getElementById('ctab-recurring');
-  allTab.style.color = sub === 'all' ? '#0265dc' : '#737475';
-  allTab.style.borderBottomColor = sub === 'all' ? '#0265dc' : 'transparent';
-  recTab.style.color = sub === 'recurring' ? '#0265dc' : '#737475';
-  recTab.style.borderBottomColor = sub === 'recurring' ? '#0265dc' : 'transparent';
+  const activeBg = '#fff', activeColor = '#0265dc', activeShadow = '0 1px 2px rgba(0,0,0,0.04)';
+  const idleBg = 'transparent', idleColor = '#64748b', idleShadow = 'none';
+  if (allTab) {
+    allTab.style.background = sub === 'all' ? activeBg : idleBg;
+    allTab.style.color = sub === 'all' ? activeColor : idleColor;
+    allTab.style.boxShadow = sub === 'all' ? activeShadow : idleShadow;
+  }
+  if (recTab) {
+    recTab.style.background = sub === 'recurring' ? activeBg : idleBg;
+    recTab.style.color = sub === 'recurring' ? activeColor : idleColor;
+    recTab.style.boxShadow = sub === 'recurring' ? activeShadow : idleShadow;
+  }
   if (sub === 'recurring') loadRecurring();
 }
 
@@ -10196,16 +10179,6 @@ function renderCrmEmptyState() {
 
   panel.innerHTML = `
     <div style="padding:8px 0">
-      <div class="owner-signal-card" style="margin-bottom:16px">
-        <div class="owner-signal-label">Client Summary</div>
-        <div class="owner-signal-title">${overdue.length ? `${overdue.length} overdue follow-up${overdue.length > 1 ? 's' : ''} need attention.` : 'Client pipeline is organized and ready for the next touch.'}</div>
-        <div class="owner-signal-copy">${overdue.length ? 'Start with overdue follow-ups, then move through upcoming client tasks and billing conversations.' : 'Select a client to view jobs, invoices, notes, portal access, and follow-up history in one place.'}</div>
-        <div class="owner-inline-list">
-          <div class="owner-inline-row"><span>Total clients</span><strong>${allClientsData.length}</strong></div>
-          <div class="owner-inline-row"><span>Open follow-ups</span><strong>${pending}</strong></div>
-          <div class="owner-inline-row"><span>Recurring invoice plans</span><strong>${recurringData.filter(r => r.active !== false).length}</strong></div>
-        </div>
-      </div>
       ${overdue.length ? `
       <div style="background:#fff;border:1px solid #fecaca;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow-soft)">
         <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em">⚠ Overdue Follow-ups</div>
