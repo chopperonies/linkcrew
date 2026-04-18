@@ -824,15 +824,15 @@
     /* ── Job cards ── */
     .panel-title { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
     .job-card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(249,252,255,0.96) 100%);
-      border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.18s;
-      box-shadow: var(--shadow-soft);
+      background: #fff;
+      border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+      box-shadow: 0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04);
     }
-    .job-card:hover { border-color: rgba(14,165,233,0.28); box-shadow: var(--shadow-strong); transform: translateY(-2px); }
+    .job-card:hover { border-color: rgba(14,165,233,0.3); box-shadow: 0 20px 40px rgba(15,23,42,0.10), 0 8px 16px rgba(15,23,42,0.05); transform: translateY(-2px); }
     .job-card.selected {
-      border-color: rgba(14,165,233,0.34);
-      background: linear-gradient(180deg, #f8fdff 0%, #eefaff 100%);
-      box-shadow: 0 18px 44px rgba(14,165,233,0.14);
+      border-color: rgba(14,165,233,0.4);
+      background: #f8fdff;
+      box-shadow: 0 20px 44px rgba(14,165,233,0.18), 0 6px 14px rgba(14,165,233,0.10);
     }
     .job-card .job-name { font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 4px; letter-spacing: -0.01em; }
     .job-card .job-address { font-size: 12px; color: var(--text-soft); margin-bottom: 10px; }
@@ -875,7 +875,7 @@
     /* ── Modals ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.4); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.visible { display: flex; }
-    .modal { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 440px; max-height: 82vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+    .modal { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 24px; width: 440px; max-height: 82vh; overflow-y: auto; box-shadow: 0 32px 64px rgba(15,23,42,0.18), 0 12px 24px rgba(15,23,42,0.10); }
     .modal h3 { margin-bottom: 14px; color: var(--text); font-size: 15px; font-weight: 800; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -908,6 +908,8 @@
     .lc-btn.danger:hover { background: #fef2f2; border-color: #f87171; color: #7f1d1d; }
     .lc-btn.muted { color: #64748b; border-color: #e2e8f0; }
     .lc-btn.muted:hover { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+    .lc-btn.on-dark { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+    .lc-btn.on-dark:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); color: #fff; }
     .lc-btn.sm { padding: 2px 8px; font-size: 11px; gap: 4px; border-width: 1px; font-weight: 600; }
     .lc-btn.sm i[data-lucide] { width: 10px; height: 10px; }
     .lc-btn.xs { padding: 1px 6px; font-size: 10px; gap: 3px; border-width: 1px; font-weight: 600; letter-spacing: 0.02em; }
@@ -915,6 +917,10 @@
     .lc-btn.icon-only { padding: 8px; gap: 0; }
     .lc-btn.icon-only.sm { padding: 4px; }
     .lc-btn.icon-only.xs { padding: 3px; }
+
+    /* Flat, elevated card — modern hero-style */
+    .lc-card { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 18px; box-shadow: 0 20px 40px rgba(15,23,42,0.10), 0 8px 16px rgba(15,23,42,0.05); }
+    .lc-card.flush { padding: 0; overflow: hidden; }
 
     /* Text-link action — minimal footprint, no border */
     .lc-link { background: none; border: none; color: #1d4ed8; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; font-family: inherit; text-decoration: none; transition: color 0.12s; }
@@ -1673,7 +1679,7 @@
         <div style="font-size:17px;font-weight:800;color:#17191c;margin-bottom:4px">👋 Welcome to LinkCrew!</div>
         <div style="font-size:13px;color:#737475">Complete these steps to get your account set up.</div>
       </div>
-      <button onclick="dismissOnboarding()" style="background:none;border:none;font-size:12px;color:#737475;cursor:pointer;padding:4px 8px;border-radius:6px;white-space:nowrap">Dismiss</button>
+      <button class="lc-link muted" onclick="dismissOnboarding()" style="white-space:nowrap">Dismiss</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px" id="onboarding-steps"></div>
   </div>
@@ -2388,7 +2394,7 @@
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px">Your referral code</div>
               <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 16px">
                 <strong id="referral-code" style="font-size:16px;color:#fff;letter-spacing:0.1em;font-family:monospace;flex:1">LINKCREW-269</strong>
-                <button onclick="copyReferralCode()" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.25);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Copy code</button>
+                <button class="lc-btn sm on-dark" onclick="copyReferralCode()"><i data-lucide="copy"></i> Copy code</button>
               </div>
             </div>
 
@@ -2397,24 +2403,16 @@
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px">Shareable link</div>
               <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px">
                 <span id="referral-link" style="font-size:12px;color:rgba(255,255,255,0.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:monospace">https://linkcrew.io/signup?ref=LINKCREW-269</span>
-                <button onclick="copyReferralLink()" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Copy link</button>
+                <button class="lc-btn sm on-dark" onclick="copyReferralLink()" style="flex-shrink:0"><i data-lucide="link"></i> Copy link</button>
               </div>
             </div>
 
             <!-- Share buttons -->
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button onclick="shareReferral('email')" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.12s" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                <i data-lucide="mail" style="width:13px;height:13px"></i> Email
-              </button>
-              <button onclick="shareReferral('facebook')" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                <i data-lucide="facebook" style="width:13px;height:13px"></i> Facebook
-              </button>
-              <button onclick="shareReferral('x')" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                <i data-lucide="twitter" style="width:13px;height:13px"></i> X / Twitter
-              </button>
-              <button onclick="shareReferral('linkedin')" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                <i data-lucide="linkedin" style="width:13px;height:13px"></i> LinkedIn
-              </button>
+              <button class="lc-btn sm on-dark" onclick="shareReferral('email')"><i data-lucide="mail"></i> Email</button>
+              <button class="lc-btn sm on-dark" onclick="shareReferral('facebook')"><i data-lucide="facebook"></i> Facebook</button>
+              <button class="lc-btn sm on-dark" onclick="shareReferral('x')"><i data-lucide="twitter"></i> X / Twitter</button>
+              <button class="lc-btn sm on-dark" onclick="shareReferral('linkedin')"><i data-lucide="linkedin"></i> LinkedIn</button>
             </div>
           </div>
 
@@ -2799,7 +2797,7 @@
           <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
               <div style="font-size:15px;font-weight:700;color:#17191c">Recurring Invoices</div>
-              <button onclick="openRecurringModal()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">+ Add</button>
+              <button class="lc-btn sm primary" onclick="openRecurringModal()"><i data-lucide="plus"></i> Add</button>
             </div>
             <div style="font-size:13px;color:#737475;margin-bottom:18px">Automatically create and send an invoice to a client on a set schedule.</div>
             <div id="recurring-list"><div style="font-size:13px;color:#b0b0b0">Loading...</div></div>
@@ -3070,7 +3068,7 @@
               <select id="ts-employee" style="background:#fff;border:1px solid #e8e8e8;border-radius:7px;padding:8px 12px;font-size:13px;color:#17191c">
                 <option value="">All crew</option>
               </select>
-              <button onclick="loadTimesheets()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">Filter</button>
+              <button class="lc-btn sm primary" onclick="loadTimesheets()"><i data-lucide="filter"></i> Filter</button>
             </div>
           </div>
 
@@ -3381,7 +3379,7 @@
     </label>
     <div style="margin-top:6px;font-size:12px;color:#64748b">Only applies when a related job is selected. Standalone calendar events like meetings or quote visits can remain private to the office.</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
-      <button id="appt-delete-btn" onclick="deleteAppt()" style="display:none;background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer">Delete</button>
+      <button id="appt-delete-btn" class="lc-btn sm danger" onclick="deleteAppt()" style="display:none"><i data-lucide="trash-2"></i> Delete</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn-cancel" id="appt-back-btn" onclick="returnToCalendarDayModal()" style="display:none">Back to Day</button>
         <button class="btn-cancel" onclick="closeApptModal()">Cancel</button>
@@ -3422,7 +3420,7 @@
       <div class="form-group"><label>Duration (min)</label><input type="number" id="svc-duration" placeholder="60" min="15" step="15"></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
-      <button id="svc-delete-btn" onclick="deleteService()" style="display:none;background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer">Delete</button>
+      <button id="svc-delete-btn" class="lc-btn sm danger" onclick="deleteService()" style="display:none"><i data-lucide="trash-2"></i> Delete</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn-cancel" onclick="closeServiceModal()">Cancel</button>
         <button class="btn-save" id="svc-save-btn" onclick="saveService()">Save</button>
@@ -3598,9 +3596,7 @@
           <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:6px">Account Security</div>
           <div style="font-size:13px;color:#737475;line-height:1.7">Change the password for the account currently signed into this dashboard.</div>
         </div>
-        <button onclick="openAccountSecurity()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
-          Change Password
-        </button>
+        <button class="lc-btn sm primary" onclick="openAccountSecurity()"><i data-lucide="lock"></i> Change Password</button>
       </div>
     </div>
 
@@ -3616,9 +3612,7 @@
         </label>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
-        <button onclick="saveManagerFinancialsSetting()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
-          Save Financial Access
-        </button>
+        <button class="lc-btn sm primary" onclick="saveManagerFinancialsSetting()"><i data-lucide="check"></i> Save Financial Access</button>
         <span id="manager-financials-status" style="font-size:12px;color:#64748b"></span>
       </div>
     </div>
@@ -3674,7 +3668,7 @@
             <div style="font-size:12px;font-weight:600;color:#737475;margin-bottom:6px">Business Knowledge</div>
             <textarea id="vb-knowledge" rows="6" placeholder="Example: We are a roofing company in Kingston, NY. We offer roof repairs ($200–500), full replacements ($5,000–15,000), and gutter cleaning ($150). Available Mon–Fri 8am–6pm. Free estimates. We do not do commercial work. Website: kingstonroofing.com. For urgent repairs call back directly." style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:8px;padding:11px 14px;font-size:13px;color:#17191c;resize:vertical;font-family:inherit;line-height:1.6"></textarea>
             <div style="font-size:11px;color:#b0b0b0;margin-top:4px">This is saved separately — click "Save Knowledge" below, then fill in your Twilio credentials to activate.</div>
-            <button onclick="saveKnowledge()" style="margin-top:8px;background:#f5f5f5;border:1px solid #e8e8e8;color:#17191c;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer">Save Knowledge</button>
+            <button class="lc-btn sm" onclick="saveKnowledge()" style="margin-top:8px"><i data-lucide="save"></i> Save Knowledge</button>
             <span id="vb-knowledge-status" style="font-size:12px;margin-left:8px"></span>
           </div>
 
@@ -3693,12 +3687,8 @@
             <input type="text" id="vb-phone" placeholder="+15551234567" class="auth-input" style="margin-bottom:0;font-family:monospace;font-size:13px">
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-            <button onclick="saveVoicebot()" style="background:#0265dc;color:#fff;border:none;border-radius:7px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
-              Activate Voice Bot
-            </button>
-            <button id="vb-disable-btn" onclick="disableVoicebot()" style="display:none;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer">
-              Disable
-            </button>
+            <button class="lc-btn sm primary" onclick="saveVoicebot()"><i data-lucide="phone"></i> Activate Voice Bot</button>
+            <button id="vb-disable-btn" class="lc-btn sm danger" onclick="disableVoicebot()" style="display:none"><i data-lucide="power-off"></i> Disable</button>
             <span id="vb-status" style="font-size:12px"></span>
           </div>
         </div>
@@ -3863,7 +3853,7 @@
     <p id="invite-status" style="font-size:13px;color:#737475;margin-bottom:14px">If the client has an email on file, LinkCrew will email this portal link automatically. You can still copy it below if needed.</p>
     <div style="display:flex;gap:8px">
       <input type="text" id="invite-link" readonly style="flex:1;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:9px 12px;font-size:12px;color:#17191c">
-      <button id="copy-btn" onclick="copyInviteLink()" style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Copy</button>
+      <button id="copy-btn" class="lc-btn sm primary" onclick="copyInviteLink()"><i data-lucide="copy"></i> Copy</button>
     </div>
     <p style="font-size:11px;color:#b0b0b0;margin-top:10px">⚠ Clicking "Invite" again generates a new link, invalidating the old one.</p>
   </div>
@@ -3936,7 +3926,7 @@
     <p style="font-size:14px;color:#737475;line-height:1.6;margin-bottom:28px" id="lockout-body">Choose a plan to keep access to your dashboard, jobs, clients, and crew.</p>
     <a href="/pricing" style="display:inline-block;background:#0265dc;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;margin-bottom:12px">View Plans & Pricing</a>
     <br>
-    <button id="lockout-portal-btn" onclick="openBillingPortal()" style="display:none;background:none;border:none;color:#737475;font-size:13px;cursor:pointer;margin-top:8px;text-decoration:underline">Manage existing subscription</button>
+    <button id="lockout-portal-btn" class="lc-link muted" onclick="openBillingPortal()" style="display:none;margin-top:8px;text-decoration:underline">Manage existing subscription</button>
   </div>
 </div>
 
@@ -4049,14 +4039,14 @@
     </div>
 
     <!-- Recent Activity (full width) -->
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft);margin-bottom:16px">
+    <div class="lc-card" style="margin-bottom:16px">
       <div class="panel-title">Recent Activity</div>
       <div id="detail-updates"></div>
     </div>
 
     <!-- Secondary sections — collapsible, side by side when there's room -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-      <details id="detail-notes-wrapper" style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-soft);overflow:hidden">
+      <details id="detail-notes-wrapper" class="lc-card flush">
         <summary style="padding:14px 18px;cursor:pointer;font-weight:700;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span>📝 Owner Notes <span id="detail-notes-count" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:6px"></span></span>
@@ -4067,7 +4057,7 @@
         <div style="padding:0 18px 6px;font-size:11px;color:#94a3b8;font-style:italic">Not visible to the client — only you and your crew can see this.</div>
         <div id="detail-notes" style="padding:0 18px 18px"></div>
       </details>
-      <details id="detail-supplies-wrapper" style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-soft);overflow:hidden">
+      <details id="detail-supplies-wrapper" class="lc-card flush">
         <summary style="padding:14px 18px;cursor:pointer;font-weight:700;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span>📦 Supplies <span id="detail-supplies-count" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:6px"></span></span>
@@ -4078,7 +4068,7 @@
         <div style="padding:0 18px 6px;font-size:11px;color:#94a3b8;font-style:italic">Not visible to the client — only you and your crew can see this.</div>
         <div id="detail-supplies" style="padding:0 18px 18px"></div>
       </details>
-      <details id="detail-bottlenecks-wrapper" style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-soft);overflow:hidden">
+      <details id="detail-bottlenecks-wrapper" class="lc-card flush">
         <summary style="padding:14px 18px;cursor:pointer;font-weight:700;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span>⚠️ Bottlenecks <span id="detail-bottlenecks-count" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:6px"></span></span>
@@ -5207,7 +5197,7 @@ async function loadOnboardingBanner() {
       <div style="font-size:12px;color:#737475;margin-bottom:12px;line-height:1.5">${s.desc}</div>
       ${s.done
         ? `<div style="font-size:12px;font-weight:600;color:#16a34a">Done ✓</div>`
-        : `<button onclick="${s.action}" style="background:#0265dc;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">${s.label}</button>`}
+        : `<button class="lc-btn sm primary" onclick="${s.action}">${s.label}</button>`}
     </div>
   `).join('');
 
@@ -6166,7 +6156,7 @@ async function openDetail(jobId, jobName) {
   const assignedIds = new Set((assignments||[]).map(a => a.employee_id));
   const unassigned = (window._allEmployees||[]).filter(e => employeeIsAssignable(e) && !assignedIds.has(e.id));
   empEl.innerHTML = `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
     <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
       <span>Crew</span>
       ${unassigned.length ? `
@@ -6215,7 +6205,7 @@ async function openDetail(jobId, jobName) {
               style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:999px;padding:5px 9px;${smsDisabledStyle}font-weight:700;white-space:nowrap">
               Both
             </button>
-            ${!onSite ? `<button onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#555'">✕</button>` : ''}
+            ${!onSite ? `<button class="lc-link muted" onclick="removeCrewAssignment('${job?.id}','${a.employee_id}')" title="Remove" style="font-size:14px">✕</button>` : ''}
           </div>
         </div>`;
     }).join('') : '<div style="font-size:12px;color:#666;padding:8px 0">No crew assigned yet.</div>'}
@@ -6228,7 +6218,7 @@ async function openDetail(jobId, jobName) {
     `<option value="${c.id}" ${c.id === job?.client_id ? 'selected' : ''}>${c.name}</option>`
   ).join('');
   clientEl.innerHTML = `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
     <div class="panel-title">Client</div>
     <select onchange="linkJobClient('${job?.id}', this.value)"
       style="width:100%;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:8px 10px;font-size:13px;color:#17191c">
@@ -6246,7 +6236,7 @@ async function openDetail(jobId, jobName) {
     ? `<div class="form-group" style="margin-bottom:0"><label>Estimate Amount</label><input type="number" id="detail-job-estimate" value="${job?.estimate_amount || ''}" min="0" step="0.01" placeholder="0.00"></div>`
     : `<div style="display:flex;align-items:flex-end;padding:12px 14px;border:1px solid #e8e8e8;border-radius:10px;background:#f8fafc;font-size:12px;color:#64748b;line-height:1.6">Financial details are hidden for your role.</div>`;
   overviewEl.innerHTML = `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
       <div class="panel-title">Job Overview</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group" style="margin-bottom:0"><label>Job Name</label><input type="text" id="detail-job-name" value="${job?.name || ''}"></div>
@@ -6289,21 +6279,14 @@ async function openDetail(jobId, jobName) {
   const smsDisabledAttrs = !ownerTwilioConfigured ? 'disabled title="Set up the company Twilio number in Settings to enable SMS client messages."' : '';
   const smsDisabledStyle = !ownerTwilioConfigured ? 'opacity:0.5;cursor:not-allowed;' : 'cursor:pointer;';
   woEl.innerHTML = `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
     <div class="panel-title">Work Order / Estimate</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
       ${hasEstimate ? `<span style="font-size:13px;font-weight:600;color:#0265dc">Est: $${parseFloat(job.estimate_amount).toFixed(2)}</span>` : ''}
-      <a href="${woUrl}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View</a>
-      <button onclick="copyWoLink('${woUrl}')" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475">Copy Link</button>
-      <button id="wo-send-btn-${job?.id}" onclick="sendWorkOrder('${job?.id}')"
-        style="font-size:12px;background:#0265dc;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:600">
-        Email Client
-      </button>
-      <button id="wo-sms-btn-${job?.id}" onclick="smsWorkOrder('${job?.id}')"
-        ${smsDisabledAttrs}
-        style="font-size:12px;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:5px 12px;${smsDisabledStyle}font-weight:600">
-        SMS Client
-      </button>
+      <a class="lc-btn xs" href="${woUrl}" target="_blank" style="text-decoration:none"><i data-lucide="eye"></i> View</a>
+      <button class="lc-btn xs" onclick="copyWoLink('${woUrl}')"><i data-lucide="copy"></i> Copy Link</button>
+      <button id="wo-send-btn-${job?.id}" class="lc-btn xs primary" onclick="sendWorkOrder('${job?.id}')"><i data-lucide="mail"></i> Email Client</button>
+      <button id="wo-sms-btn-${job?.id}" class="lc-btn xs success" onclick="smsWorkOrder('${job?.id}')" ${smsDisabledAttrs} style="${!ownerTwilioConfigured ? 'opacity:0.5;cursor:not-allowed;' : ''}"><i data-lucide="message-square"></i> SMS Client</button>
     </div>
     </div>
   `;
@@ -6313,7 +6296,7 @@ async function openDetail(jobId, jobName) {
   const hasInvoice = canViewFinancials() && job?.invoice_amount > 0;
   const invoiceStatusMarkup = renderInvoiceStatus(jobInvoiceUiState, `job-${job.id}`);
   invEl.innerHTML = canViewFinancials() ? `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
     <div class="panel-title">Invoice</div>
     ${isPaid
       ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#166534;font-weight:600;margin-bottom:8px">✅ Paid — $${parseFloat(job.invoice_amount).toFixed(2)}</div>
@@ -6322,13 +6305,13 @@ async function openDetail(jobId, jobName) {
       : hasInvoice
         ? `<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;font-weight:600;margin-bottom:8px">⏳ Awaiting payment — $${parseFloat(job.invoice_amount).toFixed(2)}</div>
            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-             <button onclick="markInvoicePaid('${job.id}')" style="font-size:12px;background:#166534;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:700">✓ Mark as Paid</button>
+             <button class="lc-btn xs success" onclick="markInvoicePaid('${job.id}')"><i data-lucide="check"></i> Mark as Paid</button>
              <select id="notify-method-${job.id}" style="font-size:12px;background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:5px 10px;color:#17191c">
                <option value="">No notification</option>
                <option value="email">Notify by email</option>
                <option value="sms">Notify by SMS</option>
              </select>
-             <button onclick="openSetInvoice('${job.id}', ${job.invoice_amount})" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475">Edit amount</button>
+             <button class="lc-btn xs" onclick="openSetInvoice('${job.id}', ${job.invoice_amount})"><i data-lucide="pencil"></i> Edit amount</button>
              <a href="/invoice?job_id=${job.id}" target="_blank" style="font-size:12px;background:none;border:1px solid #e8e8e8;border-radius:6px;padding:5px 12px;cursor:pointer;color:#737475;text-decoration:none;display:inline-block">View Invoice</a>
            </div>
            ${invoiceStatusMarkup}`
@@ -6345,7 +6328,7 @@ async function openDetail(jobId, jobName) {
     }
     </div>
   ` : `
-    <div style="background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft)">
+    <div class="lc-card">
       <div class="panel-title">Invoice</div>
       <div style="font-size:13px;color:#64748b;line-height:1.7">Invoice amounts and payment details are hidden for your role.</div>
     </div>
@@ -6363,7 +6346,7 @@ async function openDetail(jobId, jobName) {
         <div class="update-body">
           <div class="ub-name" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <span>${u.employees?.name||'Owner note'}</span>
-            <button data-message="${encodeInlineData(u.message || '')}" onclick="editJobNote('${job.id}','${u.id}', decodeURIComponent(this.dataset.message || ''))" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px">Edit</button>
+            <button data-message="${encodeInlineData(u.message || '')}" class="lc-link" onclick="editJobNote('${job.id}','${u.id}', decodeURIComponent(this.dataset.message || ''))">Edit</button>
           </div>
           <div class="ub-msg">${u.message||''}</div>
           <div class="ub-time">${new Date(u.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
@@ -6425,6 +6408,7 @@ async function openDetail(jobId, jobName) {
 
   document.querySelectorAll('.job-card').forEach(c => c.classList.remove('selected'));
   document.querySelector(`[onclick*="${jobId}"]`)?.classList.add('selected');
+  refreshLucideIcons();
 }
 
 async function saveJobOverview(jobId) {
@@ -6870,8 +6854,8 @@ function renderTeamListHtml(employees, inline) {
   if (employees.length <= TEAM_LIST_CAP) return rowsHtml;
   const remaining = employees.length - TEAM_LIST_CAP;
   const footer = showAll
-    ? `<div style="padding:10px 0 2px;text-align:center"><button onclick="setTeamListShowAll(false)" style="background:none;border:none;color:#0265dc;font-size:12px;font-weight:600;cursor:pointer;padding:6px 10px">Show less</button></div>`
-    : `<div style="padding:10px 0 2px;text-align:center"><button onclick="setTeamListShowAll(true)" style="background:none;border:none;color:#0265dc;font-size:12px;font-weight:600;cursor:pointer;padding:6px 10px">Show all ${employees.length} team members (${remaining} more)</button></div>`;
+    ? `<div style="padding:10px 0 2px;text-align:center"><button class="lc-link" onclick="setTeamListShowAll(false)">Show less</button></div>`
+    : `<div style="padding:10px 0 2px;text-align:center"><button class="lc-link" onclick="setTeamListShowAll(true)">Show all ${employees.length} team members (${remaining} more)</button></div>`;
   return rowsHtml + footer;
 }
 
@@ -6968,11 +6952,12 @@ function renderStoredDashboardLinks(employees = []) {
         <div style="margin-top:4px;font-size:11px;color:#64748b">Saved ${new Date(entry.saved_at).toLocaleString()}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        <button onclick="copyStoredDashboardLink('${entry.employee_id}')" style="background:#eef6ff;border:1px solid #bfdbfe;color:#1d4ed8;cursor:pointer;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px">Copy Link</button>
-        <button onclick="openStoredDashboardLink('${entry.employee_id}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px">Open Link</button>
+        <button class="lc-btn xs primary" onclick="copyStoredDashboardLink('${entry.employee_id}')"><i data-lucide="copy"></i> Copy Link</button>
+        <button class="lc-btn xs" onclick="openStoredDashboardLink('${entry.employee_id}')"><i data-lucide="external-link"></i> Open Link</button>
       </div>
     </div>
   `).join('');
+  refreshLucideIcons(list);
 }
 
 function getSupervisorSelectorEntries() {
@@ -8311,7 +8296,7 @@ function renderExpensesList() {
       <div class="workspace-row-meta" style="gap:8px">
         <strong style="font-size:13px;min-width:60px;text-align:right">$${parseFloat(e.amount).toFixed(2)}</strong>
         <span class="chip ${e.reimburse_to === 'none' ? 'chip-grey' : 'chip-yellow'}">${e.reimburse_to === 'none' ? 'No reimburse' : e.reimburse_to === 'owner' ? 'Owner' : 'Employee' + (e.employees?.name ? ': ' + e.employees.name : '')}</span>
-        <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:13px;padding:2px 4px;opacity:0.7" title="Delete expense">🗑</button>
+        <button class="lc-link danger" onclick="deleteExpense('${e.id}')" title="Delete expense" style="font-size:13px">🗑</button>
       </div>
     </div>`).join('');
 }
@@ -9851,8 +9836,8 @@ function renderRecurring() {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${activeToggle}
-        <button onclick="openRecurringModal('${r.id}')" style="background:none;border:none;color:#0265dc;cursor:pointer;font-size:12px;font-weight:700;padding:2px 6px" title="Edit">Edit</button>
-        <button onclick="deleteRecurring('${r.id}')" style="background:none;border:none;color:#b0b0b0;cursor:pointer;font-size:15px;padding:2px 6px" title="Delete">✕</button>
+        <button class="lc-link" onclick="openRecurringModal('${r.id}')" title="Edit">Edit</button>
+        <button class="lc-link muted" onclick="deleteRecurring('${r.id}')" title="Delete" style="font-size:15px">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -11433,7 +11418,7 @@ function renderServiceCatalogSettings() {
               <td style="padding:10px 14px;color:#737475">${catLabels[s.category] || s.category}</td>
               <td style="padding:10px 14px;text-align:right;font-weight:700;color:var(--accent)">$${parseFloat(s.unit_price).toFixed(2)}</td>
               <td style="padding:10px 8px;text-align:center">
-                <button onclick="deleteService('${s.id}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:3px 6px;opacity:0.7" title="Remove">🗑</button>
+                <button class="lc-link danger" onclick="deleteService('${s.id}')" title="Remove" style="font-size:14px">🗑</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -11520,7 +11505,7 @@ function addServiceToInvoice(serviceId) {
         <div style="font-size:15px;font-weight:800;color:var(--text)">Pick a Service</div>
         <div style="font-size:12px;color:var(--text-soft);margin-top:2px">Click to add to invoice line items</div>
       </div>
-      <button onclick="closeServicePicker()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-soft);padding:4px 8px;border-radius:6px">×</button>
+      <button class="lc-link muted" onclick="closeServicePicker()" style="font-size:20px;padding:4px 8px">×</button>
     </div>
     <div id="service-picker-list" style="overflow-y:auto;flex:1;min-height:0"></div>
   </div>
