@@ -948,8 +948,8 @@
 
     /* ── Photos ── */
     .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-    .photo-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-soft); }
-    .photo-card:hover { border-color: #0265dc; }
+    .photo-card { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; overflow: hidden; cursor: pointer; box-shadow: 0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04); transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s; }
+    .photo-card:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(15,23,42,0.10), 0 8px 16px rgba(15,23,42,0.05); }
     .photo-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
     .photo-meta { padding: 5px 7px; }
     .photo-meta .pm-job { font-size: 10px; color: #0265dc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -962,7 +962,7 @@
     .side-tab.active { color: #0369a1; border-bottom-color: #0369a1; font-weight: 700; }
 
     /* ── Admin tenants list ── */
-    .tenant-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-soft); }
+    .tenant-card { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04); }
     .tenant-card .tc-name { font-size: 14px; font-weight: 800; color: var(--text); }
     .tenant-card .tc-meta { font-size: 11px; color: var(--text-soft); margin-top: 3px; }
     .tenant-stats { display: flex; gap: 12px; }
@@ -985,12 +985,12 @@
     .period-btn.active { background: #0265dc; color: #fff; }
     .period-btn:hover:not(.active) { background: #f5f5f5; }
     .report-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-    .report-stat { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--shadow-soft); }
+    .report-stat { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 20px; box-shadow: 0 20px 40px rgba(15,23,42,0.08), 0 6px 14px rgba(15,23,42,0.04); }
     .report-stat .rs-val { font-size: 34px; font-weight: 900; color: var(--text); letter-spacing: -0.03em; }
     .report-stat .rs-label { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
     .report-stat .rs-sub { font-size: 11px; color: var(--text-soft); margin-top: 3px; }
     .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-    .chart-card { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow-soft); }
+    .chart-card { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 18px; box-shadow: 0 20px 40px rgba(15,23,42,0.08), 0 6px 14px rgba(15,23,42,0.04); }
     .chart-card-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
     .chart-wrap { position: relative; height: 220px; }
     .supply-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
@@ -1022,7 +1022,7 @@
     .agd-name { font-size: 24px; font-weight: 900; color: var(--text); letter-spacing: -0.02em; }
     .agd-client { font-size: 14px; color: #0265dc; margin-top: 4px; font-weight: 600; }
     .agd-actions { display: flex; gap: 8px; }
-    .agd-section { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-soft); }
+    .agd-section { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 18px; margin-bottom: 14px; box-shadow: 0 20px 40px rgba(15,23,42,0.08), 0 6px 14px rgba(15,23,42,0.04); }
     .agd-section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
     .agd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .agd-field label { font-size: 11px; color: #737475; display: block; margin-bottom: 3px; }
@@ -1060,7 +1060,7 @@
     .cd-contact { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
     .btn-edit-client { background: var(--surface-tint); border: 1px solid var(--border); padding: 9px 14px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--text); }
     .btn-edit-client:hover { background: #d0d0d0; }
-    .cd-section { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-soft); }
+    .cd-section { background: #fff; border: 1px solid rgba(15,23,42,0.06); border-radius: 2px; padding: 18px; margin-bottom: 14px; box-shadow: 0 20px 40px rgba(15,23,42,0.08), 0 6px 14px rgba(15,23,42,0.04); }
     .cd-section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
     .cd-notes { font-size: 14px; color: var(--text); line-height: 1.65; white-space: pre-wrap; }
     .cd-notes-empty { font-size: 13px; color: #949596; font-style: italic; }
@@ -8521,7 +8521,7 @@ function getCalendarAgendaMarkup(dayAppts) {
     const end = a.end_time ? new Date(a.end_time) : null;
     const timeLabel = `${start.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${end ? ' - ' + end.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''}`;
     return `
-      <div onclick="openApptModal(null,'${a.id}')" style="background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:14px 16px;cursor:pointer;box-shadow:0 10px 30px rgba(15,23,42,0.05)">
+      <div onclick="openApptModal(null,'${a.id}')" style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:14px 16px;cursor:pointer;box-shadow:0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
           <div>
             <div style="font-size:11px;font-weight:700;color:#0265dc;text-transform:uppercase;letter-spacing:0.08em">${timeLabel}</div>
@@ -8893,7 +8893,7 @@ function openCalendarDayModal() {
     </label>
   `).join('') : '<div style="font-size:12px;color:#949596;font-style:italic">No services created yet.</div>';
   bodyEl.innerHTML = `
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:16px 18px;max-height:72vh;overflow:auto">
+    <div style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:16px 18px;max-height:72vh;overflow:auto;box-shadow:0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
         <div>
           <div style="font-size:12px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Day Timeline</div>
@@ -8903,7 +8903,7 @@ function openCalendarDayModal() {
       </div>
       ${getCalendarTimelineMarkup(dayAppts, { emptyCopy: 'No appointments are scheduled for this day. Add one using the quick form on the right.' })}
     </div>
-    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:16px 18px;display:grid;gap:12px;align-content:start">
+    <div style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:16px 18px;display:grid;gap:12px;align-content:start;box-shadow:0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04)">
       <div>
         <div style="font-size:12px;font-weight:700;color:#737475;text-transform:uppercase;letter-spacing:0.08em">Quick Add</div>
         <div style="font-size:13px;color:#64748b;margin-top:4px">Create a day event without leaving this workspace.</div>
@@ -10399,7 +10399,7 @@ function renderCrmEmptyState() {
   panel.innerHTML = `
     <div style="padding:8px 0">
       ${overdue.length ? `
-      <div style="background:#fff;border:1px solid #fecaca;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow-soft)">
+      <div style="background:#fff;border:1px solid #fecaca;border-radius:2px;padding:16px;margin-bottom:16px;box-shadow:0 12px 24px rgba(15,23,42,0.06), 0 4px 10px rgba(15,23,42,0.04)">
         <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em">⚠ Overdue Follow-ups</div>
         ${allClientsData.flatMap(c =>
           (c.client_follow_ups||[])
@@ -10483,15 +10483,15 @@ async function openClientDetail(clientId) {
 
     <!-- Quick stats -->
     <div style="display:grid;grid-template-columns:repeat(${canViewFinancials() ? 3 : 1},1fr);gap:10px;margin-bottom:16px">
-      <div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+      <div style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:14px;text-align:center;box-shadow:0 8px 18px rgba(15,23,42,0.05), 0 3px 8px rgba(15,23,42,0.03)">
         <div style="font-size:22px;font-weight:800;color:#17191c">${jobs.length}</div>
         <div style="font-size:10px;color:#737475;margin-top:2px;font-weight:600;text-transform:uppercase">Jobs</div>
       </div>
-      ${canViewFinancials() ? `<div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+      ${canViewFinancials() ? `<div style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:14px;text-align:center;box-shadow:0 8px 18px rgba(15,23,42,0.05), 0 3px 8px rgba(15,23,42,0.03)">
         <div style="font-size:22px;font-weight:800;color:#0265dc">$${jobs.reduce((s,j) => s + (parseFloat(j.invoice_amount)||0), 0).toFixed(0)}</div>
         <div style="font-size:10px;color:#737475;margin-top:2px;font-weight:600;text-transform:uppercase">Invoiced</div>
       </div>
-      <div style="background:linear-gradient(180deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #e8eef3;border-radius:14px;padding:14px;text-align:center">
+      <div style="background:#fff;border:1px solid rgba(15,23,42,0.06);border-radius:2px;padding:14px;text-align:center;box-shadow:0 8px 18px rgba(15,23,42,0.05), 0 3px 8px rgba(15,23,42,0.03)">
         <div style="font-size:22px;font-weight:800;color:${jobs.some(j=>j.payment_status!=='paid'&&j.invoice_amount>0)?'#dc2626':'#16a34a'}">
           $${jobs.filter(j=>j.payment_status!=='paid').reduce((s,j) => s + (parseFloat(j.invoice_amount)||0), 0).toFixed(0)}
         </div>
