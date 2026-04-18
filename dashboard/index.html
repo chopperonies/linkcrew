@@ -163,32 +163,6 @@
     .chip-red { background: #fef2f2; color: #991b1b; }
     .chip-grey { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
 
-    /* Primary button — smaller, cleaner, matches mini-btn weight */
-    .owner-btn.primary {
-      background: #0369a1;
-      color: #fff;
-      border: 1px solid #0369a1;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      box-shadow: none;
-      border-radius: 6px;
-      transition: background 0.12s, border-color 0.12s;
-    }
-    .owner-btn.primary:hover {
-      background: #075985;
-      border-color: #075985;
-      box-shadow: none;
-      transform: none;
-    }
-    /* Match base .owner-btn to the same compact size */
-    .owner-btn:not(.primary) {
-      padding: 6px 12px;
-      font-size: 11px;
-      border-radius: 6px;
-      box-shadow: none;
-    }
-
     /* Quick add dropdown */
     .quick-add-item {
       display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px;
@@ -200,9 +174,9 @@
 
     /* Active filter buttons */
     .owner-mini-btn.active {
-      background: #0369a1 !important;
-      color: #fff !important;
-      border-color: #0369a1 !important;
+      background: #eff6ff !important;
+      color: #1d4ed8 !important;
+      border-color: #93c5fd !important;
     }
 
     /* Composer */
@@ -495,18 +469,16 @@
     }
     .owner-page-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .owner-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
-      background: #fff; color: var(--text); cursor: pointer;
-      font-size: 12px; font-weight: 700; font-family: inherit;
-      box-shadow: var(--shadow-soft); transition: border-color 0.12s, background 0.12s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1;
+      background: transparent; color: #334155; cursor: pointer;
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      white-space: nowrap;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
     }
-    .owner-btn:hover { border-color: var(--border-strong); background: var(--bg); }
-    .owner-btn.primary {
-      background: var(--accent); color: #fff; border-color: transparent;
-      box-shadow: 0 4px 12px rgba(14,165,233,0.28);
-    }
-    .owner-btn.primary:hover { background: var(--accent-strong); }
+    .owner-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+    .owner-btn.primary { color: #1d4ed8; border-color: #93c5fd; background: transparent; box-shadow: none; }
+    .owner-btn.primary:hover { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
     /* ── Option B: No-card, divider-based layout ── */
     .owner-kpi-grid {
       display: flex; align-items: stretch; border-bottom: 1px solid var(--border);
@@ -545,11 +517,12 @@
     .owner-card-sub { font-size: 12px; color: var(--text-soft); line-height: 1.6; margin-top: 3px; }
     .owner-card-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .owner-mini-btn {
-      background: transparent; color: var(--text-soft); border: 1px solid var(--border);
-      padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: border-color 0.12s, color 0.12s, background 0.12s;
+      background: transparent; color: #64748b; border: 1px solid #e2e8f0;
+      padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
     }
-    .owner-mini-btn:hover { background: var(--bg); border-color: var(--border-strong); color: var(--text); }
+    .owner-mini-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
     .owner-signal-card {
       background: transparent; border: none; border-radius: 0; padding: 20px 24px;
       box-shadow: none; border-bottom: 1px solid var(--border);
@@ -913,10 +886,44 @@
     .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(14,165,233,0.12); }
     .form-group select option { background: #fff; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    .btn-cancel { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit; }
-    .btn-save { background: var(--accent); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; font-family: inherit; }
-    .btn-save:hover { background: var(--accent-strong); }
-    .add-job-btn { background: var(--accent); color: #fff; border: none; padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-cancel { background: transparent; color: #64748b; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; font-family: inherit; transition: background 0.12s, border-color 0.12s, color 0.12s; }
+    .btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+    .btn-save { background: transparent; color: #1d4ed8; border: 1px solid #93c5fd; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11px; font-family: inherit; transition: background 0.12s, border-color 0.12s, color 0.12s; }
+    .btn-save:hover { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
+    .add-job-btn { background: transparent; color: #1d4ed8; border: 1px solid #93c5fd; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.12s, border-color 0.12s, color 0.12s; }
+    .add-job-btn:hover { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
+
+    /* ── Unified button system ── */
+    .lc-btn { display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 1.5px solid #cbd5e1; color: #334155; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.12s, border-color 0.12s, color 0.12s; white-space: nowrap; }
+    .lc-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+    .lc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .lc-btn i[data-lucide] { width: 14px; height: 14px; flex-shrink: 0; }
+    .lc-btn.primary { color: #1d4ed8; border-color: #93c5fd; }
+    .lc-btn.primary:hover { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
+    .lc-btn.primary.solid { background: #0265dc; border-color: #0265dc; color: #fff; }
+    .lc-btn.primary.solid:hover { background: #0253b3; border-color: #0253b3; color: #fff; }
+    .lc-btn.success { color: #166534; border-color: #86efac; }
+    .lc-btn.success:hover { background: #f0fdf4; border-color: #4ade80; color: #14532d; }
+    .lc-btn.danger { color: #991b1b; border-color: #fca5a5; }
+    .lc-btn.danger:hover { background: #fef2f2; border-color: #f87171; color: #7f1d1d; }
+    .lc-btn.muted { color: #64748b; border-color: #e2e8f0; }
+    .lc-btn.muted:hover { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+    .lc-btn.sm { padding: 2px 8px; font-size: 11px; gap: 4px; border-width: 1px; font-weight: 600; }
+    .lc-btn.sm i[data-lucide] { width: 10px; height: 10px; }
+    .lc-btn.xs { padding: 1px 6px; font-size: 10px; gap: 3px; border-width: 1px; font-weight: 600; letter-spacing: 0.02em; }
+    .lc-btn.xs i[data-lucide] { width: 9px; height: 9px; }
+    .lc-btn.icon-only { padding: 8px; gap: 0; }
+    .lc-btn.icon-only.sm { padding: 4px; }
+    .lc-btn.icon-only.xs { padding: 3px; }
+
+    /* Text-link action — minimal footprint, no border */
+    .lc-link { background: none; border: none; color: #1d4ed8; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; font-family: inherit; text-decoration: none; transition: color 0.12s; }
+    .lc-link:hover { text-decoration: underline; color: #1e3a8a; }
+    .lc-link.sm { font-size: 11px; font-weight: 600; }
+    .lc-link.muted { color: #64748b; }
+    .lc-link.muted:hover { color: #334155; }
+    .lc-link.danger { color: #b91c1c; }
+    .lc-link.danger:hover { color: #7f1d1d; }
 
     /* ── Team modal ── */
     .team-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf2f7; }
@@ -2635,12 +2642,9 @@
                 <div class="owner-card-headline">Team members</div>
                 <div class="owner-card-sub">Keep the roster clean and role-aware so jobs, check-ins, and supply requests always tie back to the right person.</div>
               </div>
-              <div class="owner-card-actions">
-                <button id="team-list-toggle" class="owner-mini-btn" onclick="toggleTeamList()">Show Team Members</button>
-              </div>
             </div>
             <div id="team-summary-copy" style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:14px">Loading team summary...</div>
-            <div id="team-list-wrap" style="display:none">
+            <div id="team-list-wrap">
               <div id="team-list-inline"><div class="empty" style="padding:12px">Loading...</div></div>
             </div>
           </div>
@@ -4094,25 +4098,24 @@
 
 <!-- ── Team Management Modal ── -->
 <div class="modal-overlay" id="team-modal">
-  <div class="modal" style="width:460px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <h3 style="margin:0">👥 Team</h3>
+  <div class="modal" style="width:520px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0" id="team-modal-title">👥 Team</h3>
       <button class="btn-cancel" onclick="closeTeam()" style="padding:4px 10px">✕</button>
     </div>
-    <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Add New Employee</div>
+    <div id="team-modal-subtitle" style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;">Add New Employee</div>
+
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Personal Details</div>
     <div class="form-group"><label>Full Name</label><input type="text" id="emp-name" placeholder="e.g. Marcus Johnson"></div>
     <div class="form-group">
       <label>Phone Number</label>
       <input type="tel" id="emp-phone" placeholder="+1 (555) 000-0000">
       <div style="margin-top:6px;font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;line-height:1.5">
-        ⚠ <strong>This is how this person signs into the mobile app.</strong> Use the phone they actually carry — if they use a different number when installing the app, they won't be able to find your team.
+        ⚠ <strong>This phone number logs them into the mobile app and connects them to your team.</strong> Use the phone they actually carry — if you change it later, they'll be signed out and have to sign in again with the new number.
       </div>
     </div>
-    <div class="form-group" id="emp-email-group">
-      <label>Dashboard Access Email <span style="color:#94a3b8;font-weight:500">(supervisor, manager, or owner only)</span></label>
-      <input type="email" id="emp-email" placeholder="name@company.com">
-      <div style="margin-top:6px;font-size:12px;color:#64748b">Optional. If provided for a supervisor, manager, or owner, LinkCrew will send a secure setup link for dashboard access.</div>
-    </div>
+
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">Role & Availability</div>
     <div class="form-group">
       <label>Role</label>
       <select id="emp-role">
@@ -4122,9 +4125,28 @@
         <option value="owner">Owner — full access</option>
       </select>
     </div>
-    <div class="modal-actions">
+    <div class="form-group" id="emp-status-group" style="display:none">
+      <label>Status</label>
+      <select id="emp-status">
+        <option value="active">Active — available for jobs</option>
+        <option value="vacation">Vacation — temporarily unavailable</option>
+        <option value="suspended">Suspended — blocked from sign-in</option>
+      </select>
+      <div style="margin-top:6px;font-size:12px;color:#64748b">Suspended blocks the mobile app login and revokes dashboard access.</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">Dashboard Access</div>
+    <div id="emp-dashboard-access-section"></div>
+
+    <div id="emp-danger-zone" style="display:none;margin-top:22px;padding:14px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2">
+      <div style="font-size:11px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Danger Zone</div>
+      <div style="font-size:12px;color:#7f1d1d;line-height:1.5;margin-bottom:10px">Removes this person from your team. Their job history stays intact, but they'll lose access to the mobile app and dashboard.</div>
+      <button class="lc-link danger" onclick="modalRemoveEmployee()">Remove from Team</button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:22px">
       <button class="btn-cancel" onclick="closeTeam()">Cancel</button>
-      <button class="btn-save" onclick="saveEmployee()">Add Employee</button>
+      <button class="btn-save" id="emp-save-btn" onclick="saveEmployee()">Add Employee</button>
     </div>
   </div>
 </div>
@@ -6829,21 +6851,40 @@ function clearStoredDashboardLinks() {
   renderStoredDashboardLinks(window._allEmployees || []);
 }
 
-function isTeamListExpanded() {
-  return window._teamListExpanded === true;
+const TEAM_LIST_CAP = 10;
+window._teamListShowAll = false;
+
+function refreshLucideIcons(rootEl) {
+  if (!window.lucide) return;
+  if (rootEl) lucide.createIcons({ nodes: [rootEl] });
+  else lucide.createIcons();
 }
 
-function setTeamListExpanded(expanded) {
-  window._teamListExpanded = expanded === true;
-  const wrap = document.getElementById('team-list-wrap');
-  const toggle = document.getElementById('team-list-toggle');
-  if (wrap) wrap.style.display = window._teamListExpanded ? 'block' : 'none';
-  if (toggle) toggle.textContent = window._teamListExpanded ? 'Hide Team Members' : 'Show Team Members';
+function renderTeamListHtml(employees, inline) {
+  if (!employees.length) {
+    return '<div class="empty" style="padding:12px">No team members match this filter.</div>';
+  }
+  const showAll = !!window._teamListShowAll;
+  const visible = showAll ? employees : employees.slice(0, TEAM_LIST_CAP);
+  const rowsHtml = visible.map(e => renderTeamRow(e, inline)).join('');
+  if (employees.length <= TEAM_LIST_CAP) return rowsHtml;
+  const remaining = employees.length - TEAM_LIST_CAP;
+  const footer = showAll
+    ? `<div style="padding:10px 0 2px;text-align:center"><button onclick="setTeamListShowAll(false)" style="background:none;border:none;color:#0265dc;font-size:12px;font-weight:600;cursor:pointer;padding:6px 10px">Show less</button></div>`
+    : `<div style="padding:10px 0 2px;text-align:center"><button onclick="setTeamListShowAll(true)" style="background:none;border:none;color:#0265dc;font-size:12px;font-weight:600;cursor:pointer;padding:6px 10px">Show all ${employees.length} team members (${remaining} more)</button></div>`;
+  return rowsHtml + footer;
 }
 
-function toggleTeamList() {
-  setTeamListExpanded(!isTeamListExpanded());
+function setTeamListShowAll(flag) {
+  window._teamListShowAll = !!flag;
+  const employees = applyTeamFilter(window._allEmployees || []);
+  const inline = document.getElementById('team-list-inline');
+  if (inline) {
+    inline.innerHTML = renderTeamListHtml(employees, true);
+    refreshLucideIcons(inline);
+  }
 }
+
 
 function renderTeamSummary(employees = []) {
   const summary = document.getElementById('team-summary-copy');
@@ -7017,85 +7058,19 @@ function getEmployeeDashboardAccessCopy(employee) {
   return 'Dashboard access enabled';
 }
 
-function isTeamActionsExpanded(employeeId, inline = false) {
-  const key = `${inline ? 'inline' : 'modal'}:${employeeId}`;
-  return window._teamActionsExpanded?.[key] === true;
-}
-
-function setTeamActionsExpanded(employeeId, expanded, inline = false) {
-  const key = `${inline ? 'inline' : 'modal'}:${employeeId}`;
-  window._teamActionsExpanded = window._teamActionsExpanded || {};
-  window._teamActionsExpanded[key] = expanded === true;
-  const panel = document.getElementById(`team-actions-panel-${inline ? 'inline-' : ''}${employeeId}`);
-  const toggle = document.getElementById(`team-actions-toggle-${inline ? 'inline-' : ''}${employeeId}`);
-  if (panel) panel.style.display = window._teamActionsExpanded[key] ? 'flex' : 'none';
-  if (toggle) toggle.textContent = window._teamActionsExpanded[key] ? 'Hide Actions' : 'Actions';
-}
-
-function toggleTeamActions(employeeId, inline = false) {
-  setTeamActionsExpanded(employeeId, !isTeamActionsExpanded(employeeId, inline), inline);
-}
-
-function collapseTeamActions(employeeId) {
-  setTeamActionsExpanded(employeeId, false, false);
-  setTeamActionsExpanded(employeeId, false, true);
-}
-
 function renderTeamRow(employee, inline = false) {
   const employeeStatus = normalizeEmployeeStatus(employee.status);
   const accessCopy = getEmployeeDashboardAccessCopy(employee);
-  const canInviteDashboard = canManageSettings() && employeeStatus !== 'suspended' && (employee.role === 'supervisor' || employee.role === 'manager' || employee.role === 'owner');
-  const hasStoredLink = !!getStoredDashboardLinks()[employee.id]?.invite_url;
-  const roleSelectId = `team-role-select-${inline ? 'inline-' : ''}${employee.id}`;
-  const statusSelectId = `team-status-select-${inline ? 'inline-' : ''}${employee.id}`;
-  const accessButton = canInviteDashboard
-    ? `<button onclick="grantDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}','${employee.role}')" style="background:#eef6ff;border:1px solid #bfdbfe;color:#1d4ed8;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">${employee.dashboard_access_enabled ? 'Resend Access Link' : 'Grant Dashboard Access'}</button>`
-    : '';
-  const copyAccessButton = canInviteDashboard && hasStoredLink
-    ? `<button onclick="copyStoredDashboardLink('${employee.id}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Copy Saved Link</button>`
-    : '';
-  const disableAccessButton = canManageSettings() && employee.dashboard_access_enabled && employee.role !== 'owner'
-    ? `<button onclick="disableDashboardAccess('${employee.id}','${String(employee.name || '').replace(/'/g, "\\'")}')" style="background:#fff5f5;border:1px solid #fecaca;color:#b91c1c;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Disable Access</button>`
-    : '';
-  const changeRoleUI = canManageSettings() ? `
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-      <select id="${roleSelectId}" style="background:#fff;border:1px solid #cbd5e1;color:#0f172a;font-size:12px;padding:6px 8px;border-radius:10px;min-width:112px">
-        ${buildEmployeeRoleOptions(employee.role)}
-      </select>
-      <button onclick="updateEmployeeRole('${employee.id}', '${String(employee.name || '').replace(/'/g, "\\'")}', '${roleSelectId}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Save Role</button>
-    </div>
-  ` : '';
-  const statusOptions = ['active', 'vacation', 'suspended']
-    .filter(status => canManageSettings() || status !== 'suspended')
-    .map(status => `<option value="${status}" ${employeeStatus === status ? 'selected' : ''}>${formatEmployeeStatusLabel(status)}</option>`)
-    .join('');
-  const changeStatusUI = canManageEmployeeAvailability() ? `
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-      <select id="${statusSelectId}" style="background:#fff;border:1px solid #cbd5e1;color:#0f172a;font-size:12px;padding:6px 8px;border-radius:10px;min-width:122px">
-        ${statusOptions}
-      </select>
-      <button onclick="updateEmployeeStatus('${employee.id}', '${String(employee.name || '').replace(/'/g, "\\'")}', '${statusSelectId}')" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">Save Status</button>
-    </div>
-  ` : '';
-  const removeButton = canManageSettings()
-    ? `<button onclick="deleteEmployee('${employee.id}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;padding:4px 8px;border-radius:4px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">Remove</button>`
-    : '';
-  const actionButtons = [changeRoleUI, changeStatusUI, accessButton, copyAccessButton, disableAccessButton, removeButton].filter(Boolean);
-  const actionColumn = actionButtons.join('');
   const rowId = inline ? `emp-row-inline-${employee.id}` : `emp-row-${employee.id}`;
-  const actionPanelId = `team-actions-panel-${inline ? 'inline-' : ''}${employee.id}`;
-  const actionToggleId = `team-actions-toggle-${inline ? 'inline-' : ''}${employee.id}`;
-  const actionsExpanded = isTeamActionsExpanded(employee.id, inline);
-  const actionsUI = actionButtons.length
-    ? `
-        <button id="${actionToggleId}" onclick="toggleTeamActions('${employee.id}', ${inline})" style="background:#fff;border:1px solid #cbd5e1;color:#334155;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px">
-          ${actionsExpanded ? 'Hide Actions' : 'Actions'}
-        </button>
-        <div id="${actionPanelId}" style="display:${actionsExpanded ? 'flex' : 'none'};flex-direction:column;align-items:flex-end;gap:6px">${actionColumn}</div>
-      `
+  const clickable = canManageSettings();
+  const clickAttrs = clickable
+    ? `onclick="openEditEmployee('${employee.id}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''" style="align-items:flex-start;cursor:pointer;transition:background 0.15s"`
+    : `style="align-items:flex-start"`;
+  const editButton = clickable
+    ? `<button class="lc-link" onclick="event.stopPropagation();openEditEmployee('${employee.id}')">Edit</button>`
     : '';
   return `
-    <div class="team-row" id="${rowId}" style="align-items:flex-start">
+    <div class="team-row" id="${rowId}" ${clickAttrs}>
       <div class="team-avatar">${(employee.name||'?')[0].toUpperCase()}</div>
       <div class="team-info">
         <div class="ti-name">${employee.name}</div>
@@ -7105,7 +7080,7 @@ function renderTeamRow(employee, inline = false) {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
         <span class="role-badge ${roleCls[employee.role]||'role-crew'}">${employee.role.toUpperCase()}</span>
-        ${actionsUI}
+        ${editButton}
       </div>
     </div>
   `;
@@ -7177,6 +7152,7 @@ async function loadTeamInline() {
     }
     updateSettingsUsageCard();
     window._allEmployees = employees;
+    renderTeamSummary(employees);
     renderStoredDashboardLinks(employees);
 
     if (!employees.length) {
@@ -7190,27 +7166,202 @@ async function loadTeamInline() {
     setText('team-attention-copy', capacityLeft === 0 && currentMaxUsers
       ? 'This plan is at its user limit. Upgrade before adding more crew to keep onboarding simple.'
       : 'Use this roster to manage roles, remove inactive workers, and keep the field team cleanly assigned.');
-    el.innerHTML = employees.map(e => renderTeamRow(e, true)).join('');
+    el.innerHTML = renderTeamListHtml(applyTeamFilter(employees), true);
+    refreshLucideIcons(el);
   } catch (err) {
+    console.error('loadTeamInline failed:', err);
+    const summary = document.getElementById('team-summary-copy');
+    if (summary) summary.textContent = `Failed to load team: ${err?.message || 'unknown error'}`;
     el.innerHTML = '<div class="empty" style="padding:12px;color:#dc2626">Failed to load team. Please try again.</div>';
   }
 }
+let editingEmployeeId = null;
+
+function setTeamModalMode(mode) {
+  const isEdit = mode === 'edit';
+  document.getElementById('team-modal-title').textContent = isEdit ? '✏️ Edit Team Member' : '👥 Add Team Member';
+  document.getElementById('team-modal-subtitle').textContent = isEdit ? 'Update details below — changes save when you click Save.' : 'Add a new person to your team roster.';
+  document.getElementById('emp-save-btn').textContent = isEdit ? 'Save Changes' : 'Add Team Member';
+  const statusGroup = document.getElementById('emp-status-group');
+  const danger = document.getElementById('emp-danger-zone');
+  if (statusGroup) statusGroup.style.display = isEdit ? '' : 'none';
+  if (danger) danger.style.display = isEdit ? 'block' : 'none';
+  renderDashboardAccessSection();
+}
+
+function renderDashboardAccessSection() {
+  const section = document.getElementById('emp-dashboard-access-section');
+  if (!section) return;
+  const role = document.getElementById('emp-role')?.value || 'crew';
+  const isEdit = !!editingEmployeeId;
+
+  if (role === 'crew') {
+    section.innerHTML = `
+      <div style="font-size:13px;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:10px 12px;line-height:1.55">
+        📱 <strong>Mobile app only.</strong> Crew members sign into the LinkCrew mobile app with their phone number — they don't get a dashboard login. Change the role above to <strong>Supervisor, Manager, or Owner</strong> to invite this person to the dashboard.
+      </div>
+    `;
+    return;
+  }
+
+  if (!isEdit) {
+    section.innerHTML = `
+      <div class="form-group">
+        <label>Dashboard Email <span style="color:#94a3b8;font-weight:500">(optional)</span></label>
+        <input type="email" id="emp-email" placeholder="name@company.com">
+        <div style="margin-top:6px;font-size:12px;color:#64748b">If provided, LinkCrew will email a secure dashboard setup link after the account is created.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId) || {};
+  const hasAccess = !!employee.dashboard_access_enabled;
+  const accessEmail = employee.dashboard_access_email || '';
+  const storedLink = getStoredDashboardLinks()[editingEmployeeId]?.invite_url;
+  const isOwner = employee.role === 'owner';
+
+  if (hasAccess) {
+    section.innerHTML = `
+      <div style="font-size:13px;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 12px;line-height:1.55;margin-bottom:12px">
+        ✅ <strong>Active.</strong> ${accessEmail ? `Dashboard access enabled for <strong>${accessEmail}</strong>.` : 'Dashboard access is enabled.'}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button class="lc-btn xs primary" onclick="modalResendInvite()"><i data-lucide="send"></i> Resend Invite</button>
+        ${storedLink ? `<button class="lc-btn xs" onclick="modalCopyInviteLink()"><i data-lucide="copy"></i> Copy Link</button>` : ''}
+        ${isOwner ? '' : `<button class="lc-btn xs danger" onclick="modalRevokeAccess()"><i data-lucide="x-circle"></i> Revoke Access</button>`}
+      </div>
+    `;
+  } else {
+    section.innerHTML = `
+      <div style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:10px">This person doesn't have dashboard access yet. Add their email to send a secure sign-in invite.</div>
+      <div class="form-group">
+        <label>Dashboard Email</label>
+        <input type="email" id="emp-email" placeholder="name@company.com" value="${accessEmail}">
+      </div>
+      <button class="lc-btn xs primary" onclick="modalSendInvite()"><i data-lucide="send"></i> Send Dashboard Invite</button>
+    `;
+  }
+  refreshLucideIcons(section);
+}
+
 async function openTeam() {
+  editingEmployeeId = null;
   setStoredDashboardLinksExpanded(false);
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-phone').value = '';
+  document.getElementById('emp-role').value = 'crew';
+  setTeamModalMode('add');
   const modal = document.getElementById('team-modal');
   if (!modal) return;
   modal.classList.add('visible');
 }
+
+function openEditEmployee(id) {
+  if (!canManageSettings()) return alert('Only the owner can edit team members.');
+  const employee = (window._allEmployees || []).find(e => e.id === id);
+  if (!employee) return alert('Team member not found.');
+  editingEmployeeId = id;
+  document.getElementById('emp-name').value = employee.name || '';
+  document.getElementById('emp-phone').value = employee.phone || '';
+  document.getElementById('emp-role').value = employee.role || 'crew';
+  const statusSelect = document.getElementById('emp-status');
+  if (statusSelect) statusSelect.value = normalizeEmployeeStatus(employee.status);
+  setTeamModalMode('edit');
+  const modal = document.getElementById('team-modal');
+  if (modal) modal.classList.add('visible');
+}
+
 function closeTeam() {
   const modal = document.getElementById('team-modal');
   if (modal) modal.classList.remove('visible');
   document.getElementById('emp-name').value = '';
   document.getElementById('emp-phone').value = '';
-  document.getElementById('emp-email').value = '';
   document.getElementById('emp-role').value = 'crew';
-  setTeamListExpanded(false);
+  const statusSelect = document.getElementById('emp-status');
+  if (statusSelect) statusSelect.value = 'active';
+  editingEmployeeId = null;
+  setTeamModalMode('add');
   setStoredDashboardLinksExpanded(false);
   applyCapabilityUI();
+}
+
+async function modalSendInvite() {
+  if (!editingEmployeeId) return;
+  const email = document.getElementById('emp-email')?.value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('Enter a valid email address.');
+  const res = await authFetch(`/api/employees/${editingEmployeeId}/dashboard-access`, {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return alert(data.error || 'Failed to send invite.');
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (data.invite_url && employee) {
+    rememberDashboardLink({ id: editingEmployeeId, name: employee.name, role: employee.role }, data.invite_url, email);
+    try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
+  }
+  await refreshModalAfterAccessChange();
+  alert(data.email_sent ? 'Invite emailed. The link was also copied for backup sharing.' : 'Invite link copied. Email delivery is not set up — share the link manually.');
+}
+
+async function modalResendInvite() {
+  if (!editingEmployeeId) return;
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (!employee) return;
+  const email = employee.dashboard_access_email || window.prompt(`Resend invite to which email?`, '');
+  if (!email) return;
+  const res = await authFetch(`/api/employees/${editingEmployeeId}/dashboard-access`, {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim() })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return alert(data.error || 'Failed to resend invite.');
+  if (data.invite_url) {
+    rememberDashboardLink(employee, data.invite_url, email.trim());
+    try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
+  }
+  await refreshModalAfterAccessChange();
+  alert(data.email_sent ? 'New invite emailed and copied.' : 'Invite link copied. Share it manually — email delivery is not set up.');
+}
+
+async function modalCopyInviteLink() {
+  if (!editingEmployeeId) return;
+  await copyStoredDashboardLink(editingEmployeeId);
+}
+
+async function modalRevokeAccess() {
+  if (!editingEmployeeId) return;
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (!employee) return;
+  if (!confirm(`Revoke dashboard access for ${employee.name}? They'll be signed out and can't reach the dashboard until you send a new invite.`)) return;
+  const res = await authFetch(`/api/employees/${editingEmployeeId}/dashboard-access`, { method: 'DELETE' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return alert(data.error || 'Failed to revoke access.');
+  forgetDashboardLink(editingEmployeeId);
+  await refreshModalAfterAccessChange();
+  alert('Dashboard access revoked.');
+}
+
+async function modalRemoveEmployee() {
+  if (!editingEmployeeId) return;
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (!employee) return;
+  if (!confirm(`Remove ${employee.name} from your team? Their job history stays, but they'll lose mobile app and dashboard access.`)) return;
+  const res = await authFetch(`/api/employees/${editingEmployeeId}`, { method: 'DELETE' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return alert(data.error || data.message || 'Failed to remove team member.');
+  forgetDashboardLink(editingEmployeeId);
+  closeTeam();
+  await loadTeam();
+  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
+  alert('Team member removed.');
+}
+
+async function refreshModalAfterAccessChange() {
+  await loadAllEmployees();
+  renderDashboardAccessSection();
+  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
 }
 let currentEmployeeCount = 0;
 let teamRoleFilter = 'all';
@@ -7224,21 +7375,13 @@ function applyTeamFilter(employees = []) {
 
 function setTeamFilter(f) {
   teamRoleFilter = f;
-  setTeamListExpanded(true);
+  window._teamListShowAll = false;
   const employees = window._allEmployees || [];
   const filtered = applyTeamFilter(employees);
   const el = document.getElementById('team-list');
-  if (el) {
-    el.innerHTML = filtered.length
-      ? filtered.map(e => renderTeamRow(e)).join('')
-      : '<div class="empty" style="padding:12px">No team members match this filter.</div>';
-  }
+  if (el) { el.innerHTML = renderTeamListHtml(filtered, false); refreshLucideIcons(el); }
   const inline = document.getElementById('team-list-inline');
-  if (inline) {
-    inline.innerHTML = filtered.length
-      ? filtered.map(e => renderTeamRow(e, true)).join('')
-      : '<div class="empty" style="padding:12px">No team members match this filter.</div>';
-  }
+  if (inline) { inline.innerHTML = renderTeamListHtml(filtered, true); refreshLucideIcons(inline); }
   document.getElementById('team-roster-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -7251,106 +7394,18 @@ async function loadTeam() {
     currentEmployeeCount = employees.length;
     renderTeamSummary(employees);
     renderStoredDashboardLinks(employees);
-    setTeamListExpanded(isTeamListExpanded() && employees.length > 0);
     if (!el) return;
     if (!employees.length) {
       el.innerHTML = '<div class="empty" style="padding:12px">No employees yet. Add one below.</div>';
       return;
     }
-    const filtered = applyTeamFilter(employees);
-    el.innerHTML = filtered.length
-      ? filtered.map(e => renderTeamRow(e)).join('')
-      : '<div class="empty" style="padding:12px">No team members match this filter.</div>';
+    el.innerHTML = renderTeamListHtml(applyTeamFilter(employees), false);
   } catch (err) {
     renderTeamSummary([]);
     if (el) {
       el.innerHTML = '<div class="empty" style="padding:12px;color:#dc2626">Failed to load team. Please try again.</div>';
     }
   }
-}
-
-async function grantDashboardAccess(id, name, role) {
-  if (!canManageSettings()) return alert('Only the owner can grant dashboard access.');
-  if (role === 'crew') return alert('Crew members should stay on the mobile app only.');
-  const email = window.prompt(`Enter the dashboard email for ${name}:`);
-  if (!email) return;
-  const res = await authFetch(`/api/employees/${id}/dashboard-access`, {
-    method: 'POST',
-    body: JSON.stringify({ email: email.trim() })
-  });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || 'Failed to grant dashboard access');
-  if (data.invite_url) {
-    rememberDashboardLink({ id, name, role }, data.invite_url, email.trim());
-    setStoredDashboardLinksExpanded(true);
-  }
-  if (data.invite_url) {
-    try { await navigator.clipboard.writeText(data.invite_url); } catch (_) {}
-    if (!data.email_sent) {
-      alert('Dashboard access is linked. Email delivery is not configured, so the setup link has been copied for manual sharing.');
-    } else {
-      alert(data.existing_user
-        ? 'Access refreshed. A new setup link was emailed and copied so you can share it directly if needed.'
-        : 'Dashboard access granted. The setup link was emailed and copied so you can share it directly if needed.');
-    }
-  } else {
-    alert(data.existing_user ? 'Access refreshed and a new setup link was sent.' : 'Dashboard access granted and the setup link was sent.');
-  }
-  await loadTeam();
-  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
-}
-
-async function disableDashboardAccess(id, name) {
-  if (!canManageSettings()) return alert('Only the owner can disable dashboard access.');
-  if (!confirm(`Disable dashboard access for ${name}?`)) return;
-  const res = await authFetch(`/api/employees/${id}/dashboard-access`, { method: 'DELETE' });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || 'Failed to disable dashboard access');
-  forgetDashboardLink(id);
-  await loadTeam();
-  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
-  alert('Dashboard access disabled.');
-}
-
-async function updateEmployeeRole(id, name, selectId) {
-  const select = document.getElementById(selectId);
-  const role = select?.value;
-  if (!role) return;
-  const res = await authFetch(`/api/employees/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ role })
-  });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || 'Failed to update role');
-  if (role === 'crew') forgetDashboardLink(id);
-  collapseTeamActions(id);
-  await loadTeam();
-  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
-  alert(`${name} is now ${role}.`);
-}
-
-async function updateEmployeeStatus(id, name, selectId) {
-  const select = document.getElementById(selectId);
-  const status = select?.value;
-  if (!status) return;
-  const res = await authFetch(`/api/employees/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status })
-  });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || data.message || 'Failed to update status');
-  if (status === 'suspended') forgetDashboardLink(id);
-  collapseTeamActions(id);
-  if (Array.isArray(window._allEmployees)) {
-    window._allEmployees = window._allEmployees.map(employee => (
-      employee.id === id ? { ...employee, status } : employee
-    ));
-  }
-  await loadTeam();
-  await loadAllEmployees();
-  const teamView = document.getElementById('team-view');
-  if (teamView && teamView.style.display !== 'none') await loadTeamInline();
-  alert(`${name} is now ${formatEmployeeStatusLabel(status).toLowerCase()}.`);
 }
 
 function openAccountSecurity() {
@@ -7412,11 +7467,28 @@ async function submitPasswordChange() {
 async function saveEmployee() {
   const name = document.getElementById('emp-name').value.trim();
   const phone = document.getElementById('emp-phone').value.trim();
-  const email = document.getElementById('emp-email').value.trim();
+  const emailEl = document.getElementById('emp-email');
+  const email = emailEl ? emailEl.value.trim() : '';
   const role = document.getElementById('emp-role').value;
+  const status = document.getElementById('emp-status')?.value;
   if (!name || !phone) return alert('Name and phone are required');
   if (role === 'owner' && !canManageSettings()) {
     return alert('Only the owner can assign owner access.');
+  }
+  if (editingEmployeeId) {
+    const body = { name, phone, role };
+    if (status) body.status = status;
+    const res = await authFetch(`/api/employees/${editingEmployeeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || 'Failed to save changes');
+    closeTeam();
+    await loadTeam();
+    if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
+    alert('Team member updated.');
+    return;
   }
   if (email && !canManageSettings()) {
     return alert('Only the owner can grant dashboard access.');
@@ -7456,21 +7528,9 @@ async function saveEmployee() {
   alert(successMessage);
 }
 document.getElementById('emp-role')?.addEventListener('change', () => {
-  const emailInput = document.getElementById('emp-email');
-  if (document.getElementById('emp-role')?.value === 'crew' && emailInput) emailInput.value = '';
+  renderDashboardAccessSection();
   applyCapabilityUI();
 });
-async function deleteEmployee(id) {
-  if (!canManageSettings()) return alert('Only the owner can remove team members.');
-  if (!confirm('Remove this employee?')) return;
-  const res = await authFetch(`/api/employees/${id}`, { method: 'DELETE' });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return alert(data.error || data.message || 'Failed to remove employee');
-  forgetDashboardLink(id);
-  await loadTeam();
-  if (document.getElementById('team-view').style.display !== 'none') await loadTeamInline();
-}
-
 // ── Admin: All Accounts ───────────────────────────────────────────────────────
 async function showAdminTenants() {
   document.getElementById('admin-modal').classList.add('visible');
