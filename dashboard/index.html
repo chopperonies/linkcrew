@@ -2670,18 +2670,21 @@
       </div>
 
       <div id="service-pro-library">
-        <div class="owner-card">
-          <div class="owner-card-header">
-            <div>
+        <details class="owner-card" id="service-pro-library-details" style="padding:0">
+          <summary style="list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="min-width:0">
               <div class="owner-card-title">Template library</div>
-              <div class="owner-card-headline">Start from a proven workflow</div>
-              <div class="owner-card-sub">Each template defines a sequence of statuses with step checklists. Enable one, then customize it for your crew.</div>
+              <div class="owner-card-headline" style="font-size:14px">Browse templates</div>
+              <div class="owner-card-sub" id="service-pro-templates-summary" style="font-size:12px">Loading…</div>
+            </div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;white-space:nowrap">Expand ▾</div>
+          </summary>
+          <div style="padding:0 20px 20px">
+            <div id="service-pro-templates" style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+              <div class="empty" style="padding:16px">Loading templates…</div>
             </div>
           </div>
-          <div id="service-pro-templates" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:8px">
-            <div class="empty" style="padding:16px;grid-column:1/-1">Loading templates…</div>
-          </div>
-        </div>
+        </details>
 
         <div class="owner-card" style="margin-top:16px">
           <div class="owner-card-header">
@@ -7296,23 +7299,29 @@ async function loadServicePro() {
     const templates = await tplRes.json();
     const enabled = await enRes.json();
     const enabledByTpl = new Set((enabled || []).map(w => w.source_template_id).filter(Boolean));
+    const summaryEl = document.getElementById('service-pro-templates-summary');
     if (!templates || !templates.length) {
-      tplEl.innerHTML = '<div class="empty" style="padding:16px;grid-column:1/-1">No templates available yet.</div>';
+      tplEl.innerHTML = '<div class="empty" style="padding:16px">No templates available yet.</div>';
+      if (summaryEl) summaryEl.textContent = 'No templates available yet.';
     } else {
+      const enabledCount = templates.filter(t => enabledByTpl.has(t.id)).length;
+      if (summaryEl) {
+        summaryEl.textContent = `${templates.length} templates available · ${enabledCount} enabled on this account`;
+      }
       tplEl.innerHTML = templates.map(t => {
         const pills = (t.statuses || []).map(s =>
-          `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:${s.color}22;color:${s.color};font-size:11px;font-weight:600;border:1px solid ${s.color}44">${spEsc(s.name)}</span>`
+          `<span title="${spEsc(s.name)}" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:${s.color}22;color:${s.color};font-size:10px;font-weight:600;border:1px solid ${s.color}44;white-space:nowrap">${spEsc(s.name)}</span>`
         ).join(' ');
         const already = enabledByTpl.has(t.id);
+        const btn = already
+          ? `<button class="owner-btn" disabled style="opacity:0.6;cursor:default;padding:5px 10px;font-size:11px;white-space:nowrap">Enabled</button>`
+          : `<button class="owner-btn primary" onclick="enableServiceProTemplate('${t.id}')" style="padding:5px 10px;font-size:11px;white-space:nowrap">Enable</button>`;
         return `
-          <div class="owner-card" style="padding:16px;margin:0">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px">${spEsc(t.industry || 'Generic')}</div>
-            <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px">${spEsc(t.name)}</div>
-            <div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:10px">${spEsc(t.description || '')}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${pills}</div>
-            <button class="owner-btn ${already ? '' : 'primary'}" ${already ? 'disabled style="opacity:0.6;cursor:default"' : `onclick="enableServiceProTemplate('${t.id}')"`}>
-              ${already ? 'Enabled' : 'Enable for my account'}
-            </button>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;background:#f1f5f9;border-radius:6px;padding:3px 8px;white-space:nowrap">${spEsc(t.industry || 'Generic')}</div>
+            <div style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;min-width:140px" title="${spEsc(t.description || '')}">${spEsc(t.name)}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0">${pills}</div>
+            ${btn}
           </div>`;
       }).join('');
     }
@@ -7733,8 +7742,13 @@ function runWorkflowAction(actionType, configJson) {
       break;
     }
     case 'add_note': {
+      const wrapper = document.getElementById('detail-notes-wrapper');
+      if (wrapper) wrapper.open = true;
       const input = document.getElementById('detail-note-input');
-      if (input) { input.focus(); input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      if (input) {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => input.focus(), 300);
+      }
       break;
     }
     case 'create_po': {
@@ -7747,8 +7761,12 @@ function runWorkflowAction(actionType, configJson) {
       break;
     }
     case 'generate_estimate': {
-      const target = document.getElementById('detail-workorder');
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (job.id) {
+        window.open(`/workorder?job_id=${encodeURIComponent(job.id)}`, '_blank', 'noopener');
+      } else {
+        const target = document.getElementById('detail-workorder');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       break;
     }
     default:
