@@ -6319,7 +6319,8 @@ async function openDetail(jobId, jobName) {
           ${wfStatuses.map(s => {
             const active = s.id === wfCurrentId;
             const color = s.color || '#0ea5e9';
-            return `<button type="button" onclick="advanceWorkflowStatus('${job.id}','${s.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1.5px solid ${active ? color : '#e2e8f0'};background:${active ? color : '#fff'};color:${active ? '#fff' : '#475569'};cursor:pointer;white-space:nowrap">${s.order_index}. ${spEsc(s.name)}</button>`;
+            const ic = s.icon || 'circle';
+            return `<button type="button" onclick="advanceWorkflowStatus('${job.id}','${s.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1.5px solid ${active ? color : '#e2e8f0'};background:${active ? color : '#fff'};color:${active ? '#fff' : '#475569'};cursor:pointer;white-space:nowrap"><i data-lucide="${ic}" style="width:14px;height:14px"></i>${s.order_index}. ${spEsc(s.name)}</button>`;
           }).join('')}
         </div>
         <input type="hidden" id="detail-job-status" value="${normalizeJobStatus(job?.status)}">
@@ -6408,6 +6409,7 @@ async function openDetail(jobId, jobName) {
       </div>
     </div>
   `;
+  if (window.lucide) { try { lucide.createIcons({ nodes: [overviewEl] }); } catch (_) {} }
 
   const woEl = document.getElementById('detail-workorder');
   const hasEstimate = canViewFinancials() && job?.estimate_amount > 0;
@@ -7466,6 +7468,7 @@ function renderWorkflowEditor() {
       </div>
     </div>
   `;
+  if (window.lucide) { try { lucide.createIcons({ nodes: [ed] }); } catch (_) {} }
 }
 
 const ACTION_TYPES = [
@@ -7479,6 +7482,13 @@ const ACTION_TYPES = [
 const ACTION_STYLES = [
   { value: 'ghost', label: 'Ghost' },
   { value: 'primary_solid', label: 'Solid' },
+];
+const STATUS_ICON_OPTIONS = [
+  'clipboard', 'truck', 'wrench', 'check-circle', 'file-check',
+  'calendar', 'send', 'map-pin', 'search', 'dollar-sign',
+  'circle', 'hard-hat', 'package', 'camera', 'phone',
+  'navigation', 'tool', 'clock', 'alert-triangle', 'flag',
+  'play', 'pause', 'home', 'zap'
 ];
 
 function renderStatusRow(status, idx, total) {
@@ -7511,13 +7521,16 @@ function renderStatusRow(status, idx, total) {
   `).join('');
   return `
     <div class="sp-status-row" data-status-id="${sid}" style="padding:12px 14px;border:1.5px solid ${status.color || '#e2e8f0'};border-left-width:4px;border-radius:10px;background:#fff">
-      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center;margin-bottom:10px">
         <div style="display:flex;flex-direction:column;gap:2px">
           <button class="lc-link sm" onclick="reorderWorkflowStatus('${sid}','up')" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''} title="Move up">▲</button>
           <button class="lc-link sm" onclick="reorderWorkflowStatus('${sid}','down')" ${idx === total - 1 ? 'disabled style="opacity:0.3"' : ''} title="Move down">▼</button>
         </div>
         <input type="text" class="sp-name" value="${spEsc(status.name || '')}" placeholder="Status name" style="font-weight:700">
         <input type="color" class="sp-color" value="${status.color || '#0ea5e9'}" title="Status color" style="width:40px;height:32px;padding:0;border:1px solid #e2e8f0;border-radius:6px;background:none;cursor:pointer">
+        <select class="sp-icon" title="Status icon" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:6px 8px;font-size:12px">
+          ${STATUS_ICON_OPTIONS.map(ic => `<option value="${ic}" ${status.icon === ic ? 'selected' : ''}>${ic}</option>`).join('')}
+        </select>
         <select class="sp-legacy" title="Maps to legacy job status" style="background:#f5f5f5;border:1px solid #e8e8e8;border-radius:6px;padding:6px 8px;font-size:12px">
           <option value="">— legacy —</option>
           ${legacyOptions}
@@ -7543,6 +7556,7 @@ function readStatusFromRow(statusId) {
   if (!row) return null;
   const name = row.querySelector('.sp-name')?.value.trim() || 'Untitled';
   const color = row.querySelector('.sp-color')?.value || '#0ea5e9';
+  const icon = row.querySelector('.sp-icon')?.value || 'circle';
   const legacy = row.querySelector('.sp-legacy')?.value || '';
   const stepRows = row.querySelectorAll('.sp-steps-list [data-step-idx]');
   const steps = Array.from(stepRows).map((sr, i) => ({
@@ -7556,7 +7570,7 @@ function readStatusFromRow(statusId) {
     action_type: br.querySelector('.sp-btn-type')?.value || 'add_note',
     style: br.querySelector('.sp-btn-style')?.value || 'ghost',
   })).filter(b => b.label);
-  return { name, color, legacy_status: legacy || null, steps, action_buttons };
+  return { name, color, icon, legacy_status: legacy || null, steps, action_buttons };
 }
 
 async function saveWorkflowStatus(statusId) {
