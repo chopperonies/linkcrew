@@ -5341,7 +5341,7 @@ app.post('/api/mobile/crew/jobs/:id/supply-request', mobileAuth, async (req, res
 app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const stuckThreshold = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
-  const [jobsR, onSiteR, assignmentsR, suppliesR, bottlenecksR] = await Promise.all([
+  const [jobsR, onSiteR, assignmentsR, suppliesR, bottlenecksR, recentR] = await Promise.all([
     supabaseAdmin.from('jobs')
       .select('id, name, address, status, updated_at, workflow_id, workflow_progress, clients(name)')
       .in('status', ['active', 'in_progress', 'scheduled', 'on_hold'])
@@ -5355,6 +5355,11 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
       .eq('status', 'pending').eq('tenant_id', req.tenantId),
     supabaseAdmin.from('job_updates').select('job_id')
       .eq('type', 'bottleneck').gte('created_at', today.toISOString()).eq('tenant_id', req.tenantId),
+    supabaseAdmin.from('job_updates')
+      .select('id, type, message, photo_url, created_at, job_id, jobs(name), employees(name)')
+      .eq('tenant_id', req.tenantId)
+      .order('created_at', { ascending: false })
+      .limit(10),
   ]);
   const jobs = jobsR.data || [];
   const onSite = onSiteR.data || [];
@@ -5404,6 +5409,17 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
     pendingSupplies: supplies.filter(s => s.job_id === j.id).length,
   }));
 
+  const recentActivity = (recentR.data || []).map(u => ({
+    id: u.id,
+    type: u.type,
+    message: u.message,
+    photo_url: u.photo_url,
+    created_at: u.created_at,
+    job_id: u.job_id,
+    job_name: u.jobs?.name || null,
+    employee_name: u.employees?.name || null,
+  }));
+
   res.json({
     activeJobs: jobs.length,
     crewOnSite: onSite.length,
@@ -5412,6 +5428,7 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
     jobBreakdown,
     todayJobs,
     stuckJobs,
+    recentActivity,
   });
 });
 
