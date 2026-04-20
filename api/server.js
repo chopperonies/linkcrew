@@ -5440,7 +5440,7 @@ app.get('/api/mobile/owner/jobs/:id', mobileAuth, requireMobileOwnerOrManager, a
   if (error) return res.status(500).json({ error: error.message });
   if (!job) return res.status(404).json({ error: 'Job not found' });
 
-  const [{ data: assignments }, { data: updates }, { count: photoCount }] = await Promise.all([
+  const [{ data: assignments }, { data: updates }, { count: photoCount }, { data: acks }] = await Promise.all([
     supabaseAdmin.from('job_assignments')
       .select('id, employee_id, checked_in_at, checked_out_at, employees(id, name, phone, push_token)')
       .eq('job_id', job.id).order('checked_in_at', { ascending: false }),
@@ -5449,6 +5449,9 @@ app.get('/api/mobile/owner/jobs/:id', mobileAuth, requireMobileOwnerOrManager, a
       .eq('job_id', job.id).order('created_at', { ascending: false }).limit(30),
     supabaseAdmin.from('job_updates').select('id', { count: 'exact', head: true })
       .eq('job_id', job.id).eq('type', 'photo').not('photo_url', 'is', null),
+    supabaseAdmin.from('job_scope_acknowledgements')
+      .select('employee_id, acked_at, acked_scope_updated_at')
+      .eq('job_id', job.id),
   ]);
 
   res.json({
@@ -5457,6 +5460,7 @@ app.get('/api/mobile/owner/jobs/:id', mobileAuth, requireMobileOwnerOrManager, a
     assignments: assignments || [],
     updates: updates || [],
     photoCount: photoCount || 0,
+    scope_acks: acks || [],
   });
 });
 
