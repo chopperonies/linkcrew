@@ -5478,6 +5478,16 @@ app.post('/api/mobile/owner/crew', mobileAuth, requireMobileOwner, async (req, r
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
+// Revoke a crew member's mobile session. Next request from their app gets
+// 401 and forces re-login. Owner-only — lets you kick a lost / fired phone.
+app.post('/api/mobile/owner/crew/:id/revoke-session', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { error } = await supabaseAdmin.from('employees')
+    .update({ mobile_session_token: null, mobile_session_issued_at: null })
+    .eq('id', req.params.id).eq('tenant_id', req.tenantId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 app.patch('/api/mobile/owner/crew/:id', mobileAuth, requireMobileOwner, async (req, res) => {
   const updates = {};
   if (req.body.role) updates.role = req.body.role;
