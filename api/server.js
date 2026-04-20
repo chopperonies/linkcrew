@@ -5409,6 +5409,21 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
     pendingSupplies: supplies.filter(s => s.job_id === j.id).length,
   }));
 
+  // Schedule counts for the current visible week so the Home week strip
+  // can show a dot under days that have jobs scheduled. Key: YYYY-MM-DD.
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 13); // two weeks of coverage
+  const { data: weekSchedule } = await supabaseAdmin.from('jobs')
+    .select('scheduled_date')
+    .eq('tenant_id', req.tenantId)
+    .gte('scheduled_date', weekStart.toISOString().slice(0, 10))
+    .lte('scheduled_date', weekEnd.toISOString().slice(0, 10));
+  const scheduleByDay = {};
+  for (const row of (weekSchedule || [])) {
+    if (!row.scheduled_date) continue;
+    scheduleByDay[row.scheduled_date] = (scheduleByDay[row.scheduled_date] || 0) + 1;
+  }
+
   const recentActivity = (recentR.data || []).map(u => ({
     id: u.id,
     type: u.type,
@@ -5429,6 +5444,7 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
     todayJobs,
     stuckJobs,
     recentActivity,
+    scheduleByDay,
   });
 });
 
