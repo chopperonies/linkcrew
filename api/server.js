@@ -2327,7 +2327,10 @@ app.post('/api/employees', auth, requireOperationAccess, ensureEmployeeRoleAllow
   const maxUsers = tenant?.max_users ?? 1;
   const { count } = await supabaseAdmin.from('employees').select('*', { count: 'exact', head: true }).eq('tenant_id', req.tenantId);
   if (count >= maxUsers) return res.status(403).json({ error: `Plan limit reached. Your plan allows up to ${maxUsers} crew member${maxUsers === 1 ? '' : 's'}. Upgrade at linkcrew.io/pricing.` });
-  const normalizedPhone = phone.replace(/\D/g, '');
+  let normalizedPhone = phone.replace(/\D/g, '');
+  if (normalizedPhone.length === 11 && normalizedPhone.startsWith('1')) {
+    normalizedPhone = normalizedPhone.slice(1);
+  }
   const { data, error } = await supabaseAdmin.from('employees')
     .insert({ name: name.trim(), phone: normalizedPhone, role, status: 'active', tenant_id: req.tenantId }).select().single();
   if (error) return res.status(400).json({ error: error.message });
@@ -2339,7 +2342,11 @@ app.patch('/api/employees/:id', auth, requireOperationAccess, ensureEmployeeRole
   const { name, phone, role, status } = req.body;
   const updates = {};
   if (name) updates.name = name.trim();
-  if (phone) updates.phone = phone.replace(/\D/g, '');
+  if (phone) {
+    let p = phone.replace(/\D/g, '');
+    if (p.length === 11 && p.startsWith('1')) p = p.slice(1);
+    updates.phone = p;
+  }
   if (role) updates.role = role;
   if (status !== undefined) updates.status = normalizeEmployeeStatus(status);
   const { data, error } = await supabaseAdmin.from('employees').update(updates).eq('id', id).eq('tenant_id', req.tenantId).select().single();
@@ -4928,7 +4935,10 @@ app.post('/api/crew-register', async (req, res) => {
     .select('tenant_id').eq('token', t).maybeSingle();
   if (!invite) return res.status(400).json({ error: 'This invite link is invalid or has been regenerated. Ask your manager for a new one.' });
   const tenantId = invite.tenant_id;
-  const normalizedPhone = phone.replace(/\D/g, '');
+  let normalizedPhone = phone.replace(/\D/g, '');
+  if (normalizedPhone.length === 11 && normalizedPhone.startsWith('1')) {
+    normalizedPhone = normalizedPhone.slice(1);
+  }
   const { data: dup } = await supabaseAdmin.from('employees')
     .select('id').eq('tenant_id', tenantId).eq('phone', normalizedPhone).maybeSingle();
   if (dup) return res.status(409).json({ error: 'A crew member with this phone number already exists.' });
