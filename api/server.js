@@ -5273,11 +5273,43 @@ app.patch('/api/mobile/owner/jobs/:id', mobileAuth, async (req, res) => {
   if (req.body.status) updates.status = req.body.status;
   if (req.body.name) updates.name = req.body.name;
   if (req.body.address !== undefined) updates.address = req.body.address;
+  if (req.body.description !== undefined) updates.description = req.body.description;
+  if (req.body.estimate_amount !== undefined) {
+    if (req.role !== 'owner') return res.status(403).json({ error: 'Owner access required to edit estimate' });
+    const n = req.body.estimate_amount === null ? null : parseFloat(req.body.estimate_amount);
+    if (n !== null && (isNaN(n) || n < 0)) return res.status(400).json({ error: 'Invalid estimate amount' });
+    updates.estimate_amount = n;
+  }
   if (!Object.keys(updates).length) return res.status(400).json({ error: 'no updates' });
   const { data, error } = await supabaseAdmin
     .from('jobs').update(updates).eq('id', req.params.id).eq('tenant_id', req.tenantId).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// Email the public work-order / quote URL to the linked client.
+app.post('/api/mobile/owner/jobs/:id/send-workorder', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { data: job } = await supabaseAdmin.from('jobs')
+    .select('*, clients(name, email)')
+    .eq('id', req.params.id).eq('tenant_id', req.tenantId).single();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job.clients?.email) return res.status(400).json({ error: 'Link a client with an email address first.' });
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('company_name').eq('id', req.tenantId).single();
+  try {
+    await sendWorkOrderToClient({
+      clientName: job.clients.name,
+      clientEmail: job.clients.email,
+      jobName: job.name,
+      description: job.description,
+      estimateAmount: job.estimate_amount,
+      workorderUrl: `https://linkcrew.io/workorder?job_id=${job.id}`,
+      tenantName: tenant?.company_name,
+    });
+    res.json({ ok: true, emailed_to: job.clients.email });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Create a job
