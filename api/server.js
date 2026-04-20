@@ -4927,10 +4927,67 @@ app.get('/api/join-info', async (req, res) => {
   res.json({ companyName: tenant.company_name || 'Your Team' });
 });
 
+// Owner login via email + password (same creds as the web dashboard).
+// Verifies against Supabase auth, then finds/creates the owner employee
+// row for the tenant and mints a mobile_session_token. Closes the
+// "crew can log in as owner via phone" security gap: owners auth with
+// a real password, crew use phone-only. No pivoting between roles.
+app.post('/api/login-email', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+
+  const verify = await supabase.auth.signInWithPassword({ email: String(email).trim(), password });
+  if (verify.error || !verify.data?.user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  // Don't need the Supabase session past verification.
+  try { if (verify.data?.session?.access_token) await supabase.auth.signOut(verify.data.session.access_token); } catch (_) {}
+
+  // Find the tenant this owner belongs to.
+  const { data: tenant, error: tErr } = await supabaseAdmin.from('tenants')
+    .select('id, company_name, phone, owner_email')
+    .eq('owner_email', String(email).trim().toLowerCase())
+    .maybeSingle();
+  if (tErr) return res.status(500).json({ error: tErr.message });
+  if (!tenant) return res.status(404).json({ error: 'No LinkCrew tenant found for this email.' });
+
+  // Find or create the owner employee row. Phone is optional on first
+  // email-login; owner can set it later from Settings if they also want
+  // to use phone on another device.
+  let { data: employee } = await supabaseAdmin.from('employees')
+    .select('*')
+    .eq('tenant_id', tenant.id)
+    .eq('role', 'owner')
+    .maybeSingle();
+
+  if (!employee) {
+    const insert = await supabaseAdmin.from('employees').insert({
+      tenant_id: tenant.id,
+      name: tenant.company_name || 'Owner',
+      role: 'owner',
+      status: 'active',
+      phone: null,
+    }).select().single();
+    if (insert.error) return res.status(500).json({ error: insert.error.message });
+    employee = insert.data;
+  }
+
+  const token = `mob_${crypto.randomUUID()}`;
+  const { error: tokErr } = await supabaseAdmin.from('employees')
+    .update({ mobile_session_token: token, mobile_session_issued_at: new Date().toISOString() })
+    .eq('id', employee.id);
+  if (tokErr) return res.status(500).json({ error: tokErr.message });
+
+  res.json({ employee: { ...employee, mobile_session_token: token } });
+});
+
 // Public: mobile phone login — RLS blocks anon reads of employees, so
 // the mobile app hits this endpoint (service role) instead of the DB.
 // Issues a mobile_session_token which the app presents on every subsequent
 // /api/mobile/* request (see mobileAuth middleware below).
+// NOTE: phone-login only returns employees with role='crew' or 'manager'
+// to prevent phone-number enumeration from reaching owner accounts.
+// Owner must use /api/login-email.
 app.post('/api/login-phone', async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.status(400).json({ error: 'Phone number is required' });
@@ -4943,9 +5000,10 @@ app.post('/api/login-phone', async (req, res) => {
     .from('employees')
     .select('*')
     .eq('phone', normalized)
+    .in('role', ['crew', 'manager'])
     .maybeSingle();
   if (error) return res.status(500).json({ error: error.message });
-  if (!employee) return res.status(404).json({ error: 'Your phone number is not registered. Ask your manager to add you to the team.' });
+  if (!employee) return res.status(404).json({ error: 'Your phone number is not registered for this team. If you are the account owner, sign in with your email instead.' });
 
   const token = `mob_${crypto.randomUUID()}`;
   const { error: tokErr } = await supabaseAdmin
@@ -5202,7 +5260,7 @@ app.post('/api/mobile/crew/jobs/:id/supply-request', mobileAuth, async (req, res
 // ── Mobile owner/manager endpoints (same mobileAuth guard) ──
 
 // Home KPIs — one round trip returns everything the owner home needs.
-app.get('/api/mobile/owner/home', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const [jobsR, onSiteR, suppliesR, bottlenecksR] = await Promise.all([
     supabaseAdmin.from('jobs').select('id, name')
@@ -5234,7 +5292,7 @@ app.get('/api/mobile/owner/home', mobileAuth, async (req, res) => {
 });
 
 // All tenant jobs with recent activity (for Jobs / Dashboard tabs)
-app.get('/api/mobile/owner/jobs', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/jobs', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('jobs').select('*, clients(name, email)').eq('tenant_id', req.tenantId).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
@@ -5243,7 +5301,7 @@ app.get('/api/mobile/owner/jobs', mobileAuth, async (req, res) => {
 
 // Dashboard = jobs + joined crew-on-site + pending supplies + last 5 updates per job.
 // One round trip; client just renders.
-app.get('/api/mobile/owner/dashboard', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/dashboard', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data: jobs, error } = await supabaseAdmin
     .from('jobs').select('*').eq('tenant_id', req.tenantId).order('name');
   if (error) return res.status(500).json({ error: error.message });
@@ -5268,7 +5326,7 @@ app.get('/api/mobile/owner/dashboard', mobileAuth, async (req, res) => {
 });
 
 // Update a job's status
-app.patch('/api/mobile/owner/jobs/:id', mobileAuth, async (req, res) => {
+app.patch('/api/mobile/owner/jobs/:id', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const updates = {};
   if (req.body.status) updates.status = req.body.status;
   if (req.body.name) updates.name = req.body.name;
@@ -5313,7 +5371,7 @@ app.post('/api/mobile/owner/jobs/:id/send-workorder', mobileAuth, requireMobileO
 });
 
 // Create a job
-app.post('/api/mobile/owner/jobs', mobileAuth, async (req, res) => {
+app.post('/api/mobile/owner/jobs', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { name, address, description, estimate_amount } = req.body || {};
   if (!name || !address) return res.status(400).json({ error: 'name and address required' });
   const { data, error } = await supabaseAdmin
@@ -5330,7 +5388,7 @@ app.post('/api/mobile/owner/jobs', mobileAuth, async (req, res) => {
 });
 
 // Assignments for a job (active, not checked out)
-app.get('/api/mobile/owner/jobs/:id/assignments', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/jobs/:id/assignments', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('job_assignments')
     .select('employee_id, checked_in_at, employees(name)')
@@ -5341,7 +5399,7 @@ app.get('/api/mobile/owner/jobs/:id/assignments', mobileAuth, async (req, res) =
 });
 
 // Replace the assignment set for a job (diff with current, add/remove)
-app.post('/api/mobile/owner/jobs/:id/assignments', mobileAuth, async (req, res) => {
+app.post('/api/mobile/owner/jobs/:id/assignments', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const jobId = req.params.id;
   const ids = Array.isArray(req.body.employee_ids) ? req.body.employee_ids : [];
   const { data: current } = await supabaseAdmin
@@ -5369,13 +5427,13 @@ app.post('/api/mobile/owner/jobs/:id/assignments', mobileAuth, async (req, res) 
 });
 
 // Clients list + create
-app.get('/api/mobile/owner/clients', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/clients', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('clients').select('*').eq('tenant_id', req.tenantId).order('name');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
-app.post('/api/mobile/owner/clients', mobileAuth, async (req, res) => {
+app.post('/api/mobile/owner/clients', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { name, phone, email, address } = req.body || {};
   if (!name) return res.status(400).json({ error: 'name required' });
   const { data, error } = await supabaseAdmin
@@ -5391,13 +5449,13 @@ app.post('/api/mobile/owner/clients', mobileAuth, async (req, res) => {
 });
 
 // Employees list + role update + create
-app.get('/api/mobile/owner/crew', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/crew', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('employees').select('*').eq('tenant_id', req.tenantId).order('name');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
-app.post('/api/mobile/owner/crew', mobileAuth, async (req, res) => {
+app.post('/api/mobile/owner/crew', mobileAuth, requireMobileOwner, async (req, res) => {
   const { name, phone, role } = req.body || {};
   if (!name || !phone || !role) return res.status(400).json({ error: 'name, phone, role required' });
   // Plan limit check
@@ -5420,7 +5478,7 @@ app.post('/api/mobile/owner/crew', mobileAuth, async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-app.patch('/api/mobile/owner/crew/:id', mobileAuth, async (req, res) => {
+app.patch('/api/mobile/owner/crew/:id', mobileAuth, requireMobileOwner, async (req, res) => {
   const updates = {};
   if (req.body.role) updates.role = req.body.role;
   if (req.body.status) updates.status = req.body.status;
@@ -5432,14 +5490,14 @@ app.patch('/api/mobile/owner/crew/:id', mobileAuth, async (req, res) => {
 });
 
 // Supply requests list + status update
-app.get('/api/mobile/owner/supplies', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/supplies', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('supply_requests').select('*, jobs(name), employees(name)')
     .eq('tenant_id', req.tenantId).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
-app.patch('/api/mobile/owner/supplies/:id', mobileAuth, async (req, res) => {
+app.patch('/api/mobile/owner/supplies/:id', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { status } = req.body || {};
   if (!status) return res.status(400).json({ error: 'status required' });
   const { data, error } = await supabaseAdmin
@@ -5449,7 +5507,7 @@ app.patch('/api/mobile/owner/supplies/:id', mobileAuth, async (req, res) => {
 });
 
 // Photos = job_updates of type 'photo' with a photo_url
-app.get('/api/mobile/owner/photos', mobileAuth, async (req, res) => {
+app.get('/api/mobile/owner/photos', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from('job_updates').select('id, message, photo_url, created_at, jobs(name), employees(name)')
     .eq('tenant_id', req.tenantId).eq('type', 'photo').not('photo_url', 'is', null)
@@ -5461,6 +5519,14 @@ app.get('/api/mobile/owner/photos', mobileAuth, async (req, res) => {
 // Owner-only guard for mobile financial endpoints
 function requireMobileOwner(req, res, next) {
   if (req.role !== 'owner') return res.status(403).json({ error: 'Owner access required' });
+  next();
+}
+
+// Owner or manager — for shared owner-URL endpoints. Crew gets 403.
+function requireMobileOwnerOrManager(req, res, next) {
+  if (req.role !== 'owner' && req.role !== 'manager') {
+    return res.status(403).json({ error: 'Owner or manager access required' });
+  }
   next();
 }
 
