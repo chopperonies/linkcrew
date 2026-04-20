@@ -4929,6 +4929,8 @@ app.get('/api/join-info', async (req, res) => {
 
 // Public: mobile phone login — RLS blocks anon reads of employees, so
 // the mobile app hits this endpoint (service role) instead of the DB.
+// Issues a mobile_session_token which the app presents on every subsequent
+// /api/mobile/* request (see mobileAuth middleware below).
 app.post('/api/login-phone', async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.status(400).json({ error: 'Phone number is required' });
@@ -4944,7 +4946,256 @@ app.post('/api/login-phone', async (req, res) => {
     .maybeSingle();
   if (error) return res.status(500).json({ error: error.message });
   if (!employee) return res.status(404).json({ error: 'Your phone number is not registered. Ask your manager to add you to the team.' });
-  res.json({ employee });
+
+  const token = `mob_${crypto.randomUUID()}`;
+  const { error: tokErr } = await supabaseAdmin
+    .from('employees')
+    .update({ mobile_session_token: token, mobile_session_issued_at: new Date().toISOString() })
+    .eq('id', employee.id);
+  if (tokErr) return res.status(500).json({ error: tokErr.message });
+
+  res.json({ employee: { ...employee, mobile_session_token: token } });
+});
+
+// Mobile auth middleware: resolve mobile_session_token → employee + tenant.
+async function mobileAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token || !token.startsWith('mob_')) return res.status(401).json({ error: 'Unauthorized' });
+  const { data: employee, error } = await supabaseAdmin
+    .from('employees')
+    .select('id, tenant_id, role, status, name, phone')
+    .eq('mobile_session_token', token)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!employee) return res.status(401).json({ error: 'Session expired. Please log in again.' });
+  if (employee.status === 'suspended') return res.status(403).json({ error: 'Account suspended' });
+  req.employeeId = employee.id;
+  req.tenantId = employee.tenant_id;
+  req.employeeName = employee.name;
+  req.employeePhone = employee.phone;
+  req.role = employee.role;
+  next();
+}
+
+// ── Mobile crew endpoints (bypass RLS via service role, guarded by mobileAuth) ──
+
+// List active jobs for the tenant
+app.get('/api/mobile/crew/jobs', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .select('*')
+    .eq('tenant_id', req.tenantId)
+    .eq('status', 'active')
+    .order('name');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+// Single job (with minimal client info for call/navigate)
+app.get('/api/mobile/crew/jobs/:id', mobileAuth, async (req, res) => {
+  const { data: job, error } = await supabaseAdmin
+    .from('jobs')
+    .select('*')
+    .eq('tenant_id', req.tenantId)
+    .eq('id', req.params.id)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  let client = null;
+  if (job.client_id) {
+    const { data: c } = await supabaseAdmin
+      .from('clients')
+      .select('id, name, phone, email')
+      .eq('id', job.client_id)
+      .maybeSingle();
+    client = c || null;
+  }
+  res.json({ job, client });
+});
+
+// Crew member's current (not-checked-out) assignment
+app.get('/api/mobile/crew/assignment', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('job_assignments')
+    .select('job_id, checked_in_at')
+    .eq('employee_id', req.employeeId)
+    .is('checked_out_at', null)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || null);
+});
+
+// Check in to a job
+app.post('/api/mobile/crew/jobs/:id/check-in', mobileAuth, async (req, res) => {
+  const { gps } = req.body || {};
+  const checkedInAt = new Date().toISOString();
+  const { data: job } = await supabaseAdmin
+    .from('jobs').select('id, name').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  const { error: upErr } = await supabaseAdmin
+    .from('job_assignments')
+    .upsert({
+      job_id: job.id,
+      employee_id: req.employeeId,
+      tenant_id: req.tenantId,
+      checked_in_at: checkedInAt,
+      checked_out_at: null,
+      punch_in_lat: gps?.lat ?? null,
+      punch_in_lng: gps?.lng ?? null,
+    }, { onConflict: 'job_id,employee_id' });
+  if (upErr) return res.status(500).json({ error: upErr.message });
+  await supabaseAdmin.from('job_updates').insert({
+    job_id: job.id,
+    employee_id: req.employeeId,
+    tenant_id: req.tenantId,
+    type: 'checkin',
+    message: `${req.employeeName} checked in${gps ? ' 📍' : ''}`,
+  });
+  res.json({ ok: true, job_name: job.name, checked_in_at: checkedInAt });
+});
+
+// Check out of a job
+app.post('/api/mobile/crew/jobs/:id/check-out', mobileAuth, async (req, res) => {
+  const { gps } = req.body || {};
+  const checkedOutAt = new Date().toISOString();
+  const { data: job } = await supabaseAdmin
+    .from('jobs').select('id, name').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  const { error: upErr } = await supabaseAdmin
+    .from('job_assignments')
+    .update({
+      checked_out_at: checkedOutAt,
+      punch_out_lat: gps?.lat ?? null,
+      punch_out_lng: gps?.lng ?? null,
+    })
+    .eq('job_id', job.id)
+    .eq('employee_id', req.employeeId);
+  if (upErr) return res.status(500).json({ error: upErr.message });
+  await supabaseAdmin.from('job_updates').insert({
+    job_id: job.id,
+    employee_id: req.employeeId,
+    tenant_id: req.tenantId,
+    type: 'checkout',
+    message: `${req.employeeName} checked out${gps ? ' 📍' : ''}`,
+  });
+  res.json({ ok: true, job_name: job.name, checked_out_at: checkedOutAt });
+});
+
+// Create a job update (note, bottleneck, photo)
+app.post('/api/mobile/crew/jobs/:id/updates', mobileAuth, async (req, res) => {
+  const { type, message, photo_url } = req.body || {};
+  const allowed = new Set(['note', 'bottleneck', 'photo', 'update']);
+  if (!allowed.has(type)) return res.status(400).json({ error: 'Invalid update type' });
+  if (!message && !photo_url) return res.status(400).json({ error: 'Message or photo required' });
+  const { data: job } = await supabaseAdmin
+    .from('jobs').select('id').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  const { data, error } = await supabaseAdmin
+    .from('job_updates')
+    .insert({
+      job_id: job.id,
+      employee_id: req.employeeId,
+      tenant_id: req.tenantId,
+      type,
+      message: message || null,
+      photo_url: photo_url || null,
+    })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// Tenant plan info (for owner lockout screens in mobile app)
+app.get('/api/mobile/tenant-plan', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('tenants')
+    .select('plan, subscription_status, max_users, trial_ends_at, paused, blocked')
+    .eq('id', req.tenantId)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || {});
+});
+
+// Register FCM push token
+app.post('/api/mobile/push-token', mobileAuth, async (req, res) => {
+  const { push_token } = req.body || {};
+  if (!push_token) return res.status(400).json({ error: 'push_token required' });
+  const { error } = await supabaseAdmin
+    .from('employees')
+    .update({ push_token })
+    .eq('id', req.employeeId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// List enabled workflows + their statuses for this tenant
+app.get('/api/mobile/crew/workflows', mobileAuth, async (req, res) => {
+  const { data: workflows, error } = await supabaseAdmin
+    .from('service_workflows')
+    .select('*')
+    .eq('tenant_id', req.tenantId)
+    .order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  const ids = (workflows || []).map(w => w.id);
+  let statuses = [];
+  if (ids.length) {
+    const { data: st, error: stErr } = await supabaseAdmin
+      .from('workflow_statuses')
+      .select('*')
+      .in('workflow_id', ids)
+      .order('order_index', { ascending: true });
+    if (stErr) return res.status(500).json({ error: stErr.message });
+    statuses = st || [];
+  }
+  const byWf = statuses.reduce((m, s) => { (m[s.workflow_id] ||= []).push(s); return m; }, {});
+  res.json((workflows || []).map(w => ({ ...w, statuses: byWf[w.id] || [] })));
+});
+
+// Advance a pill + update checklist; derives legacy jobs.status from the pill.
+app.patch('/api/mobile/crew/jobs/:id/workflow-progress', mobileAuth, async (req, res) => {
+  const { id } = req.params;
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('id, workflow_id, workflow_progress')
+    .eq('id', id)
+    .eq('tenant_id', req.tenantId)
+    .maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job.workflow_id) return res.status(400).json({ error: 'Job has no workflow attached' });
+
+  const incoming = req.body?.workflow_progress || {};
+  const base = job.workflow_progress || {};
+  const merged = { ...base, ...incoming };
+  if (incoming.completed_steps) {
+    merged.completed_steps = { ...(base.completed_steps || {}), ...incoming.completed_steps };
+  }
+
+  const { data: wfStatuses } = await supabaseAdmin
+    .from('workflow_statuses')
+    .select('id, legacy_status, order_index')
+    .eq('workflow_id', job.workflow_id)
+    .order('order_index', { ascending: true });
+  const list = wfStatuses || [];
+  let currentId = merged.current_status_id;
+  if (!currentId || !list.some(s => s.id === currentId)) {
+    currentId = list[0]?.id || null;
+    if (currentId) merged.current_status_id = currentId;
+  }
+  const currentStatus = currentId ? list.find(s => s.id === currentId) : null;
+  const updates = { workflow_progress: merged, updated_at: new Date().toISOString() };
+  if (currentStatus?.legacy_status) updates.status = normalizeJobStatus(currentStatus.legacy_status);
+
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .update(updates)
+    .eq('id', id)
+    .eq('tenant_id', req.tenantId)
+    .select('*')
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
 });
 
 // Public: crew member self-registers
