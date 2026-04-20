@@ -5476,6 +5476,10 @@ app.patch('/api/mobile/owner/jobs/:id', mobileAuth, requireMobileOwnerOrManager,
     if (n !== null && (isNaN(n) || n < 0)) return res.status(400).json({ error: 'Invalid estimate amount' });
     updates.estimate_amount = n;
   }
+  if (req.body.scheduled_date !== undefined) {
+    // Accept YYYY-MM-DD string or null. Postgres will reject any malformed value.
+    updates.scheduled_date = req.body.scheduled_date || null;
+  }
   if (!Object.keys(updates).length) return res.status(400).json({ error: 'no updates' });
   const scopeTouched = scopeFieldsTouched(updates);
   const { data, error } = await supabaseAdmin
@@ -5525,7 +5529,7 @@ app.post('/api/mobile/owner/jobs/:id/send-workorder', mobileAuth, requireMobileO
 
 // Create a job
 app.post('/api/mobile/owner/jobs', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
-  const { name, address, description, estimate_amount } = req.body || {};
+  const { name, address, description, estimate_amount, scheduled_date, client_id } = req.body || {};
   if (!name || !address) return res.status(400).json({ error: 'name and address required' });
   const { data, error } = await supabaseAdmin
     .from('jobs').insert({
@@ -5535,6 +5539,8 @@ app.post('/api/mobile/owner/jobs', mobileAuth, requireMobileOwnerOrManager, asyn
       tenant_id: req.tenantId,
       description: description || null,
       estimate_amount: estimate_amount != null ? Number(estimate_amount) : null,
+      scheduled_date: scheduled_date || null,
+      client_id: client_id || null,
     }).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
