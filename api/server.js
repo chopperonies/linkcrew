@@ -5909,6 +5909,87 @@ app.post('/api/mobile/owner/jobs/:id/mark-paid', mobileAuth, requireMobileOwner,
   res.json({ job, receipt_email_sent: emailSent });
 });
 
+// Quick invoice — pick-or-create client, enter amount, emails automatically.
+// Solves the walk-up contractor scenario: tech finished a surprise job and
+// owner needs to bill a client that isn't in the system yet.
+app.post('/api/mobile/owner/invoices/quick', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { client_id, new_client, amount, description } = req.body || {};
+  const amt = parseFloat(amount);
+  if (!amt || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Valid amount required' });
+  if (!client_id && !new_client?.name) {
+    return res.status(400).json({ error: 'Pick a client or enter a new client name' });
+  }
+
+  // Resolve the client
+  let client;
+  if (client_id) {
+    const { data } = await supabaseAdmin.from('clients')
+      .select('id, name, email, address, phone')
+      .eq('id', client_id).eq('tenant_id', req.tenantId).single();
+    if (!data) return res.status(404).json({ error: 'Client not found' });
+    client = data;
+  } else {
+    const { name, email, phone, address } = new_client;
+    const normalizedPhone = phone ? String(phone).replace(/\D/g, '').replace(/^1(\d{10})$/, '$1') : null;
+    const { data, error } = await supabaseAdmin.from('clients').insert({
+      name: String(name).trim(),
+      email: email ? String(email).trim().toLowerCase() : null,
+      phone: normalizedPhone,
+      address: address ? String(address).trim() : null,
+      tenant_id: req.tenantId,
+    }).select().single();
+    if (error) return res.status(400).json({ error: error.message });
+    client = data;
+  }
+
+  // Create the invoice-only job
+  const jobName = (description && description.trim())
+    || `Invoice for ${client.name}`;
+  const { data: job, error: jobErr } = await supabaseAdmin.from('jobs').insert({
+    name: jobName,
+    address: client.address || '',
+    status: 'invoiced',
+    payment_status: 'unpaid',
+    invoice_amount: amt,
+    client_id: client.id,
+    tenant_id: req.tenantId,
+  }).select('*, clients(name, email)').single();
+  if (jobErr) return res.status(400).json({ error: jobErr.message });
+
+  // Email the client if we have their email
+  let emailSent = false;
+  if (client.email) {
+    try {
+      const { data: tenant } = await supabaseAdmin.from('tenants')
+        .select('company_name').eq('id', req.tenantId).single();
+      const { data: clientUser } = await supabaseAdmin.from('client_users')
+        .select('portal_token').eq('client_id', client.id).maybeSingle();
+      const portalUrl = clientUser?.portal_token
+        ? `https://linkcrew.io/portal?token=${clientUser.portal_token}`
+        : 'https://linkcrew.io/portal';
+      await sendInvoiceToClient({
+        clientName: client.name,
+        clientEmail: client.email,
+        jobName: job.name,
+        amount: amt,
+        portalUrl,
+        tenantName: tenant?.company_name,
+      });
+      emailSent = true;
+    } catch (e) {
+      console.error('[quick invoice] email error:', e.message);
+    }
+  }
+
+  res.json({
+    job,
+    client,
+    client_created: !client_id,
+    invoice_email_sent: emailSent,
+    invoice_emailed_to: emailSent ? client.email : null,
+  });
+});
+
 // Invoices = jobs with invoice_amount > 0. No separate invoices table exists.
 app.get('/api/mobile/owner/invoices', mobileAuth, requireMobileOwner, async (req, res) => {
   const { data, error } = await supabaseAdmin
