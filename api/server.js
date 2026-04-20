@@ -4927,6 +4927,23 @@ app.get('/api/join-info', async (req, res) => {
   res.json({ companyName: tenant.company_name || 'Your Team' });
 });
 
+// Recent login attempts for the authed owner's email — for the dashboard
+// security widget. Returns last 20 with success/fail + timestamp + IP.
+app.get('/api/login-attempts/recent', auth, requireSettingsAccess, async (req, res) => {
+  const email = req.userEmail ? String(req.userEmail).toLowerCase() : null;
+  if (!email) return res.json({ attempts: [], failed_last_24h: 0 });
+  const since24h = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+  const [{ data: attempts }, { count: failedLast24h }] = await Promise.all([
+    supabaseAdmin.from('login_attempts')
+      .select('success, ip, user_agent, created_at')
+      .eq('email', email).order('created_at', { ascending: false }).limit(20),
+    supabaseAdmin.from('login_attempts')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', email).eq('success', false).gte('created_at', since24h),
+  ]);
+  res.json({ attempts: attempts || [], failed_last_24h: failedLast24h || 0 });
+});
+
 // Owner login via email + password (same creds as the web dashboard).
 // Verifies against Supabase auth, then finds/creates the owner employee
 // row for the tenant and mints a mobile_session_token. Closes the
@@ -4936,8 +4953,26 @@ app.post('/api/login-email', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
-  const verify = await supabase.auth.signInWithPassword({ email: String(email).trim(), password });
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const ip = (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()) || req.ip || null;
+  const userAgent = String(req.headers['user-agent'] || '').slice(0, 200);
+
+  // Rate limit: 5 failures in the last 10 minutes for this email → 15 min lockout.
+  const windowStart = new Date(Date.now() - 10 * 60_000).toISOString();
+  const { count: recentFailures } = await supabaseAdmin.from('login_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('email', normalizedEmail)
+    .eq('success', false)
+    .gte('created_at', windowStart);
+  if ((recentFailures || 0) >= 5) {
+    return res.status(429).json({ error: 'Too many failed attempts. Try again in 15 minutes.' });
+  }
+
+  const verify = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
   if (verify.error || !verify.data?.user) {
+    await supabaseAdmin.from('login_attempts').insert({
+      email: normalizedEmail, ip, user_agent: userAgent, success: false,
+    });
     return res.status(401).json({ error: 'Invalid email or password' });
   }
   // Don't need the Supabase session past verification.
@@ -4977,6 +5012,10 @@ app.post('/api/login-email', async (req, res) => {
     .update({ mobile_session_token: token, mobile_session_issued_at: new Date().toISOString() })
     .eq('id', employee.id);
   if (tokErr) return res.status(500).json({ error: tokErr.message });
+
+  await supabaseAdmin.from('login_attempts').insert({
+    email: normalizedEmail, ip, user_agent: userAgent, success: true,
+  });
 
   res.json({ employee: { ...employee, mobile_session_token: token } });
 });
@@ -5478,6 +5517,16 @@ app.post('/api/mobile/owner/crew', mobileAuth, requireMobileOwner, async (req, r
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
+// Dashboard-auth version of the mobile session revoke — button on the
+// dashboard Team modal. Same effect: clears the token, next request 401s.
+app.post('/api/employees/:id/revoke-mobile', auth, requireSettingsAccess, async (req, res) => {
+  const { error } = await supabaseAdmin.from('employees')
+    .update({ mobile_session_token: null, mobile_session_issued_at: null })
+    .eq('id', req.params.id).eq('tenant_id', req.tenantId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // Revoke a crew member's mobile session. Next request from their app gets
 // 401 and forces re-login. Owner-only — lets you kick a lost / fired phone.
 app.post('/api/mobile/owner/crew/:id/revoke-session', mobileAuth, requireMobileOwner, async (req, res) => {

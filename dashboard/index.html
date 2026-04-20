@@ -3463,6 +3463,18 @@
       </div>
     </div>
 
+    <!-- Sign-in activity -->
+    <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#17191c;margin-bottom:4px">Sign-in Activity</div>
+          <div style="font-size:13px;color:#737475;line-height:1.6;max-width:640px">Mobile + dashboard login attempts for your email. After 5 failures in 10 minutes we lock the email out for 15 minutes.</div>
+        </div>
+        <div id="login-attempts-summary" style="font-size:13px;font-weight:700;color:#737475">Loading…</div>
+      </div>
+      <div id="login-attempts-list" style="margin-top:6px"></div>
+    </div>
+
     <!-- Logo -->
     <div data-owner-settings style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:28px;margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">
@@ -4107,6 +4119,9 @@
 
     <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">Dashboard Access</div>
     <div id="emp-dashboard-access-section"></div>
+
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">Mobile Session</div>
+    <div id="emp-mobile-session-section"></div>
 
     <div id="emp-danger-zone" style="display:none;margin-top:22px;padding:14px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2">
       <div style="font-size:11px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Danger Zone</div>
@@ -7841,6 +7856,48 @@ function setTeamModalMode(mode) {
   if (statusGroup) statusGroup.style.display = isEdit ? '' : 'none';
   if (danger) danger.style.display = isEdit ? 'block' : 'none';
   renderDashboardAccessSection();
+  renderMobileSessionSection();
+}
+
+function renderMobileSessionSection() {
+  const section = document.getElementById('emp-mobile-session-section');
+  if (!section) return;
+  if (!editingEmployeeId) { section.innerHTML = ''; return; }
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (!employee) { section.innerHTML = ''; return; }
+  const hasSession = !!employee.mobile_session_token;
+  const issuedAt = employee.mobile_session_issued_at;
+  if (hasSession) {
+    const when = issuedAt ? new Date(issuedAt).toLocaleString() : 'unknown';
+    section.innerHTML = `
+      <div style="font-size:13px;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 12px;line-height:1.55;margin-bottom:10px">
+        📱 <strong>Phone signed in.</strong> Last sign-in: ${when}.
+      </div>
+      <button class="lc-btn xs danger" onclick="modalKickFromMobile()"><i data-lucide="smartphone-charging"></i> Kick from Mobile</button>
+    `;
+  } else {
+    section.innerHTML = `
+      <div style="font-size:13px;color:#737475;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:10px 12px;line-height:1.55">No active mobile session for this person.</div>
+    `;
+  }
+  refreshLucideIcons(section);
+}
+
+async function modalKickFromMobile() {
+  if (!editingEmployeeId) return;
+  const employee = (window._allEmployees || []).find(e => e.id === editingEmployeeId);
+  if (!employee) return;
+  if (!confirm(`Kick ${employee.name} off the mobile app? Their phone will be signed out immediately. Use this if a phone is lost or the person is no longer on the team.`)) return;
+  const res = await authFetch(`/api/employees/${editingEmployeeId}/revoke-mobile`, { method: 'POST' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return alert(data.error || 'Could not revoke session.');
+  // Refresh the local cache so the modal updates.
+  if (window._allEmployees) {
+    const idx = window._allEmployees.findIndex(e => e.id === editingEmployeeId);
+    if (idx >= 0) window._allEmployees[idx] = { ...window._allEmployees[idx], mobile_session_token: null, mobile_session_issued_at: null };
+  }
+  renderMobileSessionSection();
+  alert('Phone session revoked.');
 }
 
 function renderDashboardAccessSection() {
@@ -10688,7 +10745,50 @@ async function loadSettings() {
     currentPlan === 'business' ? 'block' : 'none';
   updateSettingsUsageCard();
   loadPaymentsSettings();
+  loadLoginAttempts();
   settingsLoaded = true;
+}
+
+async function loadLoginAttempts() {
+  const summaryEl = document.getElementById('login-attempts-summary');
+  const listEl = document.getElementById('login-attempts-list');
+  if (!summaryEl || !listEl) return;
+  try {
+    const res = await authFetch('/api/login-attempts/recent');
+    if (!res.ok) { summaryEl.textContent = 'Unavailable'; return; }
+    const data = await res.json();
+    const failed = data.failed_last_24h || 0;
+    summaryEl.textContent = failed > 0 ? `${failed} failed in last 24h` : 'No failed attempts';
+    summaryEl.style.color = failed > 0 ? '#dc2626' : '#16a34a';
+    if (!data.attempts || !data.attempts.length) {
+      listEl.innerHTML = '<div style="font-size:13px;color:#737475;margin-top:14px">No login attempts recorded yet.</div>';
+      return;
+    }
+    listEl.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:14px">
+        <thead><tr style="text-align:left;color:#737475;font-weight:700;border-bottom:1px solid #e8e8e8">
+          <th style="padding:8px 6px">Status</th>
+          <th style="padding:8px 6px">When</th>
+          <th style="padding:8px 6px">IP</th>
+        </tr></thead>
+        <tbody>
+          ${data.attempts.map(a => `
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:10px 6px">
+                <span style="display:inline-block;padding:3px 8px;border-radius:6px;font-weight:700;font-size:11px;background:${a.success ? '#f0fdf4' : '#fef2f2'};color:${a.success ? '#166534' : '#991b1b'}">
+                  ${a.success ? 'Success' : 'Failed'}
+                </span>
+              </td>
+              <td style="padding:10px 6px;color:#17191c">${new Date(a.created_at).toLocaleString()}</td>
+              <td style="padding:10px 6px;color:#737475;font-family:ui-monospace,monospace;font-size:12px">${a.ip || '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    summaryEl.textContent = 'Unavailable';
+  }
 }
 
 async function saveManagerFinancialsSetting() {
