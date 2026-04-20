@@ -5609,11 +5609,25 @@ app.patch('/api/mobile/owner/crew/:id', mobileAuth, requireMobileOwner, async (r
   const updates = {};
   if (req.body.role) updates.role = req.body.role;
   if (req.body.status) updates.status = req.body.status;
+  if (typeof req.body.name === 'string') updates.name = req.body.name.trim();
+  if (typeof req.body.phone === 'string') {
+    const normalized = String(req.body.phone).replace(/\D/g, '').replace(/^1(\d{10})$/, '$1');
+    updates.phone = normalized || null;
+  }
   if (!Object.keys(updates).length) return res.status(400).json({ error: 'no updates' });
   const { data, error } = await supabaseAdmin
     .from('employees').update(updates).eq('id', req.params.id).eq('tenant_id', req.tenantId).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// Remove an employee. Their session token is cleared implicitly since the
+// row is gone; next /api/mobile/* request 401s.
+app.delete('/api/mobile/owner/crew/:id', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { error } = await supabaseAdmin.from('employees')
+    .delete().eq('id', req.params.id).eq('tenant_id', req.tenantId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
 });
 
 // Supply requests list + status update
