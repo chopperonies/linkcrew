@@ -4957,11 +4957,39 @@ app.post('/api/login-phone', async (req, res) => {
   res.json({ employee: { ...employee, mobile_session_token: token } });
 });
 
+// Per-token rate limit — sliding 60s window, 120 requests per token.
+// In-memory: fine for single-process (current Render + planned single-container Coolify).
+// Switch to Redis-backed when we scale to multiple replicas.
+const MOBILE_RATE_WINDOW_MS = 60_000;
+const MOBILE_RATE_LIMIT = 120;
+const mobileRateBuckets = new Map(); // token -> number[] (timestamps)
+setInterval(() => {
+  const cutoff = Date.now() - MOBILE_RATE_WINDOW_MS;
+  for (const [k, arr] of mobileRateBuckets) {
+    const kept = arr.filter(t => t > cutoff);
+    if (kept.length === 0) mobileRateBuckets.delete(k);
+    else mobileRateBuckets.set(k, kept);
+  }
+}, 5 * 60_000).unref();
+
+function mobileRateLimit(token) {
+  const now = Date.now();
+  const cutoff = now - MOBILE_RATE_WINDOW_MS;
+  const arr = (mobileRateBuckets.get(token) || []).filter(t => t > cutoff);
+  if (arr.length >= MOBILE_RATE_LIMIT) return false;
+  arr.push(now);
+  mobileRateBuckets.set(token, arr);
+  return true;
+}
+
 // Mobile auth middleware: resolve mobile_session_token → employee + tenant.
 async function mobileAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token || !token.startsWith('mob_')) return res.status(401).json({ error: 'Unauthorized' });
+  if (!mobileRateLimit(token)) {
+    return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+  }
   const { data: employee, error } = await supabaseAdmin
     .from('employees')
     .select('id, tenant_id, role, status, name, phone')
@@ -5394,6 +5422,25 @@ app.get('/api/mobile/owner/photos', mobileAuth, async (req, res) => {
     .from('job_updates').select('id, message, photo_url, created_at, jobs(name), employees(name)')
     .eq('tenant_id', req.tenantId).eq('type', 'photo').not('photo_url', 'is', null)
     .order('created_at', { ascending: false }).limit(80);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+// Owner-only guard for mobile financial endpoints
+function requireMobileOwner(req, res, next) {
+  if (req.role !== 'owner') return res.status(403).json({ error: 'Owner access required' });
+  next();
+}
+
+// Invoices = jobs with invoice_amount > 0. No separate invoices table exists.
+app.get('/api/mobile/owner/invoices', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .select('id, name, address, status, payment_status, invoice_amount, created_at, updated_at, client_id, clients(name, email)')
+    .eq('tenant_id', req.tenantId)
+    .gt('invoice_amount', 0)
+    .order('updated_at', { ascending: false })
+    .limit(200);
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
