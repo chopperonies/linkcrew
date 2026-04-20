@@ -4992,6 +4992,19 @@ app.get('/api/mobile/crew/jobs', mobileAuth, async (req, res) => {
   res.json(data || []);
 });
 
+// Jobs out of field-work — completed, invoiced, paid, cancelled, archived, etc.
+app.get('/api/mobile/crew/jobs/history', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .select('*')
+    .eq('tenant_id', req.tenantId)
+    .in('status', ['completed', 'invoiced', 'saved_for_later', 'cancelled', 'archived'])
+    .order('updated_at', { ascending: false })
+    .limit(60);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
 // Single job (with minimal client info for call/navigate)
 app.get('/api/mobile/crew/jobs/:id', mobileAuth, async (req, res) => {
   const { data: job, error } = await supabaseAdmin
