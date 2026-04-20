@@ -5340,11 +5340,17 @@ app.post('/api/mobile/crew/jobs/:id/supply-request', mobileAuth, async (req, res
 // Home KPIs — one round trip returns everything the owner home needs.
 app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const [jobsR, onSiteR, suppliesR, bottlenecksR] = await Promise.all([
-    supabaseAdmin.from('jobs').select('id, name')
-      .in('status', ['active', 'in_progress', 'scheduled', 'on_hold']).eq('tenant_id', req.tenantId),
+  const stuckThreshold = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+  const [jobsR, onSiteR, assignmentsR, suppliesR, bottlenecksR] = await Promise.all([
+    supabaseAdmin.from('jobs')
+      .select('id, name, address, status, updated_at, workflow_id, workflow_progress, clients(name)')
+      .in('status', ['active', 'in_progress', 'scheduled', 'on_hold'])
+      .eq('tenant_id', req.tenantId)
+      .order('updated_at', { ascending: false }),
     supabaseAdmin.from('job_assignments').select('job_id')
       .not('checked_in_at', 'is', null).is('checked_out_at', null).eq('tenant_id', req.tenantId),
+    supabaseAdmin.from('job_assignments')
+      .select('job_id, employees(name)').is('checked_out_at', null).eq('tenant_id', req.tenantId),
     supabaseAdmin.from('supply_requests').select('job_id')
       .eq('status', 'pending').eq('tenant_id', req.tenantId),
     supabaseAdmin.from('job_updates').select('job_id')
@@ -5352,20 +5358,60 @@ app.get('/api/mobile/owner/home', mobileAuth, requireMobileOwnerOrManager, async
   ]);
   const jobs = jobsR.data || [];
   const onSite = onSiteR.data || [];
+  const assignments = assignmentsR.data || [];
   const supplies = suppliesR.data || [];
   const bottlenecks = bottlenecksR.data || [];
+
+  // Workflow status lookup so we can show stage name + color on each job.
+  const workflowIds = [...new Set(jobs.map(j => j.workflow_id).filter(Boolean))];
+  let statusById = {};
+  if (workflowIds.length) {
+    const { data: wfStatuses } = await supabaseAdmin.from('workflow_statuses')
+      .select('id, name, color').in('workflow_id', workflowIds);
+    statusById = Object.fromEntries((wfStatuses || []).map(s => [s.id, s]));
+  }
+
+  const enrich = j => {
+    const crewNames = assignments
+      .filter(a => a.job_id === j.id)
+      .map(a => a.employees?.name).filter(Boolean);
+    const stageId = j.workflow_progress?.current_status_id;
+    const stage = stageId && statusById[stageId] ? statusById[stageId] : null;
+    return {
+      id: j.id,
+      name: j.name,
+      address: j.address,
+      status: j.status,
+      updated_at: j.updated_at,
+      client_name: j.clients?.name || null,
+      crew: crewNames,
+      pendingSupplies: supplies.filter(s => s.job_id === j.id).length,
+      stage_name: stage?.name || null,
+      stage_color: stage?.color || null,
+    };
+  };
+
+  const todayJobs = jobs.map(enrich);
+  const stuckJobs = jobs
+    .filter(j => j.updated_at && j.updated_at < stuckThreshold)
+    .map(enrich);
+
+  // Backwards-compatible jobBreakdown for any legacy callers.
   const jobBreakdown = jobs.map(j => ({
     id: j.id,
     name: j.name,
     crew: onSite.filter(a => a.job_id === j.id).length,
     pendingSupplies: supplies.filter(s => s.job_id === j.id).length,
   }));
+
   res.json({
     activeJobs: jobs.length,
     crewOnSite: onSite.length,
     pendingSupplies: supplies.length,
     bottlenecksToday: bottlenecks.length,
     jobBreakdown,
+    todayJobs,
+    stuckJobs,
   });
 });
 
