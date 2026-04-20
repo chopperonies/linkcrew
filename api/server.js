@@ -5473,6 +5473,56 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
   res.json({ job: data, invoice_email_sent: emailSent, invoice_emailed_to: emailSent ? client.email : null });
 });
 
+// Stripe Connect — status / start / disconnect (mobile).
+app.get('/api/mobile/owner/stripe-connect/status', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_connect_account_id, stripe_connect_status').eq('id', req.tenantId).single();
+  res.json({
+    connected: tenant?.stripe_connect_status === 'active' && !!tenant.stripe_connect_account_id,
+    status: tenant?.stripe_connect_status || null,
+  });
+});
+
+app.post('/api/mobile/owner/stripe-connect/start', mobileAuth, requireMobileOwner, async (req, res) => {
+  const clientId = process.env.STRIPE_CONNECT_CLIENT_ID;
+  if (!clientId) return res.status(500).json({ error: 'Stripe Connect is not configured' });
+  const redirectUri = `https://linkcrew.io/api/stripe/connect/callback`;
+  const state = signConnectState(req.tenantId);
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('owner_email, company_name').eq('id', req.tenantId).single();
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    scope: 'read_write',
+    state,
+    redirect_uri: redirectUri,
+    'stripe_user[email]': tenant?.owner_email || '',
+    'stripe_user[business_name]': tenant?.company_name || '',
+  });
+  res.json({ url: `https://connect.stripe.com/oauth/authorize?${params.toString()}` });
+});
+
+app.post('/api/mobile/owner/stripe-connect/disconnect', mobileAuth, requireMobileOwner, async (req, res) => {
+  const { data: tenant } = await supabaseAdmin.from('tenants')
+    .select('stripe_connect_account_id').eq('id', req.tenantId).single();
+  if (tenant?.stripe_connect_account_id && process.env.STRIPE_CONNECT_CLIENT_ID) {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    try {
+      await stripe.oauth.deauthorize({
+        client_id: process.env.STRIPE_CONNECT_CLIENT_ID,
+        stripe_user_id: tenant.stripe_connect_account_id,
+      });
+    } catch (err) {
+      console.error('[mobile stripe connect] deauthorize error:', err.message);
+    }
+  }
+  await supabaseAdmin.from('tenants').update({
+    stripe_connect_account_id: null,
+    stripe_connect_status: null,
+  }).eq('id', req.tenantId);
+  res.json({ ok: true });
+});
+
 // Company settings (owner) — company_name, phone, address (and plan info).
 app.get('/api/mobile/owner/tenant', mobileAuth, requireMobileOwner, async (req, res) => {
   const { data, error } = await supabaseAdmin.from('tenants')
