@@ -5107,6 +5107,57 @@ app.post('/api/mobile/crew/jobs/:id/updates', mobileAuth, async (req, res) => {
   res.json(data);
 });
 
+// My assignment history (for the Hours tab)
+app.get('/api/mobile/crew/my-assignments', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('job_assignments')
+    .select('id, checked_in_at, checked_out_at, jobs(name)')
+    .eq('employee_id', req.employeeId)
+    .not('checked_in_at', 'is', null)
+    .order('checked_in_at', { ascending: false })
+    .limit(40);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+// My job updates filtered by type (for Notes tab)
+app.get('/api/mobile/crew/my-updates', mobileAuth, async (req, res) => {
+  const { type, limit } = req.query;
+  let q = supabaseAdmin
+    .from('job_updates')
+    .select('id, message, created_at, jobs(name)')
+    .eq('employee_id', req.employeeId)
+    .order('created_at', { ascending: false });
+  if (type) q = q.eq('type', String(type));
+  q = q.limit(Math.min(parseInt(String(limit || '20'), 10) || 20, 100));
+  const { data, error } = await q;
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+// Create supply request
+app.post('/api/mobile/crew/jobs/:id/supply-request', mobileAuth, async (req, res) => {
+  const { items, urgency, photo_url } = req.body || {};
+  if (!items) return res.status(400).json({ error: 'items required' });
+  const { data: job } = await supabaseAdmin
+    .from('jobs').select('id').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  const { data, error } = await supabaseAdmin
+    .from('supply_requests')
+    .insert({
+      job_id: job.id,
+      employee_id: req.employeeId,
+      tenant_id: req.tenantId,
+      items,
+      urgency: urgency || 'next_day',
+      photo_url: photo_url || null,
+    })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // Tenant plan info (for owner lockout screens in mobile app)
 app.get('/api/mobile/tenant-plan', mobileAuth, async (req, res) => {
   const { data, error } = await supabaseAdmin
