@@ -2327,8 +2327,9 @@ app.post('/api/employees', auth, requireOperationAccess, ensureEmployeeRoleAllow
   const maxUsers = tenant?.max_users ?? 1;
   const { count } = await supabaseAdmin.from('employees').select('*', { count: 'exact', head: true }).eq('tenant_id', req.tenantId);
   if (count >= maxUsers) return res.status(403).json({ error: `Plan limit reached. Your plan allows up to ${maxUsers} crew member${maxUsers === 1 ? '' : 's'}. Upgrade at linkcrew.io/pricing.` });
+  const normalizedPhone = phone.replace(/\D/g, '');
   const { data, error } = await supabaseAdmin.from('employees')
-    .insert({ name: name.trim(), phone: phone.trim(), role, status: 'active', tenant_id: req.tenantId }).select().single();
+    .insert({ name: name.trim(), phone: normalizedPhone, role, status: 'active', tenant_id: req.tenantId }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
@@ -2338,7 +2339,7 @@ app.patch('/api/employees/:id', auth, requireOperationAccess, ensureEmployeeRole
   const { name, phone, role, status } = req.body;
   const updates = {};
   if (name) updates.name = name.trim();
-  if (phone) updates.phone = phone.trim();
+  if (phone) updates.phone = phone.replace(/\D/g, '');
   if (role) updates.role = role;
   if (status !== undefined) updates.status = normalizeEmployeeStatus(status);
   const { data, error } = await supabaseAdmin.from('employees').update(updates).eq('id', id).eq('tenant_id', req.tenantId).select().single();
