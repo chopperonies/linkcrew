@@ -5236,7 +5236,7 @@ app.get('/api/mobile/owner/home', mobileAuth, async (req, res) => {
 // All tenant jobs with recent activity (for Jobs / Dashboard tabs)
 app.get('/api/mobile/owner/jobs', mobileAuth, async (req, res) => {
   const { data, error } = await supabaseAdmin
-    .from('jobs').select('*').eq('tenant_id', req.tenantId).order('created_at', { ascending: false });
+    .from('jobs').select('*, clients(name, email)').eq('tenant_id', req.tenantId).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
@@ -5431,6 +5431,47 @@ function requireMobileOwner(req, res, next) {
   if (req.role !== 'owner') return res.status(403).json({ error: 'Owner access required' });
   next();
 }
+
+// Create invoice on an existing job (sets invoice_amount + status=invoiced,
+// emails client if they have an email). Mirrors desktop POST /api/jobs/:id/invoice.
+app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, async (req, res) => {
+  const amount = parseFloat(req.body?.amount);
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Valid amount required' });
+  }
+  const { data, error } = await supabaseAdmin.from('jobs')
+    .update({ invoice_amount: amount, status: 'invoiced', payment_status: 'unpaid' })
+    .eq('id', req.params.id).eq('tenant_id', req.tenantId)
+    .select('*, clients(name, email)').single();
+  if (error) return res.status(400).json({ error: error.message });
+
+  const client = data.clients;
+  let emailSent = false;
+  if (client?.email) {
+    try {
+      const [{ data: tenant }, { data: clientUser }] = await Promise.all([
+        supabaseAdmin.from('tenants').select('company_name').eq('id', req.tenantId).single(),
+        supabaseAdmin.from('client_users').select('portal_token').eq('client_id', data.client_id).maybeSingle(),
+      ]);
+      const host = `https://${req.get('host')}`;
+      const portalUrl = clientUser?.portal_token
+        ? `${host}/portal?token=${clientUser.portal_token}`
+        : `${host}/portal`;
+      await sendInvoiceToClient({
+        clientName: client.name,
+        clientEmail: client.email,
+        jobName: data.name,
+        amount,
+        portalUrl,
+        tenantName: tenant?.company_name,
+      });
+      emailSent = true;
+    } catch (emailErr) {
+      console.error('[mobile invoice] email error:', emailErr.message);
+    }
+  }
+  res.json({ job: data, invoice_email_sent: emailSent, invoice_emailed_to: emailSent ? client.email : null });
+});
 
 // Invoices = jobs with invoice_amount > 0. No separate invoices table exists.
 app.get('/api/mobile/owner/invoices', mobileAuth, requireMobileOwner, async (req, res) => {
