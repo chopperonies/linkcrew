@@ -7292,13 +7292,20 @@ async function sendCrewJobReminders(tenantId, date, mode /* 'today' | 'tomorrow'
     .select('id, name, address, scheduled_date, job_assignments(employee_id, employees(id, name, push_token))')
     .eq('tenant_id', tenantId)
     .eq('scheduled_date', date);
-  if (!jobs?.length) return 0;
+  if (!jobs?.length) return { sent: 0, jobsFound: 0, assigned: 0, noToken: 0, noTokenNames: [] };
 
   const byEmployee = new Map();
+  const noTokenNames = new Set();
+  let assignedCount = 0;
   for (const job of jobs) {
     for (const a of (job.job_assignments || [])) {
       const emp = a.employees;
-      if (!emp?.push_token) continue;
+      if (!emp) continue;
+      assignedCount++;
+      if (!emp.push_token) {
+        noTokenNames.add(emp.name || 'Unknown');
+        continue;
+      }
       if (!byEmployee.has(emp.id)) byEmployee.set(emp.id, { token: emp.push_token, name: emp.name, jobs: [] });
       byEmployee.get(emp.id).jobs.push(job);
     }
@@ -7328,7 +7335,7 @@ async function sendCrewJobReminders(tenantId, date, mode /* 'today' | 'tomorrow'
   }
 
   if (sent > 0) console.log(`🔔 Crew reminders: tenant ${tenantId}, ${mode} (${date}), ${sent} push(es)`);
-  return sent;
+  return { sent, jobsFound: jobs.length, assigned: assignedCount, noToken: noTokenNames.size, noTokenNames: Array.from(noTokenNames) };
 }
 
 cron.schedule('0 * * * *', async () => {
@@ -7356,8 +7363,8 @@ app.post('/api/mobile/owner/crew-reminder-test', mobileAuth, requireMobileOwnerO
   let now;
   try { now = nowIn(tz); } catch { now = nowIn('America/Los_Angeles'); }
   const date = mode === 'today' ? now.today : now.tomorrow;
-  const sent = await sendCrewJobReminders(req.tenantId, date, mode);
-  res.json({ ok: true, mode, date, tz, sent });
+  const result = await sendCrewJobReminders(req.tenantId, date, mode);
+  res.json({ ok: true, mode, date, tz, ...result });
 });
 
 // ── Keepalive — ping self every 14 min to prevent Render sleep ────────────────
