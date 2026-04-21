@@ -6008,7 +6008,9 @@ app.get('/api/mobile/owner/search', mobileAuth, requireMobileOwnerOrManager, asy
   const q = String(req.query.q || '').trim();
   const type = String(req.query.type || 'all');
   if (!q) return res.json({ clients: [], jobs: [], invoices: [] });
-  const like = `%${q}%`;
+  // PostgREST's .or() filter syntax uses '*' as wildcard, not '%'.
+  // Using '%' inside .or() silently returns zero results.
+  const like = `*${q}*`;
 
   const tasks = {};
   if (type === 'all' || type === 'clients') {
