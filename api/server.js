@@ -5050,14 +5050,18 @@ app.post('/api/login-phone', async (req, res) => {
     normalized = normalized.slice(1);
   }
   if (!normalized) return res.status(400).json({ error: 'Invalid phone number' });
+  // Unified login: any role (owner, manager, crew) whose phone matches.
+  // If a number appears in multiple tenants we return the most-recently
+  // updated record; the app can later surface a tenant picker if needed.
   const { data: employee, error } = await supabaseAdmin
     .from('employees')
     .select('*')
     .eq('phone', normalized)
-    .in('role', ['crew', 'manager'])
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle();
   if (error) return res.status(500).json({ error: error.message });
-  if (!employee) return res.status(404).json({ error: 'Your phone number is not registered for this team. If you are the account owner, sign in with your email instead.' });
+  if (!employee) return res.status(404).json({ error: "This phone number isn't registered. Ask your account owner to add you, or sign up at linkcrew.io/app." });
 
   const token = `mob_${crypto.randomUUID()}`;
   const { error: tokErr } = await supabaseAdmin
