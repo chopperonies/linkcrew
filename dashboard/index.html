@@ -5896,13 +5896,18 @@ async function refreshLiveMap() {
     if (!crew.length) {
       crewList.innerHTML = '<em style="color:#94a3b8">No crew clocked in right now.</em>';
     } else {
-      crewList.innerHTML = crew.map(c => `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
-          <span style="width:8px;height:8px;border-radius:50%;background:${c.active ? '#16a34a' : '#94a3b8'};box-shadow:0 0 0 2px ${c.active ? 'rgba(22,163,74,0.2)' : 'rgba(148,163,184,0.2)'}"></span>
-          <strong style="font-size:13px;color:#0f172a">${esc(c.name)}</strong>
-          <span style="color:#94a3b8;font-size:11px">${c.active ? 'clocked in' : 'clocked out'} · ${formatRelative(c.last_seen)}</span>
-        </div>
-      `).join('');
+      crewList.innerHTML = crew.map(c => {
+        const clickable = c.lat != null && c.lng != null;
+        const label = `${c.name} — ${c.active ? 'clocked in' : 'clocked out'} · ${formatRelative(c.last_seen)}`;
+        return `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;${clickable ? 'cursor:pointer' : ''}"
+               ${clickable ? `onclick="focusLivePin(${c.lat}, ${c.lng}, ${JSON.stringify(label)}, '${c.active ? 'in' : 'out'}')"` : ''}>
+            <span style="width:8px;height:8px;border-radius:50%;background:${c.active ? '#16a34a' : '#94a3b8'};box-shadow:0 0 0 2px ${c.active ? 'rgba(22,163,74,0.2)' : 'rgba(148,163,184,0.2)'}"></span>
+            <strong style="font-size:13px;color:#0f172a">${esc(c.name)}</strong>
+            <span style="color:#94a3b8;font-size:11px">${c.active ? 'clocked in' : 'clocked out'} · ${formatRelative(c.last_seen)}</span>
+          </div>
+        `;
+      }).join('');
     }
   }
   for (const c of crew) {
@@ -5942,13 +5947,19 @@ async function refreshLiveMap() {
     if (!markers.length) {
       punchList.innerHTML = '<em style="color:#94a3b8">No punches yet for this day.</em>';
     } else {
-      punchList.innerHTML = markers.slice(0, 30).map(m => `
-        <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
-          <span style="width:6px;height:6px;border-radius:50%;background:${m.kind === 'in' ? '#16a34a' : '#dc2626'}"></span>
-          <strong style="font-size:12px;color:#0f172a">${esc(m.name)}</strong>
-          <span style="color:#64748b;font-size:11px">${m.kind === 'in' ? 'IN' : 'OUT'} · ${new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-        </div>
-      `).join('');
+      punchList.innerHTML = markers.slice(0, 30).map(m => {
+        const clickable = m.lat != null && m.lng != null;
+        const time = new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const label = `${m.name} — ${m.kind === 'in' ? 'IN' : 'OUT'} · ${time}`;
+        return `
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-radius:6px;${clickable ? 'cursor:pointer' : ''}"
+               ${clickable ? `onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''" onclick="focusLivePin(${m.lat}, ${m.lng}, ${JSON.stringify(label)}, '${m.kind}')"` : ''}>
+            <span style="width:6px;height:6px;border-radius:50%;background:${m.kind === 'in' ? '#16a34a' : '#dc2626'}"></span>
+            <strong style="font-size:12px;color:#0f172a">${esc(m.name)}</strong>
+            <span style="color:#64748b;font-size:11px">${m.kind === 'in' ? 'IN' : 'OUT'} · ${time}</span>
+          </div>
+        `;
+      }).join('');
     }
   }
   for (const m of markers) {
@@ -6007,6 +6018,26 @@ async function refreshLiveMap() {
     _liveMap.fitBounds(bounds, 60);
     if (_liveMap.getZoom() > 15) _liveMap.setZoom(15);
   }
+}
+
+// Pan + zoom the Live Map to a specific coord and show a quick info bubble.
+let _liveFocusInfo = null;
+function focusLivePin(lat, lng, label, kind) {
+  if (!_liveMap) return;
+  _liveMap.panTo({ lat, lng });
+  if (_liveMap.getZoom() < 15) _liveMap.setZoom(16);
+  const color = kind === 'in' ? '#16a34a' : kind === 'out' ? '#dc2626' : '#0ea5e9';
+  if (_liveFocusInfo) { try { _liveFocusInfo.close(); } catch {} }
+  _liveFocusInfo = new google.maps.InfoWindow({
+    position: { lat, lng },
+    content: `<div style="font-family:system-ui,-apple-system,sans-serif;font-size:12px;padding:2px 4px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${color}"></span>
+        <strong>${esc(label)}</strong>
+      </div>
+    </div>`,
+  });
+  _liveFocusInfo.open(_liveMap);
 }
 
 async function geocodeAllJobs() {
