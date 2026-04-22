@@ -6211,21 +6211,41 @@ app.post('/api/mobile/owner/jobs/:id/send-workorder', mobileAuth, requireMobileO
 
 // Create a job
 app.post('/api/mobile/owner/jobs', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
-  const { name, address, description, estimate_amount, scheduled_date, client_id } = req.body || {};
+  const { name, address, description, estimate_amount, scheduled_date, client_id, workflow_id, status } = req.body || {};
   if (!name || !address) return res.status(400).json({ error: 'name and address required' });
+  // If a workflow_id is supplied, verify it belongs to this tenant.
+  if (workflow_id) {
+    const { data: wf } = await supabaseAdmin
+      .from('service_workflows').select('id').eq('id', workflow_id).eq('tenant_id', req.tenantId).maybeSingle();
+    if (!wf) return res.status(400).json({ error: 'Invalid workflow' });
+  }
+  const allowedStatuses = new Set(['quoted', 'scheduled', 'in_progress', 'complete', 'invoiced', 'on_hold']);
+  const startStatus = typeof status === 'string' && allowedStatuses.has(status) ? status : 'scheduled';
   const { data, error } = await supabaseAdmin
     .from('jobs').insert({
       name: String(name).trim(),
       address: String(address).trim(),
-      status: 'scheduled',
+      status: startStatus,
       tenant_id: req.tenantId,
       description: description || null,
       estimate_amount: estimate_amount != null ? Number(estimate_amount) : null,
       scheduled_date: scheduled_date || null,
       client_id: client_id || null,
+      workflow_id: workflow_id || null,
     }).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// List tenant's enabled Service PRO workflows (for the new-job type picker).
+app.get('/api/mobile/owner/workflows', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('service_workflows')
+    .select('id, name, description, industry')
+    .eq('tenant_id', req.tenantId)
+    .order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
 });
 
 // Assignments for a job (active, not checked out)
