@@ -5308,7 +5308,7 @@ app.get('/api/mobile/crew/schedule', mobileAuth, async (req, res) => {
   const end = String(req.query.end || '');
   const { data: jobs, error: je } = await supabaseAdmin
     .from('jobs')
-    .select('id, name, address, status, scheduled_date, client_id, clients(name)')
+    .select('id, name, address, status, scheduled_date, payment_status, invoice_amount, client_id, clients(name)')
     .eq('tenant_id', req.tenantId)
     .gte('scheduled_date', start || '1970-01-01')
     .lte('scheduled_date', end || '9999-12-31')
