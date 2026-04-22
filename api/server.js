@@ -5804,10 +5804,15 @@ app.post('/api/mobile/clock-in', mobileAuth, async (req, res) => {
       started_at: new Date().toISOString(),
       start_lat: gps?.lat ?? null,
       start_lng: gps?.lng ?? null,
+      last_ping_lat: gps?.lat ?? null,
+      last_ping_lng: gps?.lng ?? null,
+      last_ping_at: gps?.lat != null ? new Date().toISOString() : null,
     })
     .select('id, started_at, start_lat, start_lng')
     .single();
   if (error) return res.status(500).json({ error: error.message });
+  // Fire-and-forget auto-advance from clock-in geofence hit.
+  autoAdvanceFromClockIn(req.tenantId, req.employeeId, gps).catch(() => {});
   res.json({ ok: true, entry: data });
 });
 
@@ -5834,7 +5839,31 @@ app.post('/api/mobile/clock-out', mobileAuth, async (req, res) => {
     .select('id, started_at, ended_at, start_lat, start_lng, end_lat, end_lng')
     .single();
   if (error) return res.status(500).json({ error: error.message });
+  // Fire-and-forget auto-advance: mid-job clock-out pauses active jobs.
+  autoAdvanceFromClockOut(req.tenantId, req.employeeId).catch(() => {});
   res.json({ ok: true, entry: data });
+});
+
+// Heartbeat — periodic foreground ping from a clocked-in crew member, used
+// by the Live Map on the web dashboard. Writes to time_entries on the open
+// entry only; no-op if not clocked in.
+app.post('/api/mobile/me/heartbeat', mobileAuth, async (req, res) => {
+  const { lat, lng } = req.body || {};
+  if (lat == null || lng == null) return res.status(400).json({ error: 'lat + lng required' });
+  const { data: open } = await supabaseAdmin
+    .from('time_entries')
+    .select('id')
+    .eq('employee_id', req.employeeId)
+    .is('ended_at', null)
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!open) return res.json({ ok: true, clocked_in: false });
+  await supabaseAdmin
+    .from('time_entries')
+    .update({ last_ping_lat: lat, last_ping_lng: lng, last_ping_at: new Date().toISOString() })
+    .eq('id', open.id);
+  res.json({ ok: true, clocked_in: true });
 });
 
 // My clock state: current open entry (if any) + today's totals + today's pins.
@@ -8111,6 +8140,642 @@ app.post('/api/mobile/owner/crew-reminder-test', mobileAuth, requireMobileOwnerO
   const date = mode === 'today' ? now.today : now.tomorrow;
   const result = await sendCrewJobReminders(req.tenantId, date, mode);
   res.json({ ok: true, mode, date, tz, ...result });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Crew-driven job lifecycle — state machine, attachments, work-order requests
+// ────────────────────────────────────────────────────────────────────────────
+
+// Accept/normalize status values. Jobs that came in as 'active' are field-
+// active and are treated as equivalent to 'dispatched' for the flow.
+const JOB_FIELD_STATES = new Set([
+  'scheduled', 'dispatched', 'en_route', 'on_site',
+  'active', 'in_progress', 'on_hold', 'paused',
+]);
+const JOB_TERMINAL_STATES = new Set([
+  'completed', 'closed', 'invoiced', 'cancelled', 'archived', 'saved_for_later',
+]);
+const JOB_APPROVER_ROLES = new Set(['owner', 'manager', 'supervisor']);
+
+// Allowed crew-driven forward transitions (crew tap).
+const CREW_FORWARD_TRANSITIONS = {
+  scheduled:   ['en_route', 'on_site'],
+  dispatched:  ['en_route', 'on_site'],
+  active:      ['en_route', 'on_site', 'in_progress'],
+  en_route:    ['on_site'],
+  on_site:     ['in_progress'],
+  in_progress: ['paused', 'completed'],   // completed = "request closure"
+  paused:      ['in_progress'],
+};
+
+// Manager/supervisor/owner can move to any state from any state (override).
+function canActorTransition(role, fromStatus, toStatus) {
+  if (JOB_APPROVER_ROLES.has(role)) return true;
+  // Crew path:
+  const allowed = CREW_FORWARD_TRANSITIONS[fromStatus] || [];
+  return allowed.includes(toStatus);
+}
+
+function distanceMeters(lat1, lng1, lat2, lng2) {
+  if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return Infinity;
+  const R = 6371000;
+  const toRad = (x) => (x * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+async function sendExpoPush(tokens, title, body, data) {
+  const messages = (tokens || []).filter(Boolean).map(to => ({ to, title, body, data }));
+  if (!messages.length) return;
+  try {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(messages),
+    });
+  } catch {}
+}
+
+// Fan-out push to all approver-role employees for a tenant.
+async function notifyApprovers(tenantId, title, body, data) {
+  const { data: emps } = await supabaseAdmin
+    .from('employees')
+    .select('id, push_token, role')
+    .eq('tenant_id', tenantId)
+    .in('role', ['owner', 'manager', 'supervisor']);
+  const tokens = (emps || []).map(e => e.push_token).filter(Boolean);
+  if (tokens.length) await sendExpoPush(tokens, title, body, data);
+}
+
+async function notifyEmployees(employeeIds, title, body, data) {
+  if (!employeeIds?.length) return;
+  const { data: emps } = await supabaseAdmin
+    .from('employees')
+    .select('id, push_token')
+    .in('id', employeeIds);
+  const tokens = (emps || []).map(e => e.push_token).filter(Boolean);
+  if (tokens.length) await sendExpoPush(tokens, title, body, data);
+}
+
+// Central transition. Validates rights, updates job, writes audit row, notifies.
+// trigger: manual | clock_in | clock_out | photo | checklist | service_pro |
+//          override | cancel | approve | reject | system
+async function transitionJob({
+  jobId, tenantId, toStatus, actorEmployeeId, actorRole,
+  trigger = 'manual', note = null, gps = null, skipCheckpoint = false,
+}) {
+  const { data: job, error: jErr } = await supabaseAdmin
+    .from('jobs')
+    .select('id, tenant_id, status, name')
+    .eq('id', jobId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+  if (jErr) throw jErr;
+  if (!job) return { ok: false, error: 'Job not found' };
+  if (job.status === toStatus) return { ok: true, job, no_op: true };
+  if (actorRole && !canActorTransition(actorRole, job.status, toStatus)) {
+    return { ok: false, error: `Not allowed: ${job.status} → ${toStatus} (role=${actorRole})` };
+  }
+  // Completion checkpoint: crew can't move to 'completed' unless all
+  // required acks are satisfied (unless bypassed by manager override).
+  if (toStatus === 'completed' && !skipCheckpoint && !JOB_APPROVER_ROLES.has(actorRole)) {
+    const ok = await completionCheckpointSatisfied(jobId, actorEmployeeId);
+    if (!ok.satisfied) {
+      return { ok: false, error: 'Checkpoint not met', missing: ok.missing };
+    }
+  }
+  const { data: updated, error: uErr } = await supabaseAdmin
+    .from('jobs')
+    .update({ status: toStatus, updated_at: new Date().toISOString() })
+    .eq('id', jobId)
+    .select('id, status, name')
+    .single();
+  if (uErr) return { ok: false, error: uErr.message };
+  await supabaseAdmin.from('job_status_events').insert({
+    job_id: jobId,
+    tenant_id: tenantId,
+    from_status: job.status,
+    to_status: toStatus,
+    actor_employee_id: actorEmployeeId || null,
+    trigger,
+    note,
+    lat: gps?.lat ?? null,
+    lng: gps?.lng ?? null,
+  });
+  // Notify — fan out to approvers on every transition except noise.
+  if (trigger !== 'system') {
+    const label = toStatus.replace(/_/g, ' ');
+    await notifyApprovers(tenantId,
+      `${updated.name}: ${label}`,
+      actorRole === 'crew' ? 'Crew updated job status' : `Moved to ${label}`,
+      { type: 'job_status', job_id: jobId, to: toStatus }
+    );
+  }
+  return { ok: true, job: updated };
+}
+
+// Completion checkpoint: all required attachments must have acknowledged_at
+// set by the acting crew member. Extend later for photos/signature/payment.
+async function completionCheckpointSatisfied(jobId, employeeId) {
+  const { data: requiredAtts } = await supabaseAdmin
+    .from('job_attachments')
+    .select('id')
+    .eq('job_id', jobId)
+    .eq('require_acknowledgment', true);
+  if (!requiredAtts?.length) return { satisfied: true, missing: [] };
+  const attIds = requiredAtts.map(a => a.id);
+  const { data: acks } = await supabaseAdmin
+    .from('job_attachment_acks')
+    .select('attachment_id, acknowledged_at')
+    .in('attachment_id', attIds)
+    .eq('employee_id', employeeId);
+  const ackedIds = new Set((acks || []).filter(a => a.acknowledged_at).map(a => a.attachment_id));
+  const missing = attIds.filter(id => !ackedIds.has(id));
+  return { satisfied: missing.length === 0, missing };
+}
+
+// Resolve any open work-order requests on a job with the given reason.
+async function resolveWorkOrderRequests(jobId, resolverEmployeeId, resolution) {
+  await supabaseAdmin
+    .from('job_work_order_requests')
+    .update({
+      resolved_at: new Date().toISOString(),
+      resolved_by: resolverEmployeeId || null,
+      resolution,
+    })
+    .eq('job_id', jobId)
+    .is('resolved_at', null);
+  // Push-notify the original requester(s) that their request is resolved.
+  const { data: resolved } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .select('requested_by')
+    .eq('job_id', jobId)
+    .not('resolved_at', 'is', null)
+    .order('resolved_at', { ascending: false })
+    .limit(5);
+  const requesters = [...new Set((resolved || []).map(r => r.requested_by).filter(Boolean))];
+  if (requesters.length) {
+    await notifyEmployees(requesters, 'Work order ready', 'Plans are now attached to your job.', {
+      type: 'wo_resolved', job_id: jobId,
+    });
+  }
+}
+
+// Find the most-recent job this employee is assigned to today that's still
+// in a field-active state. Used to pick a target for clock-in auto-advance.
+async function findActiveJobForEmployee(tenantId, employeeId) {
+  const { data: assignments } = await supabaseAdmin
+    .from('job_assignments')
+    .select('job_id, jobs(id, status, lat, lng, scheduled_date)')
+    .eq('employee_id', employeeId);
+  const today = new Date().toISOString().slice(0, 10);
+  const candidates = (assignments || [])
+    .map(a => a.jobs)
+    .filter(j => j && JOB_FIELD_STATES.has(j.status))
+    .filter(j => !j.scheduled_date || j.scheduled_date === today);
+  return candidates[0] || null;
+}
+
+async function autoAdvanceFromClockIn(tenantId, employeeId, gps) {
+  const job = await findActiveJobForEmployee(tenantId, employeeId);
+  if (!job) return;
+  const { data: tenant } = await supabaseAdmin
+    .from('tenants').select('geofence_radius_m').eq('id', tenantId).maybeSingle();
+  const radius = tenant?.geofence_radius_m ?? 100;
+  const onSite = gps?.lat != null && job.lat != null &&
+    distanceMeters(gps.lat, gps.lng, job.lat, job.lng) <= radius;
+  const toStatus = onSite ? 'on_site' : 'en_route';
+  // Only advance if we're not already ahead of this state.
+  if (onSite && (job.status === 'scheduled' || job.status === 'dispatched' ||
+                 job.status === 'active' || job.status === 'en_route')) {
+    await transitionJob({
+      jobId: job.id, tenantId, toStatus: 'on_site',
+      actorEmployeeId: employeeId, actorRole: 'system',
+      trigger: 'clock_in', gps,
+    });
+  } else if (!onSite && (job.status === 'scheduled' || job.status === 'dispatched' ||
+                         job.status === 'active')) {
+    await transitionJob({
+      jobId: job.id, tenantId, toStatus: 'en_route',
+      actorEmployeeId: employeeId, actorRole: 'system',
+      trigger: 'clock_in', gps,
+    });
+  }
+  return toStatus;
+}
+
+async function autoAdvanceFromClockOut(tenantId, employeeId) {
+  const job = await findActiveJobForEmployee(tenantId, employeeId);
+  if (!job) return;
+  if (job.status === 'in_progress' || job.status === 'on_site') {
+    await transitionJob({
+      jobId: job.id, tenantId, toStatus: 'paused',
+      actorEmployeeId: employeeId, actorRole: 'system',
+      trigger: 'clock_out',
+    });
+  }
+}
+
+// ─── Transition endpoints ─────────────────────────────────────────────────
+
+// Crew-visible: move a job pill forward. Validates role-based transitions.
+app.post('/api/mobile/jobs/:id/transition', mobileAuth, async (req, res) => {
+  const { to_status, note, gps } = req.body || {};
+  if (!to_status) return res.status(400).json({ error: 'to_status required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId: req.tenantId,
+    toStatus: to_status, actorEmployeeId: req.employeeId, actorRole: req.role,
+    trigger: 'manual', note, gps,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Crew-specific sugar: "Request completion" (= move to 'completed' pending approval).
+app.post('/api/mobile/jobs/:id/request-completion', mobileAuth, async (req, res) => {
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId: req.tenantId,
+    toStatus: 'completed', actorEmployeeId: req.employeeId, actorRole: req.role,
+    trigger: 'manual',
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Approver: approve the crew's closure request → 'closed'.
+app.post('/api/mobile/jobs/:id/approve', mobileAuth, async (req, res) => {
+  if (!JOB_APPROVER_ROLES.has(req.role)) return res.status(403).json({ error: 'Approver role required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId: req.tenantId,
+    toStatus: 'closed', actorEmployeeId: req.employeeId, actorRole: req.role,
+    trigger: 'approve',
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Approver: reject closure — bounce back to in_progress with a reason.
+app.post('/api/mobile/jobs/:id/reject-completion', mobileAuth, async (req, res) => {
+  if (!JOB_APPROVER_ROLES.has(req.role)) return res.status(403).json({ error: 'Approver role required' });
+  const { reason } = req.body || {};
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId: req.tenantId,
+    toStatus: 'in_progress', actorEmployeeId: req.employeeId, actorRole: req.role,
+    trigger: 'reject', note: reason || null,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Approver: cancel a job with a required reason.
+app.post('/api/mobile/jobs/:id/cancel', mobileAuth, async (req, res) => {
+  if (!JOB_APPROVER_ROLES.has(req.role)) return res.status(403).json({ error: 'Approver role required' });
+  const { reason } = req.body || {};
+  if (!reason) return res.status(400).json({ error: 'reason required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId: req.tenantId,
+    toStatus: 'cancelled', actorEmployeeId: req.employeeId, actorRole: req.role,
+    trigger: 'cancel', note: reason,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Audit trail for one job.
+app.get('/api/mobile/jobs/:id/status-events', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('job_status_events')
+    .select('id, from_status, to_status, trigger, note, created_at, actor_employee_id, employees:actor_employee_id(name, role)')
+    .eq('job_id', req.params.id)
+    .eq('tenant_id', req.tenantId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ events: data || [] });
+});
+
+// ─── Attachments ──────────────────────────────────────────────────────────
+
+// Upload (multipart). Only approver roles. Fields:
+//   file: binary
+//   label (optional)
+//   require_acknowledgment (bool, default false)
+app.post('/api/mobile/jobs/:id/attachments', mobileAuth, upload.single('file'), async (req, res) => {
+  if (!JOB_APPROVER_ROLES.has(req.role)) return res.status(403).json({ error: 'Approver role required' });
+  if (!req.file) return res.status(400).json({ error: 'file required' });
+  const jobId = req.params.id;
+  // Confirm job belongs to tenant.
+  const { data: job } = await supabaseAdmin.from('jobs')
+    .select('id').eq('id', jobId).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  const safeName = req.file.originalname.replace(/[^\w.\-]+/g, '_');
+  const storagePath = `${req.tenantId}/${jobId}/${Date.now()}_${safeName}`;
+  const { error: upErr } = await supabaseAdmin.storage
+    .from('job-attachments')
+    .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+  if (upErr) return res.status(500).json({ error: upErr.message });
+  const requireAck = String(req.body?.require_acknowledgment || '').toLowerCase() === 'true';
+  const { data: att, error } = await supabaseAdmin
+    .from('job_attachments')
+    .insert({
+      job_id: jobId,
+      tenant_id: req.tenantId,
+      filename: req.file.originalname,
+      storage_path: storagePath,
+      mime_type: req.file.mimetype,
+      size_bytes: req.file.size,
+      label: req.body?.label || null,
+      require_acknowledgment: requireAck,
+      uploaded_by: req.employeeId,
+    })
+    .select('*')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  // Resolve any open work-order request for this job.
+  await resolveWorkOrderRequests(jobId, req.employeeId, 'attachment_added');
+  // Notify assigned crew that new plans are attached.
+  const { data: assigns } = await supabaseAdmin
+    .from('job_assignments')
+    .select('employee_id')
+    .eq('job_id', jobId);
+  const crewIds = (assigns || []).map(a => a.employee_id).filter(Boolean);
+  if (crewIds.length) {
+    await notifyEmployees(crewIds, 'New plans attached',
+      `${req.file.originalname}${requireAck ? ' — review required' : ''}`,
+      { type: 'job_attachment', job_id: jobId, attachment_id: att.id });
+  }
+  res.json({ ok: true, attachment: att });
+});
+
+// List attachments for a job + this employee's ack status for each.
+app.get('/api/mobile/jobs/:id/attachments', mobileAuth, async (req, res) => {
+  const { data: atts, error } = await supabaseAdmin
+    .from('job_attachments')
+    .select('*')
+    .eq('job_id', req.params.id)
+    .eq('tenant_id', req.tenantId)
+    .order('uploaded_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  const ids = (atts || []).map(a => a.id);
+  let acks = [];
+  if (ids.length) {
+    const { data } = await supabaseAdmin
+      .from('job_attachment_acks')
+      .select('attachment_id, viewed_at, acknowledged_at')
+      .in('attachment_id', ids)
+      .eq('employee_id', req.employeeId);
+    acks = data || [];
+  }
+  const ackMap = new Map(acks.map(a => [a.attachment_id, a]));
+  // Signed URL for viewing (1 hour).
+  const results = [];
+  for (const a of (atts || [])) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from('job-attachments')
+      .createSignedUrl(a.storage_path, 3600);
+    results.push({
+      ...a,
+      url: signed?.signedUrl || null,
+      viewed_at: ackMap.get(a.id)?.viewed_at || null,
+      acknowledged_at: ackMap.get(a.id)?.acknowledged_at || null,
+    });
+  }
+  res.json({ attachments: results });
+});
+
+// Mark an attachment as viewed (from crew opening it).
+app.post('/api/mobile/jobs/:id/attachments/:attId/view', mobileAuth, async (req, res) => {
+  const now = new Date().toISOString();
+  const { error } = await supabaseAdmin
+    .from('job_attachment_acks')
+    .upsert({ attachment_id: req.params.attId, employee_id: req.employeeId, viewed_at: now },
+            { onConflict: 'attachment_id,employee_id' });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// Mark an attachment as acknowledged ("I have read the plans..." switch).
+app.post('/api/mobile/jobs/:id/attachments/:attId/ack', mobileAuth, async (req, res) => {
+  const now = new Date().toISOString();
+  const { error } = await supabaseAdmin
+    .from('job_attachment_acks')
+    .upsert({ attachment_id: req.params.attId, employee_id: req.employeeId,
+              viewed_at: now, acknowledged_at: now },
+            { onConflict: 'attachment_id,employee_id' });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// Remove attachment (approver only).
+app.delete('/api/mobile/jobs/:id/attachments/:attId', mobileAuth, async (req, res) => {
+  if (!JOB_APPROVER_ROLES.has(req.role)) return res.status(403).json({ error: 'Approver role required' });
+  const { data: att } = await supabaseAdmin
+    .from('job_attachments').select('storage_path').eq('id', req.params.attId)
+    .eq('tenant_id', req.tenantId).maybeSingle();
+  if (!att) return res.status(404).json({ error: 'Not found' });
+  await supabaseAdmin.storage.from('job-attachments').remove([att.storage_path]).catch(() => {});
+  await supabaseAdmin.from('job_attachments').delete().eq('id', req.params.attId);
+  res.json({ ok: true });
+});
+
+// ─── Work-order requests ──────────────────────────────────────────────────
+
+app.post('/api/mobile/jobs/:id/request-work-order', mobileAuth, async (req, res) => {
+  const { note } = req.body || {};
+  const { data: job } = await supabaseAdmin
+    .from('jobs').select('id, name').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  // Avoid duplicate open requests from the same crew on the same job.
+  const { data: existing } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .select('id')
+    .eq('job_id', req.params.id)
+    .eq('requested_by', req.employeeId)
+    .is('resolved_at', null)
+    .maybeSingle();
+  if (existing) return res.json({ ok: true, request: existing, already_open: true });
+  const { data: request, error } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .insert({
+      job_id: req.params.id,
+      tenant_id: req.tenantId,
+      requested_by: req.employeeId,
+      note: note || null,
+    })
+    .select('*')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  await notifyApprovers(req.tenantId,
+    `${job.name}: work order requested`,
+    note ? `${req.employeeName}: ${note}` : `${req.employeeName} needs plans`,
+    { type: 'wo_request', job_id: job.id, request_id: request.id });
+  res.json({ ok: true, request });
+});
+
+// List open work-order requests for a tenant.
+app.get('/api/mobile/owner/work-order-requests', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .select('*, jobs(id, name, address, scheduled_date), employees:requested_by(name)')
+    .eq('tenant_id', req.tenantId)
+    .is('resolved_at', null)
+    .order('requested_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ requests: data || [] });
+});
+
+// Dismiss with reason (no attachments needed after all).
+app.post('/api/mobile/owner/work-order-requests/:id/dismiss', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
+  const { reason } = req.body || {};
+  const { data, error } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .update({
+      resolved_at: new Date().toISOString(),
+      resolved_by: req.employeeId,
+      resolution: 'dismissed',
+      resolution_note: reason || null,
+    })
+    .eq('id', req.params.id)
+    .eq('tenant_id', req.tenantId)
+    .select('*')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  if (data?.requested_by) {
+    await notifyEmployees([data.requested_by], 'Request dismissed',
+      reason || 'Owner says no plans needed.', { type: 'wo_dismissed', job_id: data.job_id });
+  }
+  res.json({ ok: true });
+});
+
+// ─── Dashboard aggregate endpoints (for /app) ─────────────────────────────
+
+// Pending closure approvals — jobs in 'completed' awaiting 'closed' signoff.
+app.get('/api/dashboard/pending-approvals', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .select('id, name, address, scheduled_date, updated_at')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'completed')
+    .order('updated_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ jobs: data || [] });
+});
+
+// Open work-order requests for the tenant.
+app.get('/api/dashboard/work-order-requests', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+  const { data, error } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .select('*, jobs(id, name, address, scheduled_date), employees:requested_by(name)')
+    .eq('tenant_id', tenantId)
+    .is('resolved_at', null)
+    .order('requested_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ requests: data || [] });
+});
+
+// Approve/reject/cancel from web dashboard. Thin wrappers over transitionJob.
+app.post('/api/dashboard/jobs/:id/approve', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const role = req.role || 'owner';
+  if (!JOB_APPROVER_ROLES.has(role)) return res.status(403).json({ error: 'Approver role required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId, toStatus: 'closed',
+    actorEmployeeId: req.employeeId || null, actorRole: role, trigger: 'approve',
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.post('/api/dashboard/jobs/:id/reject', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const role = req.role || 'owner';
+  if (!JOB_APPROVER_ROLES.has(role)) return res.status(403).json({ error: 'Approver role required' });
+  const { reason } = req.body || {};
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId, toStatus: 'in_progress',
+    actorEmployeeId: req.employeeId || null, actorRole: role,
+    trigger: 'reject', note: reason || null,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.post('/api/dashboard/jobs/:id/cancel', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const role = req.role || 'owner';
+  if (!JOB_APPROVER_ROLES.has(role)) return res.status(403).json({ error: 'Approver role required' });
+  const { reason } = req.body || {};
+  if (!reason) return res.status(400).json({ error: 'reason required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId, toStatus: 'cancelled',
+    actorEmployeeId: req.employeeId || null, actorRole: role,
+    trigger: 'cancel', note: reason,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Override: any → any, approver only. Writes an audit row with trigger='override'.
+app.post('/api/dashboard/jobs/:id/override-status', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const role = req.role || 'owner';
+  if (!JOB_APPROVER_ROLES.has(role)) return res.status(403).json({ error: 'Approver role required' });
+  const { to_status, note } = req.body || {};
+  if (!to_status) return res.status(400).json({ error: 'to_status required' });
+  const result = await transitionJob({
+    jobId: req.params.id, tenantId, toStatus: to_status,
+    actorEmployeeId: req.employeeId || null, actorRole: role,
+    trigger: 'override', note: note || null, skipCheckpoint: true,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+// Work-order dismiss from web dashboard.
+app.post('/api/dashboard/work-order-requests/:id/dismiss', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  const role = req.role || 'owner';
+  if (!JOB_APPROVER_ROLES.has(role)) return res.status(403).json({ error: 'Approver role required' });
+  const { reason } = req.body || {};
+  const { data, error } = await supabaseAdmin
+    .from('job_work_order_requests')
+    .update({
+      resolved_at: new Date().toISOString(),
+      resolved_by: req.employeeId || null,
+      resolution: 'dismissed',
+      resolution_note: reason || null,
+    })
+    .eq('id', req.params.id)
+    .eq('tenant_id', tenantId)
+    .select('*').single();
+  if (error) return res.status(500).json({ error: error.message });
+  if (data?.requested_by) {
+    await notifyEmployees([data.requested_by], 'Request dismissed',
+      reason || 'No plans needed.', { type: 'wo_dismissed', job_id: data.job_id });
+  }
+  res.json({ ok: true });
+});
+
+// Status-events feed for a single job (web job-detail panel).
+app.get('/api/dashboard/jobs/:id/status-events', auth, async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+  const { data, error } = await supabaseAdmin
+    .from('job_status_events')
+    .select('id, from_status, to_status, trigger, note, created_at, employees:actor_employee_id(name, role)')
+    .eq('job_id', req.params.id)
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ events: data || [] });
 });
 
 // ── Keepalive — ping self every 14 min to prevent Render sleep ────────────────
