@@ -5393,6 +5393,278 @@ app.post('/api/mobile/me/avatar', mobileAuth, upload.single('avatar'), async (re
   res.json({ avatar_url: bustedUrl });
 });
 
+// ── Messaging (chat_threads / chat_thread_members / chat_messages) ──
+// Every endpoint is scoped to the caller's tenant via mobileAuth, and
+// every thread-specific operation enforces membership.
+
+async function assertThreadMember(req, threadId) {
+  const { data } = await supabaseAdmin
+    .from('chat_thread_members')
+    .select('thread_id')
+    .eq('thread_id', threadId)
+    .eq('employee_id', req.employeeId)
+    .maybeSingle();
+  return !!data;
+}
+
+// List my threads with last message preview + unread count.
+app.get('/api/mobile/chat/threads', mobileAuth, async (req, res) => {
+  const { data: memberRows, error: mErr } = await supabaseAdmin
+    .from('chat_thread_members')
+    .select('thread_id, last_read_at')
+    .eq('employee_id', req.employeeId);
+  if (mErr) return res.status(500).json({ error: mErr.message });
+  const threadIds = (memberRows || []).map(r => r.thread_id);
+  if (threadIds.length === 0) return res.json([]);
+
+  const lastReadByThread = new Map((memberRows || []).map(r => [r.thread_id, r.last_read_at]));
+
+  const [{ data: threads }, { data: members }] = await Promise.all([
+    supabaseAdmin.from('chat_threads')
+      .select('id, name, created_by, created_at, last_message_at')
+      .in('id', threadIds)
+      .order('last_message_at', { ascending: false }),
+    supabaseAdmin.from('chat_thread_members')
+      .select('thread_id, employee_id, employees(name, avatar_url)')
+      .in('thread_id', threadIds),
+  ]);
+
+  // Pull the latest message per thread (small N, one query per thread
+  // kept simple; Postgres can hand it off cheaply for O(20) threads).
+  const latestByThread = new Map();
+  await Promise.all(threadIds.map(async (tid) => {
+    const { data: last } = await supabaseAdmin
+      .from('chat_messages')
+      .select('id, body, sender_id, created_at, employees:sender_id(name)')
+      .eq('thread_id', tid)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (last) latestByThread.set(tid, last);
+  }));
+
+  // Unread count = messages in my threads created after my last_read_at.
+  const unreadByThread = new Map();
+  await Promise.all(threadIds.map(async (tid) => {
+    const lastRead = lastReadByThread.get(tid) || new Date(0).toISOString();
+    const { count } = await supabaseAdmin
+      .from('chat_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('thread_id', tid)
+      .gt('created_at', lastRead)
+      .neq('sender_id', req.employeeId);
+    unreadByThread.set(tid, count || 0);
+  }));
+
+  const byThreadMembers = new Map();
+  for (const m of (members || [])) {
+    const arr = byThreadMembers.get(m.thread_id) || [];
+    arr.push({ employee_id: m.employee_id, name: m.employees?.name || 'Crew', avatar_url: m.employees?.avatar_url || null });
+    byThreadMembers.set(m.thread_id, arr);
+  }
+
+  const result = (threads || []).map(t => ({
+    id: t.id,
+    name: t.name,
+    created_by: t.created_by,
+    created_at: t.created_at,
+    last_message_at: t.last_message_at,
+    members: byThreadMembers.get(t.id) || [],
+    last_message: latestByThread.get(t.id) || null,
+    unread_count: unreadByThread.get(t.id) || 0,
+  }));
+  res.json(result);
+});
+
+// Create (or find, for DMs) a thread. body: { employee_ids: string[], name?: string }
+app.post('/api/mobile/chat/threads', mobileAuth, async (req, res) => {
+  const otherIds = Array.isArray(req.body?.employee_ids)
+    ? req.body.employee_ids.filter(id => typeof id === 'string' && id !== req.employeeId)
+    : [];
+  const rawName = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 80) : '';
+  if (otherIds.length === 0) return res.status(400).json({ error: 'Pick at least one employee' });
+
+  // Verify all invited employees are in the same tenant.
+  const { data: invitees, error: invErr } = await supabaseAdmin
+    .from('employees')
+    .select('id, tenant_id')
+    .in('id', otherIds);
+  if (invErr) return res.status(500).json({ error: invErr.message });
+  if ((invitees || []).some(e => e.tenant_id !== req.tenantId)) {
+    return res.status(403).json({ error: 'All members must be in your team' });
+  }
+  if ((invitees || []).length !== otherIds.length) {
+    return res.status(400).json({ error: 'One or more employees not found' });
+  }
+
+  const allMemberIds = Array.from(new Set([req.employeeId, ...otherIds]));
+  const isDM = allMemberIds.length === 2;
+
+  // DM find-or-create: reuse existing 1:1 thread if present.
+  if (isDM) {
+    const { data: myThreads } = await supabaseAdmin
+      .from('chat_thread_members')
+      .select('thread_id')
+      .eq('employee_id', req.employeeId);
+    const myThreadIds = (myThreads || []).map(r => r.thread_id);
+    if (myThreadIds.length > 0) {
+      const { data: otherMemberships } = await supabaseAdmin
+        .from('chat_thread_members')
+        .select('thread_id')
+        .eq('employee_id', otherIds[0])
+        .in('thread_id', myThreadIds);
+      const candidateIds = (otherMemberships || []).map(r => r.thread_id);
+      if (candidateIds.length > 0) {
+        // Return the existing DM that has exactly 2 members.
+        for (const tid of candidateIds) {
+          const { count } = await supabaseAdmin
+            .from('chat_thread_members')
+            .select('thread_id', { count: 'exact', head: true })
+            .eq('thread_id', tid);
+          if (count === 2) {
+            const { data: existing } = await supabaseAdmin
+              .from('chat_threads').select('*').eq('id', tid).maybeSingle();
+            if (existing && !existing.name) return res.json(existing);
+          }
+        }
+      }
+    }
+  }
+
+  const { data: thread, error: tErr } = await supabaseAdmin
+    .from('chat_threads')
+    .insert({
+      tenant_id: req.tenantId,
+      name: isDM ? null : (rawName || null),
+      created_by: req.employeeId,
+    })
+    .select()
+    .single();
+  if (tErr) return res.status(500).json({ error: tErr.message });
+
+  const memberRows = allMemberIds.map(id => ({ thread_id: thread.id, employee_id: id }));
+  const { error: mErr } = await supabaseAdmin.from('chat_thread_members').insert(memberRows);
+  if (mErr) return res.status(500).json({ error: mErr.message });
+
+  res.json(thread);
+});
+
+// Messages in a thread.
+app.get('/api/mobile/chat/threads/:id/messages', mobileAuth, async (req, res) => {
+  if (!(await assertThreadMember(req, req.params.id))) {
+    return res.status(403).json({ error: 'Not a member' });
+  }
+  const limit = Math.min(parseInt(String(req.query.limit || '50'), 10) || 50, 200);
+  const before = typeof req.query.before === 'string' ? req.query.before : null;
+  let qb = supabaseAdmin
+    .from('chat_messages')
+    .select('id, sender_id, body, created_at, employees:sender_id(name, avatar_url)')
+    .eq('thread_id', req.params.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (before) qb = qb.lt('created_at', before);
+  const { data, error } = await qb;
+  if (error) return res.status(500).json({ error: error.message });
+  // Return oldest-first for convenient rendering.
+  res.json((data || []).reverse());
+});
+
+app.post('/api/mobile/chat/threads/:id/messages', mobileAuth, async (req, res) => {
+  if (!(await assertThreadMember(req, req.params.id))) {
+    return res.status(403).json({ error: 'Not a member' });
+  }
+  const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+  if (!body) return res.status(400).json({ error: 'Empty message' });
+  if (body.length > 4000) return res.status(400).json({ error: 'Message too long' });
+  const { data, error } = await supabaseAdmin
+    .from('chat_messages')
+    .insert({
+      thread_id: req.params.id,
+      tenant_id: req.tenantId,
+      sender_id: req.employeeId,
+      body,
+    })
+    .select('id, sender_id, body, created_at')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Mark my own last_read_at up to this message so unread count stays 0
+  // for me.
+  await supabaseAdmin
+    .from('chat_thread_members')
+    .update({ last_read_at: data.created_at })
+    .eq('thread_id', req.params.id)
+    .eq('employee_id', req.employeeId);
+
+  // Fire-and-forget push to the other members.
+  sendChatPush(req.params.id, req.employeeId, body).catch(e => console.error('[chat push]', e.message));
+
+  res.json(data);
+});
+
+app.post('/api/mobile/chat/threads/:id/read', mobileAuth, async (req, res) => {
+  if (!(await assertThreadMember(req, req.params.id))) {
+    return res.status(403).json({ error: 'Not a member' });
+  }
+  const { error } = await supabaseAdmin
+    .from('chat_thread_members')
+    .update({ last_read_at: new Date().toISOString() })
+    .eq('thread_id', req.params.id)
+    .eq('employee_id', req.employeeId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// Employee picker: list of teammates a user can message (same tenant,
+// excluding self).
+app.get('/api/mobile/chat/employees', mobileAuth, async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('employees')
+    .select('id, name, role, phone, avatar_url')
+    .eq('tenant_id', req.tenantId)
+    .neq('id', req.employeeId)
+    .eq('status', 'active')
+    .order('name');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+// Send an Expo push to every member of a thread except the sender.
+// Best-effort — errors are swallowed so a push outage doesn't block
+// message delivery.
+async function sendChatPush(threadId, senderId, body) {
+  try {
+    const [{ data: thread }, { data: members }, { data: sender }] = await Promise.all([
+      supabaseAdmin.from('chat_threads').select('id, name').eq('id', threadId).maybeSingle(),
+      supabaseAdmin.from('chat_thread_members')
+        .select('employee_id, employees(push_token, name)')
+        .eq('thread_id', threadId)
+        .neq('employee_id', senderId),
+      supabaseAdmin.from('employees').select('name').eq('id', senderId).maybeSingle(),
+    ]);
+    const tokens = (members || [])
+      .map(m => m.employees?.push_token)
+      .filter(t => typeof t === 'string' && t.startsWith('ExponentPushToken'));
+    if (tokens.length === 0) return;
+    const title = thread?.name ? thread.name : (sender?.name || 'New message');
+    const messageBody = (thread?.name ? `${sender?.name || 'Someone'}: ` : '') + body.slice(0, 160);
+    const payload = tokens.map(to => ({
+      to,
+      sound: 'default',
+      title,
+      body: messageBody,
+      data: { type: 'chat_message', thread_id: threadId },
+    }));
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    /* swallow */
+  }
+}
+
 // Today's job progress — crew + solo owners alike. Powers the "1/3 Jobs
 // Completed Today" gauge on Home.
 app.get('/api/mobile/me/today-progress', mobileAuth, async (req, res) => {
