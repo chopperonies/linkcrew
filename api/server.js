@@ -5297,6 +5297,75 @@ app.get('/api/mobile/crew/my-assignments', mobileAuth, async (req, res) => {
   res.json(data || []);
 });
 
+// Schedule view — jobs in a date range with assigned crew names. Powers
+// the team-calendar list on crew's Schedule tab.
+app.get('/api/mobile/crew/schedule', mobileAuth, async (req, res) => {
+  const start = String(req.query.start || '');
+  const end = String(req.query.end || '');
+  const { data: jobs, error: je } = await supabaseAdmin
+    .from('jobs')
+    .select('id, name, address, status, scheduled_date, client_id, clients(name)')
+    .eq('tenant_id', req.tenantId)
+    .gte('scheduled_date', start || '1970-01-01')
+    .lte('scheduled_date', end || '9999-12-31')
+    .order('scheduled_date', { ascending: true });
+  if (je) return res.status(500).json({ error: je.message });
+  const jobIds = (jobs || []).map(j => j.id);
+  const assignmentsByJob = new Map();
+  if (jobIds.length > 0) {
+    const { data: assignments } = await supabaseAdmin
+      .from('job_assignments')
+      .select('job_id, employee_id, employees(name)')
+      .in('job_id', jobIds);
+    for (const a of (assignments || [])) {
+      const arr = assignmentsByJob.get(a.job_id) || [];
+      const name = a.employees?.name || 'Crew';
+      arr.push({ employee_id: a.employee_id, name });
+      assignmentsByJob.set(a.job_id, arr);
+    }
+  }
+  const out = (jobs || []).map(j => ({
+    ...j,
+    client_name: j.clients?.name || null,
+    crew: assignmentsByJob.get(j.id) || [],
+  }));
+  res.json(out);
+});
+
+// Today's job progress — crew + solo owners alike. Powers the "1/3 Jobs
+// Completed Today" gauge on Home.
+app.get('/api/mobile/me/today-progress', mobileAuth, async (req, res) => {
+  const today = new Date();
+  const isoDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  const jobIds = await (async () => {
+    if (req.role === 'owner' || req.role === 'admin') {
+      // Solo owners work their own jobs — scope to tenant.
+      const { data } = await supabaseAdmin
+        .from('jobs').select('id, status')
+        .eq('tenant_id', req.tenantId)
+        .eq('scheduled_date', isoDay);
+      return data || [];
+    }
+    const { data: assignments } = await supabaseAdmin
+      .from('job_assignments').select('job_id')
+      .eq('employee_id', req.employeeId);
+    const ids = (assignments || []).map(a => a.job_id);
+    if (ids.length === 0) return [];
+    const { data } = await supabaseAdmin
+      .from('jobs').select('id, status')
+      .eq('tenant_id', req.tenantId)
+      .eq('scheduled_date', isoDay)
+      .in('id', ids);
+    return data || [];
+  })();
+
+  const total = jobIds.length;
+  const completedStatuses = new Set(['completed', 'invoiced', 'paid']);
+  const completed = jobIds.filter(j => completedStatuses.has(String(j.status || '').toLowerCase())).length;
+  res.json({ completed, total, date: isoDay });
+});
+
 // ── Free-punch clock-in (time_entries table) ──
 // Universal: works for crew and owner. Not tied to a specific job —
 // a crew member on their way to a site, an owner bidding a prospect,
