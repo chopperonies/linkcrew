@@ -14,7 +14,7 @@ const { LINKCREW_FROM, LINKCREW_ALERT_FROM, EMAIL_FROM_ADDRESS, formatFrom } = r
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
 const twilio = require('twilio');
-const { PLAN_MAX_USERS } = require('./planFeatures');
+const { PLAN_MAX_USERS, FEATURES, hasFeature } = require('./planFeatures');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const VoiceResponse = twilio.twiml.VoiceResponse;
@@ -1043,6 +1043,40 @@ function requireFinancialAccess(req, res, next) {
   return res.status(403).json({ error: 'financial_access_required', message: 'Financial access is disabled for your role.' });
 }
 
+// Gate a route by plan tier. Returns 403 with { error: 'upgrade_required', required_plan, feature }.
+// Admins bypass. The auth middleware stashes req.tenantPlan for non-billing/auth/admin paths;
+// this middleware falls back to a tenants query if it's missing (impersonation, skipped subscription
+// check paths, etc.).
+// Strip GPS coords for tenants whose plan doesn't include GPS-verified punch.
+// Source can be { lat, lng } or { gps: { lat, lng } } — we accept either shape.
+function gpsForPlan(plan, source) {
+  if (!hasFeature(plan, 'gps_punch')) return { lat: null, lng: null };
+  return {
+    lat: source?.lat ?? source?.gps?.lat ?? null,
+    lng: source?.lng ?? source?.gps?.lng ?? null,
+  };
+}
+
+function requireFeature(featureName) {
+  return async function (req, res, next) {
+    if (req.isAdmin) return next();
+    let plan = req.tenantPlan;
+    if (!plan && req.tenantId) {
+      const { data: t } = await supabaseAdmin.from('tenants').select('plan').eq('id', req.tenantId).single();
+      plan = t?.plan;
+      if (plan) req.tenantPlan = plan;
+    }
+    if (!hasFeature(plan, featureName)) {
+      return res.status(403).json({
+        error: 'upgrade_required',
+        required_plan: FEATURES[featureName],
+        feature: featureName,
+      });
+    }
+    next();
+  };
+}
+
 function stripFinancialsFromJob(job) {
   if (!job) return job;
   const copy = { ...job };
@@ -1504,6 +1538,7 @@ async function auth(req, res, next) {
       .select('subscription_status, trial_ends_at, plan, paused, blocked')
       .eq('id', req.tenantId).single();
     if (tenant) {
+      req.tenantPlan = tenant.plan;
       if (tenant.blocked) {
         return res.status(403).json({ error: 'account_blocked' });
       }
@@ -2963,8 +2998,9 @@ app.get('/api/timesheets', auth, requireOperationAccess, async (req, res) => {
 
 // Manual punch in
 app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, res) => {
-  const { employee_id, job_id, work_type, lat, lng } = req.body;
+  const { employee_id, job_id, work_type } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
+  const { lat, lng } = gpsForPlan(req.tenantPlan, req.body);
 
   // Check not already punched in
   const { data: existing } = await supabaseAdmin
@@ -3019,8 +3055,9 @@ app.post('/api/timesheets/punch-in', auth, requireOperationAccess, async (req, r
 
 // Manual punch out
 app.post('/api/timesheets/punch-out', auth, requireOperationAccess, async (req, res) => {
-  const { employee_id, lat, lng } = req.body;
+  const { employee_id } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id required' });
+  const { lat, lng } = gpsForPlan(req.tenantPlan, req.body);
 
   const { data: entry } = await supabaseAdmin
     .from('job_assignments')
@@ -3073,11 +3110,7 @@ app.patch('/api/timesheets/:id', auth, requireOperationAccess, async (req, res) 
 
 // ── Reports ───────────────────────────────────────────────────────────────────
 
-app.get('/api/reports', auth, requireFinancialAccess, async (req, res) => {
-  const { data: tenant } = await supabaseAdmin.from('tenants').select('plan').eq('id', req.tenantId).single();
-  if (tenant?.plan !== 'pro') {
-    return res.status(403).json({ error: 'upgrade_required', message: 'Reports are available on the Pro plan.' });
-  }
+app.get('/api/reports', auth, requireFinancialAccess, requireFeature('reports'), async (req, res) => {
   const days = parseInt(req.query.period || '30');
   const since = new Date();
   since.setDate(since.getDate() - days);
@@ -4044,7 +4077,7 @@ app.patch('/api/settings', auth, requireSettingsAccess, async (req, res) => {
   return res.status(400).json({ error: error.message });
 });
 
-app.post('/api/settings/logo', auth, requireSettingsAccess, upload.single('logo'), async (req, res) => {
+app.post('/api/settings/logo', auth, requireSettingsAccess, requireFeature('custom_branding'), upload.single('logo'), async (req, res) => {
   const tenantId = await getEffectiveTenantId(req);
   if (!tenantId) return res.status(404).json({ error: 'No tenant found' });
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -5316,6 +5349,9 @@ async function mobileAuth(req, res, next) {
   req.employeeName = employee.name;
   req.employeePhone = employee.phone;
   req.role = employee.role;
+  // Stash plan for feature-gating (parity with the web `auth` middleware)
+  const { data: tenant } = await supabaseAdmin.from('tenants').select('plan').eq('id', employee.tenant_id).single();
+  if (tenant) req.tenantPlan = tenant.plan;
   next();
 }
 
@@ -5406,7 +5442,7 @@ app.get('/api/mobile/crew/assignment', mobileAuth, async (req, res) => {
 
 // Check in to a job
 app.post('/api/mobile/crew/jobs/:id/check-in', mobileAuth, async (req, res) => {
-  const { gps } = req.body || {};
+  const gps = gpsForPlan(req.tenantPlan, req.body?.gps);
   const checkedInAt = new Date().toISOString();
   const { data: job } = await supabaseAdmin
     .from('jobs').select('id, name').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
@@ -5428,14 +5464,14 @@ app.post('/api/mobile/crew/jobs/:id/check-in', mobileAuth, async (req, res) => {
     employee_id: req.employeeId,
     tenant_id: req.tenantId,
     type: 'checkin',
-    message: `${req.employeeName} checked in${gps ? ' 📍' : ''}`,
+    message: `${req.employeeName} checked in${gps.lat != null ? ' 📍' : ''}`,
   });
   res.json({ ok: true, job_name: job.name, checked_in_at: checkedInAt });
 });
 
 // Check out of a job
 app.post('/api/mobile/crew/jobs/:id/check-out', mobileAuth, async (req, res) => {
-  const { gps } = req.body || {};
+  const gps = gpsForPlan(req.tenantPlan, req.body?.gps);
   const checkedOutAt = new Date().toISOString();
   const { data: job } = await supabaseAdmin
     .from('jobs').select('id, name').eq('id', req.params.id).eq('tenant_id', req.tenantId).maybeSingle();
@@ -5455,7 +5491,7 @@ app.post('/api/mobile/crew/jobs/:id/check-out', mobileAuth, async (req, res) => 
     employee_id: req.employeeId,
     tenant_id: req.tenantId,
     type: 'checkout',
-    message: `${req.employeeName} checked out${gps ? ' 📍' : ''}`,
+    message: `${req.employeeName} checked out${gps.lat != null ? ' 📍' : ''}`,
   });
   res.json({ ok: true, job_name: job.name, checked_out_at: checkedOutAt });
 });
@@ -5984,7 +6020,7 @@ app.get('/api/mobile/me/today-progress', mobileAuth, async (req, res) => {
 // etc. GPS lat/lng captured at both ends power the office map on Home.
 
 app.post('/api/mobile/clock-in', mobileAuth, async (req, res) => {
-  const { gps } = req.body || {};
+  const gps = gpsForPlan(req.tenantPlan, req.body?.gps);
   // Reject if there's already an open entry for this employee (idempotent).
   const { data: existing } = await supabaseAdmin
     .from('time_entries')
@@ -6014,7 +6050,7 @@ app.post('/api/mobile/clock-in', mobileAuth, async (req, res) => {
 });
 
 app.post('/api/mobile/clock-out', mobileAuth, async (req, res) => {
-  const { gps } = req.body || {};
+  const gps = gpsForPlan(req.tenantPlan, req.body?.gps);
   const { data: open } = await supabaseAdmin
     .from('time_entries')
     .select('id')
@@ -6045,8 +6081,8 @@ app.post('/api/mobile/clock-out', mobileAuth, async (req, res) => {
 // by the Live Map on the web dashboard. Writes to time_entries on the open
 // entry only; no-op if not clocked in.
 app.post('/api/mobile/me/heartbeat', mobileAuth, async (req, res) => {
-  const { lat, lng } = req.body || {};
-  if (lat == null || lng == null) return res.status(400).json({ error: 'lat + lng required' });
+  const { lat, lng } = gpsForPlan(req.tenantPlan, req.body);
+  if (lat == null || lng == null) return res.json({ ok: true, gps_disabled: true });
   const { data: open } = await supabaseAdmin
     .from('time_entries')
     .select('id')
@@ -8113,7 +8149,7 @@ cron.schedule('0 18 * * *', async () => {
 });
 
 // Snapshot MRR on the 1st of every month at midnight
-const PLAN_MRR = { solo: 49, team: 97, pro: 165, business: 299 };
+const PLAN_MRR = { crew: 49, team: 99, pro: 199 };
 async function snapshotMRR() {
   const { data: tenants } = await supabaseAdmin.from('tenants')
     .select('plan, subscription_status, stripe_subscription_id').eq('subscription_status', 'active');
@@ -8153,9 +8189,10 @@ cron.schedule('*/15 * * * *', async () => {
 
   for (const [tenantId, tenantAppts] of Object.entries(byTenant)) {
     const { data: tenant } = await supabaseAdmin.from('tenants')
-      .select('owner_email, company_name, appt_reminder_minutes, twilio_phone, twilio_account_sid, twilio_auth_token')
+      .select('plan, owner_email, company_name, appt_reminder_minutes, twilio_phone, twilio_account_sid, twilio_auth_token')
       .eq('id', tenantId).single();
     if (!tenant || !tenant.owner_email) continue;
+    if (!hasFeature(tenant.plan, 'appt_reminders')) continue;
 
     const reminderMinutes = tenant.appt_reminder_minutes ?? 60;
     if (reminderMinutes === 0) continue; // 0 = off
@@ -8371,10 +8408,11 @@ async function sendCrewJobReminders(tenantId, date, mode /* 'today' | 'tomorrow'
 
 cron.schedule('0 * * * *', async () => {
   const { data: tenants } = await supabaseAdmin
-    .from('tenants').select('id, timezone, status');
+    .from('tenants').select('id, timezone, status, plan');
   if (!tenants?.length) return;
   for (const t of tenants) {
     if (t.status && !['active', 'trialing'].includes(t.status)) continue;
+    if (!hasFeature(t.plan, 'appt_reminders')) continue;
     const tz = t.timezone || 'America/Los_Angeles';
     let now;
     try { now = nowIn(tz); } catch { now = nowIn('America/Los_Angeles'); }
