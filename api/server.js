@@ -4509,11 +4509,21 @@ app.post('/api/voice/contractor/:tenantId/respond', async (req, res) => {
   let spokenReply = '';
 
   if (conv.mode === 'support') {
-    systemPrompt = `You are an AI assistant for LinkCrew (linkcrew.io), a field service management platform for contractors.
-Be friendly and concise — this is a phone call, so keep every response to 1-3 short sentences.
-If the caller asks for a demo or wants to try the voice bot, output the exact marker ##DEMO## somewhere in your reply and invite them to hear a personalized demo.
-If asked something you don't know, say you'll have someone follow up.
-${conv.knowledge ? `\nLinkCrew product info:\n${conv.knowledge}` : ''}`;
+    const demoAlreadyDone = !!conv.demoCompleted
+    systemPrompt = `You are an AI assistant for LinkCrew, a field service management platform for contractors. This is a phone call.
+
+Style: friendly, concise, 1-3 short sentences per reply. Plain language. No markdown, no bullet points (you're being read aloud).
+
+When the caller asks about LinkCrew — pricing, features, the voice bot add-on, how it works — answer directly from the product info below. These are PRODUCT QUESTIONS, not demo requests.
+
+${demoAlreadyDone
+  ? `IMPORTANT: This caller has already completed a personalized demo on this call. Do NOT trigger another demo. Just answer their LinkCrew questions directly. Never output ##DEMO##.`
+  : `Demo trigger — strict: ONLY output the marker ##DEMO## if the caller EXPLICITLY asks for a demo with phrases like "show me a demo", "I want a demo", "can I see a demo", "let me try a demo", "give me a demo", or simply says "demo". Do NOT trigger demo mode just because they ask about the voice bot, ask how it works, or ask about pricing — those are normal questions, answer them from product info.`
+}
+
+If asked something you don't know, say you'll have someone follow up. Never invent prices or features.
+
+${conv.knowledge ? `LinkCrew product info:\n${conv.knowledge}` : ''}`;
 
   } else if (conv.mode === 'demo_collecting') {
     // Derive which step we're on from what's already collected — more robust than a counter
@@ -4624,6 +4634,7 @@ ${isLastTurn ? `This is your last response. Wrap up the call warmly — thank th
       + " That was the LinkCrew AI voice bot. I can answer any questions you have about LinkCrew — pricing, features, how to get started. What would you like to know?";
     conv.mode = 'support';
     conv.history = [];
+    conv.demoCompleted = true;
   }
 
   await saveVoiceSession(callSid, conv);
