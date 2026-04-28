@@ -744,10 +744,9 @@
           <select class="field-select" id="plan-filter" onchange="renderTable()">
             <option value="all">All plans</option>
             <option value="free">Free</option>
-            <option value="solo">Solo</option>
+            <option value="crew">Crew</option>
             <option value="team">Team</option>
             <option value="pro">Pro</option>
-            <option value="business">Business</option>
           </select>
         </div>
         <div class="toolbar-right">
@@ -818,10 +817,9 @@
             <label>Access Tier</label>
             <select class="field-select" id="inv-plan">
               <option value="free">Free</option>
-              <option value="solo">Solo</option>
+              <option value="crew">Crew</option>
               <option value="team" selected>Team</option>
               <option value="pro">Pro</option>
-              <option value="business">Business</option>
             </select>
           </div>
           <button class="btn-primary" onclick="createInvite()">Generate Link</button>
@@ -1384,10 +1382,9 @@ function renderTenantDetail(tenant) {
         <p>Set feature access for beta or comped owners without counting them as revenue. Generate a payment link when you want the account to become billable.</p>
         <select class="field-select" id="plan-select">
           <option value="free" ${tenant.plan === 'free' ? 'selected' : ''}>Free</option>
-          <option value="solo" ${tenant.plan === 'solo' ? 'selected' : ''}>Solo - $49</option>
-          <option value="team" ${tenant.plan === 'team' ? 'selected' : ''}>Team - $97</option>
-          <option value="pro" ${tenant.plan === 'pro' ? 'selected' : ''}>Pro - $165</option>
-          <option value="business" ${tenant.plan === 'business' ? 'selected' : ''}>Business - $299</option>
+          <option value="crew" ${tenant.plan === 'crew' ? 'selected' : ''}>Crew - $49</option>
+          <option value="team" ${tenant.plan === 'team' ? 'selected' : ''}>Team - $99</option>
+          <option value="pro" ${tenant.plan === 'pro' ? 'selected' : ''}>Pro - $199</option>
         </select>
         <div class="detail-actions" style="margin-top:12px">
           <button class="btn-primary" onclick="overridePlan('${tenant.id}')">Set Access Tier</button>
@@ -1602,10 +1599,9 @@ function renderInvites(invites) {
         <td>
           <select class="field-select" style="min-width:120px" onchange="setInviteAccessPlan('${escapeJs(inv.code)}', this.value)">
             <option value="free" ${selectedPlan === 'free' ? 'selected' : ''}>Free</option>
-            <option value="solo" ${selectedPlan === 'solo' ? 'selected' : ''}>Solo</option>
+            <option value="crew" ${selectedPlan === 'crew' ? 'selected' : ''}>Crew</option>
             <option value="team" ${selectedPlan === 'team' ? 'selected' : ''}>Team</option>
             <option value="pro" ${selectedPlan === 'pro' ? 'selected' : ''}>Pro</option>
-            <option value="business" ${selectedPlan === 'business' ? 'selected' : ''}>Business</option>
           </select>
         </td>
         <td>${inv.trial_days}d</td>
@@ -1641,7 +1637,7 @@ function getInvitePlanMap() {
 
 function getInviteAccessPlan(code) {
   const plan = getInvitePlanMap()[code];
-  return ['free', 'solo', 'team', 'pro', 'business'].includes(plan) ? plan : 'team';
+  return ['free', 'crew', 'team', 'pro'].includes(plan) ? plan : 'team';
 }
 
 function getInviteStatus(invite) {

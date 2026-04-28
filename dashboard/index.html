@@ -11140,7 +11140,7 @@ let tsEditingId = null;
 let allEmployeesData = [];
 
 async function getPunchLocation() {
-  if (currentPlan !== 'business' || !navigator.geolocation) {
+  if (currentPlan !== 'pro' || !navigator.geolocation) {
     return { lat: null, lng: null, warning: '' };
   }
   try {
@@ -11831,7 +11831,7 @@ async function loadSettings() {
   if (data.photo_expiry_days) document.getElementById('set-photo-expiry').value = String(data.photo_expiry_days);
   if (data.appt_reminder_minutes !== undefined && data.appt_reminder_minutes !== null) document.getElementById('set-appt-reminder').value = String(data.appt_reminder_minutes);
   document.getElementById('priority-support-section').style.display =
-    currentPlan === 'business' ? 'block' : 'none';
+    currentPlan === 'pro' ? 'block' : 'none';
   updateSettingsUsageCard();
   loadPaymentsSettings();
   loadLoginAttempts();

@@ -14,6 +14,7 @@ const { LINKCREW_FROM, LINKCREW_ALERT_FROM, EMAIL_FROM_ADDRESS, formatFrom } = r
 const { handleMessage } = require('../bot/whatsapp');
 const Anthropic = require('@anthropic-ai/sdk');
 const twilio = require('twilio');
+const { PLAN_MAX_USERS } = require('./planFeatures');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const VoiceResponse = twilio.twiml.VoiceResponse;
@@ -250,7 +251,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
-  const planMaxUsers = { solo: 1, team: 5, pro: 10, business: 20 };
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
@@ -304,7 +304,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       }).eq('id', session.metadata.tenant_id);
       // Recalculate max_users = plan base + extra
       const { data: updated } = await supabaseAdmin.from('tenants').select('plan, extra_users').eq('id', session.metadata.tenant_id).single();
-      const base = planMaxUsers[updated?.plan] || 1;
+      const base = PLAN_MAX_USERS[updated?.plan] || 1;
       await supabaseAdmin.from('tenants').update({ max_users: base + (updated?.extra_users || 0) }).eq('id', session.metadata.tenant_id);
     }
     // Subscription checkout
@@ -316,10 +316,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         subscription_status: 'active',
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
-        max_users: (planMaxUsers[plan] || 1) + (existing?.extra_users || 0),
+        max_users: (PLAN_MAX_USERS[plan] || 1) + (existing?.extra_users || 0),
       }).eq('id', session.metadata.tenant_id);
-      // Business plan — send onboarding email with Calendly link
-      if (plan === 'business') {
+      // Pro plan — send onboarding email with Calendly link
+      if (plan === 'pro') {
         try {
           const { data: tenant } = await supabaseAdmin.from('tenants')
             .select('owner_email, company_name').eq('id', session.metadata.tenant_id).single();
@@ -1576,7 +1576,6 @@ app.post('/api/auth/signup', async (req, res) => {
   let trialDays = 14;
   let inviteId = null;
   let invitePlan = 'free';
-  const planMaxUsers = { free: 1, solo: 1, team: 5, pro: 10, business: 20 };
   if (invite_code) {
     const { data: invite } = await supabaseAdmin.from('beta_invites')
       .select('id, trial_days, max_uses, use_count, expires_at')
@@ -1587,7 +1586,7 @@ app.post('/api/auth/signup', async (req, res) => {
       if (notExpired && notFull) {
         trialDays = invite.trial_days || 14;
         inviteId = invite.id;
-        if (requestedPlan && planMaxUsers[requestedPlan]) {
+        if (requestedPlan && PLAN_MAX_USERS[requestedPlan]) {
           invitePlan = requestedPlan;
         }
       }
@@ -1612,7 +1611,7 @@ app.post('/api/auth/signup', async (req, res) => {
       owner_email: email.toLowerCase(),
       trial_ends_at: trialEndsAt,
       plan: invitePlan,
-      max_users: planMaxUsers[invitePlan] || 1,
+      max_users: PLAN_MAX_USERS[invitePlan] || 1,
       subscription_status: 'trialing',
     })
     .select()
@@ -3076,8 +3075,8 @@ app.patch('/api/timesheets/:id', auth, requireOperationAccess, async (req, res) 
 
 app.get('/api/reports', auth, requireFinancialAccess, async (req, res) => {
   const { data: tenant } = await supabaseAdmin.from('tenants').select('plan').eq('id', req.tenantId).single();
-  if (!['pro', 'business'].includes(tenant?.plan)) {
-    return res.status(403).json({ error: 'upgrade_required', message: 'Reports are available on Pro and Business plans.' });
+  if (tenant?.plan !== 'pro') {
+    return res.status(403).json({ error: 'upgrade_required', message: 'Reports are available on the Pro plan.' });
   }
   const days = parseInt(req.query.period || '30');
   const since = new Date();
@@ -3863,10 +3862,9 @@ app.get('/api/billing/status', auth, requireFinancialAccess, async (req, res) =>
 app.post('/api/billing/checkout', auth, requireSettingsAccess, requireFinancialAccess, async (req, res) => {
   const { plan } = req.body;
   const priceMap = {
-    solo:      process.env.STRIPE_PRICE_SOLO,
+    crew:      process.env.STRIPE_PRICE_CREW,
     team:      process.env.STRIPE_PRICE_TEAM,
     pro:       process.env.STRIPE_PRICE_PRO,
-    business:  process.env.STRIPE_PRICE_BUSINESS,
     voicebot:  process.env.STRIPE_PRICE_VOICEBOT,
   };
   const priceId = priceMap[plan];
@@ -5095,7 +5093,7 @@ app.post('/api/mobile/signup', async (req, res) => {
       company_name: String(company_name).trim(),
       owner_email: emailLower,
       trial_ends_at: trialEndsAt,
-      plan: 'solo',
+      plan: 'crew',
       max_users: 1,
       subscription_status: 'trialing',
     })
@@ -7492,11 +7490,10 @@ app.post('/api/admin/tenants/:id/extend-trial', auth, async (req, res) => {
 app.patch('/api/admin/tenants/:id/plan', auth, async (req, res) => {
   if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
   const { plan } = req.body;
-  const planMaxUsers = { free: 1, solo: 1, team: 5, pro: 10, business: 20 };
-  if (!planMaxUsers[plan]) return res.status(400).json({ error: 'Invalid plan' });
+  if (!PLAN_MAX_USERS[plan]) return res.status(400).json({ error: 'Invalid plan' });
   await supabaseAdmin.from('tenants').update({
     plan,
-    max_users: planMaxUsers[plan],
+    max_users: PLAN_MAX_USERS[plan],
     subscription_status: plan === 'free' ? 'trialing' : 'active',
   }).eq('id', req.params.id);
   res.json({ ok: true });
@@ -7527,10 +7524,9 @@ app.post('/api/admin/tenants/:id/payment-link', auth, async (req, res) => {
   if (!req.isAdmin) return res.status(403).json({ error: 'Admin only' });
   const { plan } = req.body;
   const priceMap = {
-    solo: process.env.STRIPE_PRICE_SOLO,
+    crew: process.env.STRIPE_PRICE_CREW,
     team: process.env.STRIPE_PRICE_TEAM,
     pro: process.env.STRIPE_PRICE_PRO,
-    business: process.env.STRIPE_PRICE_BUSINESS,
   };
   const priceId = priceMap[plan];
   if (!priceId) return res.status(400).json({ error: 'Invalid plan' });
