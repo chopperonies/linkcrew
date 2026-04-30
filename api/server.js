@@ -6521,7 +6521,7 @@ app.get('/api/mobile/owner/requests/:id', mobileAuth, requireMobileOwnerOrManage
 });
 
 app.post('/api/mobile/owner/requests', mobileAuth, requireMobileOwnerOrManager, async (req, res) => {
-  const { name, address, description, estimate_amount, client_id } = req.body || {};
+  const { name, address, description, estimate_amount, client_id, scheduled_date, scheduled_time } = req.body || {};
   if (!name || !address) return res.status(400).json({ error: 'name and address required' });
 
   if (client_id) {
@@ -6543,6 +6543,8 @@ app.post('/api/mobile/owner/requests', mobileAuth, requireMobileOwnerOrManager, 
       address: String(address).trim(),
       description: description || null,
       estimate_amount: estimate,
+      scheduled_date: scheduled_date || null,
+      scheduled_time: scheduled_time || null,
       client_id: client_id || null,
       tenant_id: req.tenantId,
       status: 'quoted',
