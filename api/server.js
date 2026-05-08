@@ -5791,13 +5791,25 @@ app.get('/api/mobile/chat/threads', mobileAuth, async (req, res) => {
 
   const [{ data: threads }, { data: members }] = await Promise.all([
     supabaseAdmin.from('chat_threads')
-      .select('id, name, created_by, created_at, last_message_at')
+      .select('id, name, created_by, created_at, last_message_at, job_id')
       .in('id', threadIds)
       .order('last_message_at', { ascending: false }),
     supabaseAdmin.from('chat_thread_members')
       .select('thread_id, employee_id, employees(name, avatar_url)')
       .in('thread_id', threadIds),
   ]);
+
+  // Enrich each job-linked thread with the job context the mobile UI
+  // needs to render the "Jobs" section (name, address, status).
+  const jobIds = Array.from(new Set((threads || []).map(t => t.job_id).filter(Boolean)));
+  const jobById = new Map();
+  if (jobIds.length > 0) {
+    const { data: jobs } = await supabaseAdmin
+      .from('jobs')
+      .select('id, name, address, status, payment_status, scheduled_date')
+      .in('id', jobIds);
+    for (const j of (jobs || [])) jobById.set(j.id, j);
+  }
 
   // Pull the latest message per thread (small N, one query per thread
   // kept simple; Postgres can hand it off cheaply for O(20) threads).
@@ -5842,16 +5854,86 @@ app.get('/api/mobile/chat/threads', mobileAuth, async (req, res) => {
     members: byThreadMembers.get(t.id) || [],
     last_message: latestByThread.get(t.id) || null,
     unread_count: unreadByThread.get(t.id) || 0,
+    job_id: t.job_id || null,
+    job: t.job_id ? (jobById.get(t.job_id) || null) : null,
   }));
   res.json(result);
 });
 
-// Create (or find, for DMs) a thread. body: { employee_ids: string[], name?: string }
+// Create (or find) a thread.
+// body: { employee_ids?: string[], name?: string, job_id?: string }
+// When job_id is provided we treat it as identity — same job re-opens the
+// same thread — and we auto-include the currently assigned crew. The
+// caller doesn't need to pass employee_ids in that case.
 app.post('/api/mobile/chat/threads', mobileAuth, async (req, res) => {
+  const jobId = typeof req.body?.job_id === 'string' && req.body.job_id ? req.body.job_id : null;
   const otherIds = Array.isArray(req.body?.employee_ids)
     ? req.body.employee_ids.filter(id => typeof id === 'string' && id !== req.employeeId)
     : [];
   const rawName = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 80) : '';
+
+  // Job-scoped thread: find-or-create on (tenant_id, job_id).
+  if (jobId) {
+    const { data: job, error: jErr } = await supabaseAdmin
+      .from('jobs')
+      .select('id, tenant_id, name')
+      .eq('id', jobId)
+      .maybeSingle();
+    if (jErr) return res.status(500).json({ error: jErr.message });
+    if (!job || job.tenant_id !== req.tenantId) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from('chat_threads')
+      .select('*')
+      .eq('tenant_id', req.tenantId)
+      .eq('job_id', jobId)
+      .maybeSingle();
+
+    // Pull every employee assigned to this job so the thread auto-includes them.
+    const { data: assignments } = await supabaseAdmin
+      .from('job_assignments')
+      .select('employee_id')
+      .eq('job_id', jobId);
+    const assignedIds = (assignments || []).map(a => a.employee_id);
+    const memberSet = new Set([req.employeeId, ...assignedIds]);
+
+    if (existing) {
+      const { data: existingMembers } = await supabaseAdmin
+        .from('chat_thread_members')
+        .select('employee_id')
+        .eq('thread_id', existing.id);
+      const haveSet = new Set((existingMembers || []).map(r => r.employee_id));
+      const toAdd = [...memberSet].filter(id => !haveSet.has(id));
+      if (toAdd.length > 0) {
+        await supabaseAdmin.from('chat_thread_members').insert(
+          toAdd.map(id => ({ thread_id: existing.id, employee_id: id })),
+        );
+      }
+      return res.json(existing);
+    }
+
+    const { data: thread, error: tErr } = await supabaseAdmin
+      .from('chat_threads')
+      .insert({
+        tenant_id: req.tenantId,
+        job_id: jobId,
+        name: null,  // UI uses the job name; keep thread.name null
+        created_by: req.employeeId,
+      })
+      .select()
+      .single();
+    if (tErr) return res.status(500).json({ error: tErr.message });
+
+    const memberRows = [...memberSet].map(id => ({ thread_id: thread.id, employee_id: id }));
+    if (memberRows.length > 0) {
+      const { error: mErr } = await supabaseAdmin.from('chat_thread_members').insert(memberRows);
+      if (mErr) return res.status(500).json({ error: mErr.message });
+    }
+    return res.json(thread);
+  }
+
   if (otherIds.length === 0) return res.status(400).json({ error: 'Pick at least one employee' });
 
   // Verify all invited employees are in the same tenant.
