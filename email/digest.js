@@ -242,8 +242,15 @@ async function sendNote({ subject, body }) {
   });
 }
 
-async function sendInvoiceToClient({ clientName, clientEmail, jobName, amount, portalUrl, tenantName }) {
+async function sendInvoiceToClient({ clientName, clientEmail, jobName, amount, portalUrl, tenantName, description }) {
   const formattedAmount = Number(amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const safeDescription = description ? String(description).trim() : '';
+  const descriptionBlock = safeDescription
+    ? `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px 18px;margin-bottom:20px">
+         <div style="font-size:12px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Scope of work</div>
+         <div style="font-size:14px;color:#111827;line-height:1.6;white-space:pre-wrap">${safeDescription.replace(/</g, '&lt;')}</div>
+       </div>`
+    : '';
   const html = `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:20px">
 <div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
@@ -256,6 +263,7 @@ async function sendInvoiceToClient({ clientName, clientEmail, jobName, amount, p
     <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 24px">
       An invoice has been created for <strong>${jobName}</strong>.
     </p>
+    ${descriptionBlock}
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
       <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Invoice Total</div>
       <div style="font-size:36px;font-weight:800;color:#0a0a0a">${formattedAmount}</div>

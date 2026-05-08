@@ -3651,6 +3651,7 @@ app.post('/api/jobs/:id/invoice', auth, requireFinancialAccess, async (req, res)
         amount: parseFloat(amount),
         portalUrl,
         tenantName: tenant?.company_name,
+        description: data.description,
       });
       invoiceEmailSent = true;
     } catch (emailErr) {
@@ -7295,6 +7296,7 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
         amount,
         portalUrl,
         tenantName: tenant?.company_name,
+        description: data.description,
       });
       emailSent = true;
     } catch (emailErr) {
@@ -7569,6 +7571,7 @@ app.post('/api/mobile/owner/jobs/:id/invoice/resend', mobileAuth, requireMobileO
       amount: Number(job.invoice_amount),
       portalUrl,
       tenantName: tenant?.company_name,
+      description: job.description,
     });
     res.json({ ok: true, emailed_to: client.email });
   } catch (err) {
