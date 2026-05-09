@@ -7293,8 +7293,15 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
   if (error) return res.status(400).json({ error: error.message });
 
   const client = data.clients;
+  // The mobile editor can send a recipient_email override (covers the case
+  // where the owner just patched the client record in the same flow but the
+  // joined select above picked up the stale email).
+  const overrideEmail = typeof req.body?.recipient_email === 'string'
+    ? req.body.recipient_email.trim().toLowerCase()
+    : '';
+  const emailToUse = overrideEmail || client?.email || '';
   let emailSent = false;
-  if (client?.email) {
+  if (emailToUse) {
     try {
       const [{ data: tenant }, { data: clientUser }] = await Promise.all([
         supabaseAdmin.from('tenants').select('company_name').eq('id', req.tenantId).single(),
@@ -7312,8 +7319,8 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
       const disc = parseFloat(req.body?.discount_amount);
       const discLabel = typeof req.body?.discount_label === 'string' ? req.body.discount_label : null;
       await sendInvoiceToClient({
-        clientName: client.name,
-        clientEmail: client.email,
+        clientName: client?.name || 'there',
+        clientEmail: emailToUse,
         jobName: data.name,
         amount,
         portalUrl,
@@ -7329,7 +7336,7 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
       console.error('[mobile invoice] email error:', emailErr.message);
     }
   }
-  res.json({ job: data, invoice_email_sent: emailSent, invoice_emailed_to: emailSent ? client.email : null });
+  res.json({ job: data, invoice_email_sent: emailSent, invoice_emailed_to: emailSent ? emailToUse : null });
 });
 
 // Subscription billing portal — returns a Stripe customer-portal URL.
