@@ -5558,6 +5558,65 @@ app.post('/api/mobile/crew/jobs/:id/check-out', mobileAuth, async (req, res) => 
   res.json({ ok: true, job_name: job.name, checked_out_at: checkedOutAt });
 });
 
+// Mirror a job_update into the job's chat thread (if one exists) so the
+// thread is the central feed for that job — notes, photos, supply
+// requests, bottlenecks all surface in Messages.
+async function mirrorJobUpdateToThread({ jobId, tenantId, employeeId, type, message, photoUrl }) {
+  const { data: thread } = await supabaseAdmin
+    .from('chat_threads')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('job_id', jobId)
+    .maybeSingle();
+  if (!thread) return;
+
+  // Make sure the author is a thread member so they don't get blocked by
+  // RLS / membership checks on subsequent reads.
+  const { data: existingMember } = await supabaseAdmin
+    .from('chat_thread_members')
+    .select('thread_id')
+    .eq('thread_id', thread.id)
+    .eq('employee_id', employeeId)
+    .maybeSingle();
+  if (!existingMember) {
+    await supabaseAdmin.from('chat_thread_members').insert({ thread_id: thread.id, employee_id: employeeId });
+  }
+
+  const labelMap = {
+    note: 'Note',
+    photo: 'Photo',
+    bottleneck: 'Bottleneck',
+    supply_request: 'Supply request',
+    update: 'Update',
+    checkin: 'Clocked in',
+    checkout: 'Clocked out',
+  };
+  const label = labelMap[type] || 'Update';
+  const body = [
+    `[${label}]`,
+    message ? message.trim() : (photoUrl ? 'New photo posted' : ''),
+    photoUrl ? `\n${photoUrl}` : '',
+  ].filter(Boolean).join(' ');
+
+  const { data: msg } = await supabaseAdmin
+    .from('chat_messages')
+    .insert({
+      thread_id: thread.id,
+      sender_id: employeeId,
+      body,
+    })
+    .select()
+    .single();
+
+  // Bump the thread so it floats to the top of the Messages list.
+  if (msg?.created_at) {
+    await supabaseAdmin
+      .from('chat_threads')
+      .update({ last_message_at: msg.created_at })
+      .eq('id', thread.id);
+  }
+}
+
 async function createMobileJobUpdate(req, res) {
   const { type, message, photo_url } = req.body || {};
   const allowed = new Set(['note', 'bottleneck', 'photo', 'update']);
@@ -5579,6 +5638,17 @@ async function createMobileJobUpdate(req, res) {
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
+
+  // Best-effort: also post into the job's chat thread.
+  mirrorJobUpdateToThread({
+    jobId: job.id,
+    tenantId: req.tenantId,
+    employeeId: req.employeeId,
+    type,
+    message,
+    photoUrl: photo_url,
+  }).catch(err => console.warn('[mirror to thread]', err?.message));
+
   res.json(data);
 }
 
@@ -6456,6 +6526,17 @@ app.post('/api/mobile/crew/jobs/:id/supply-request', mobileAuth, async (req, res
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
+
+  // Mirror into the job's chat thread.
+  mirrorJobUpdateToThread({
+    jobId: job.id,
+    tenantId: req.tenantId,
+    employeeId: req.employeeId,
+    type: 'supply_request',
+    message: `${items}${urgency ? ` (${String(urgency).replace('_', ' ')})` : ''}`,
+    photoUrl: photo_url,
+  }).catch(err => console.warn('[mirror to thread]', err?.message));
+
   res.json(data);
 });
 
