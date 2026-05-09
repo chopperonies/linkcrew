@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgBoldClean" x1="8" y1="6" x2="57" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22B0FF"/>
+      <stop offset="0.55" stop-color="#0A84F5"/>
+      <stop offset="1" stop-color="#004FC0"/>
+    </linearGradient>
+    <linearGradient id="pinBoldClean" x1="32" y1="13" x2="32" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DFF2FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#bgBoldClean)"/>
+  <rect x="5" y="5" width="54" height="54" rx="15" stroke="rgba(255,255,255,0.18)"/>
+
+  <path d="M32 13C24.27 13 18 19.27 18 27C18 38.25 32 50.75 32 50.75C32 50.75 46 38.25 46 27C46 19.27 39.73 13 32 13Z" fill="url(#pinBoldClean)"/>
+  <circle cx="32" cy="27" r="6.8" fill="#0568D6"/>
+</svg>

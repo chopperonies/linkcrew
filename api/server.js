@@ -406,8 +406,15 @@ app.use((req, res, next) => {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
+// New Next.js static-export landing — assets live under
+// dashboard/landing-next/ (including /_next/...). Mount FIRST so its
+// /_next paths resolve before the legacy dashboard static middleware.
+app.use(express.static(path.join(__dirname, '../dashboard/landing-next'), { index: false }));
 app.use(express.static(path.join(__dirname, '../dashboard'), { index: false }));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing-next/index.html')));
+// Keep the old landing reachable for rollback / comparison while the new
+// one is rolling out.
+app.get('/landing-old', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/landing.html')));
 app.get('/app', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, '../dashboard/index.html'));
