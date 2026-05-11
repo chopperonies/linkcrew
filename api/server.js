@@ -7451,6 +7451,20 @@ app.post('/api/mobile/owner/jobs/:id/invoice', mobileAuth, requireMobileOwner, a
   if (typeof req.body?.description === 'string') {
     update.description = req.body.description.trim() || null;
   }
+  // Structured worksheet rows so the editor can reconstruct line items on
+  // reopen instead of collapsing to a single row built from invoice_amount.
+  // Each row: { name: string, qty: number, price: number }. Sanitize defensively.
+  if (Array.isArray(req.body?.line_items)) {
+    const rows = req.body.line_items
+      .map(r => ({
+        name: typeof r?.name === 'string' ? r.name.trim().slice(0, 500) : '',
+        qty: Math.max(0, parseFloat(r?.qty) || 0),
+        price: Math.max(0, parseFloat(r?.price) || 0),
+      }))
+      .filter(r => r.name || r.qty > 0 || r.price > 0)
+      .slice(0, 100);
+    update.invoice_line_items = rows.length ? rows : null;
+  }
   const { data, error } = await supabaseAdmin.from('jobs')
     .update(update)
     .eq('id', req.params.id).eq('tenant_id', req.tenantId)
